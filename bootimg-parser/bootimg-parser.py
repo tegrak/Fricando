@@ -301,11 +301,6 @@ class Unpacker(object):
         self.print_header_info()
 
         #
-        # Print signiture pad info
-        #
-        self.print_sig_pad_info()
-
-        #
         # Unpack kernel
         #
         self.unpack_kernel(dir_unpacked)
@@ -329,6 +324,11 @@ class Unpacker(object):
         # Unpack signiture pad
         #
         self.unpack_sig(dir_unpacked)
+
+        #
+        # Print signiture pad info
+        #
+        self.print_sig_pad_info()
 
 #
 # Function Definition
