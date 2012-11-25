@@ -234,16 +234,16 @@ class Parser(object):
     def print_header_info(self):
         print("----------------------------------------")
         print("IMAGE HEADER INFO\n")
-        print("              Image Type ID: " + self.hdr_image_id)
-        print("        Flash Parti Version: " + str(self.hdr_flash_parti_ver))
-        print("                  Image Src: " + str(hex(self.hdr_image_src)))
-        print("              Image Dst Ptr: " + str(hex(self.hdr_image_dest_ptr)))
-        print("                 Image Size: " + str(self.hdr_image_sz))
-        print("            Image Code Size: " + str(self.hdr_code_sz))
-        print("        Image Signiture Ptr: " + str(hex(self.hdr_sig_ptr)))
-        print("       Image Signiture Size: " + str(self.hdr_sig_sz))
-        print("    Certification Chain Ptr: " + str(hex(self.hdr_cert_chain_ptr)))
-        print("   Certification Chain Size: " + str(self.hdr_cert_chain_sz))
+        print("Image Type ID           : " + self.hdr_image_id)
+        print("Flash Parti Version     : " + str(self.hdr_flash_parti_ver))
+        print("Image Src               : " + str(hex(self.hdr_image_src)))
+        print("Image Dst Ptr           : " + str(hex(self.hdr_image_dest_ptr)))
+        print("Image Size              : " + str(self.hdr_image_sz))
+        print("Image Code Size         : " + str(self.hdr_code_sz))
+        print("Image Signiture Ptr     : " + str(hex(self.hdr_sig_ptr)))
+        print("Image Signiture Size    : " + str(self.hdr_sig_sz))
+        print("Certification Chain Ptr : " + str(hex(self.hdr_cert_chain_ptr)))
+        print("Certification Chain Size: " + str(self.hdr_cert_chain_sz))
 
         print("")
 
@@ -253,16 +253,16 @@ class Parser(object):
     def print_cert_chain_info(self):
         print("----------------------------------------")
         print("CERTIFICATION CHAIN INFO\n")
-        print("                 Signiture:")
-        print("                      Size: " + str(self.cert_chain_sig_sz))
+        print("Signiture       :")
+        print("Size            : " + str(self.cert_chain_sig_sz))
         print("")
-        print("          Attestation Cert:")
+        print("Attestation Cert:")
         print(self.cert_chain_attestcert)
         print("")
-        print("            Signiture Calc:")
+        print("Signiture Calc  :")
         print(self.cert_chain_sigcalc)
         print("")
-        print("                 Root Cert: IGNORED HERE")
+        print("Root Cert       : IGNORED HERE")
 
     #
     # Run routine

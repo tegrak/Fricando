@@ -113,19 +113,19 @@ class FATParser(object):
         # FAT directory entry
         #
         self.fat_dirent = {
-            'file_name': "",
-            'file_ext': "",
-            'file_attr': 0,
-            'user_attr': 0,
-            'file_timeresolution': 0,
-            'file_timecreated': 0,
-            'file_datecreated': 0,
-            'file_datelastaccessed': 0,
-            'file_accessrightmap': 0,
-            'file_timelastmodified': 0,
-            'file_datelastmodified': 0,
-            'file_firstcluster': 0,
-            'file_bytesize': 0
+            'file_name'             : "",
+            'file_ext'              : "",
+            'file_attr'             : 0,
+            'user_attr'             : 0,
+            'file_timeresolution'   : 0,
+            'file_timecreated'      : 0,
+            'file_datecreated'      : 0,
+            'file_datelastaccessed' : 0,
+            'file_accessrightmap'   : 0,
+            'file_timelastmodified' : 0,
+            'file_datelastmodified' : 0,
+            'file_firstcluster'     : 0,
+            'file_bytesize'         : 0
             }
 
         ''' test only
@@ -228,6 +228,9 @@ class FATParser(object):
             self.fat_dirent['file_bytesize'] = self.str2int(dirent[offset:offset+4])
 
             if self.fat_dirent['file_attr'] != 0:
+                #
+                # Directory entry is found
+                #
                 self.print_fat_dir_entry(self.fat_dirent)
 
     #
@@ -350,20 +353,20 @@ class FATParser(object):
     def print_fat_common_header_info(self):
         print("----------------------------------------")
         print("IMAGE COMMON HEADER INFO\n")
-        print("                     Jump Code: %x" % self.fat_common_hdr_jumpcode + " (Hex)")
-        print("                      OEM Name: " + str(self.fat_common_hdr_oem_name.strip()))
-        print("              Bytes Per Sector: " + str(self.fat_common_hdr_bytespersec))
-        print("            Sector Per Cluster: " + str(self.fat_common_hdr_secpercluster))
-        print("               Sector Reserved: " + str(self.fat_common_hdr_secreserved))
-        print("             FAT Copies Number: " + str(self.fat_common_hdr_fatcopy_num))
+        print("Jump Code                     : %x" % self.fat_common_hdr_jumpcode + " (Hex)")
+        print("OEM Name                      : " + str(self.fat_common_hdr_oem_name.strip()))
+        print("Bytes Per Sector              : " + str(self.fat_common_hdr_bytespersec))
+        print("Sector Per Cluster            : " + str(self.fat_common_hdr_secpercluster))
+        print("Sector Reserved               : " + str(self.fat_common_hdr_secreserved))
+        print("FAT Copies Number             : " + str(self.fat_common_hdr_fatcopy_num))
         print("Maximum Root Directory Entries: " + str(self.fat_common_hdr_rootdirent_max))
-        print("      Small 32MB Sector Number: " + str(self.fat_common_hdr_small32mbsec_num))
-        print("              Media Descriptor: " + str(hex(self.fat_common_hdr_mediadesc)))
-        print("                Sector Per FAT: " + str(self.fat_common_hdr_secperfat))
-        print("              Sector Per Track: " + str(self.fat_common_hdr_secpertrack))
-        print("                   Head Number: " + str(self.fat_common_hdr_heads_num))
-        print("          Hidden Sector Number: " + str(self.fat_common_hdr_hiddensec_num))
-        print("                 Sector Number: " + str(self.fat_common_hdr_sec_num))
+        print("Small 32MB Sector Number      : " + str(self.fat_common_hdr_small32mbsec_num))
+        print("Media Descriptor              : " + str(hex(self.fat_common_hdr_mediadesc)))
+        print("Sector Per FAT                : " + str(self.fat_common_hdr_secperfat))
+        print("Sector Per Track              : " + str(self.fat_common_hdr_secpertrack))
+        print("Head Number                   : " + str(self.fat_common_hdr_heads_num))
+        print("Hidden Sector Number          : " + str(self.fat_common_hdr_hiddensec_num))
+        print("Sector Number                 : " + str(self.fat_common_hdr_sec_num))
 
         print("")
 
@@ -374,13 +377,13 @@ class FATParser(object):
         print("----------------------------------------")
         print("IMAGE FAT16 HEADER INFO\n")
         print("Logical Drive Number: " + str(self.fat16_hdr_logicaldrive_num))
-        print("       Ext Signature: " + str(self.fat16_hdr_ext_sign))
-        print("       Serial Number: " + str(self.fat16_hdr_ser_num))
-        print("         Volume Name: " + str(self.fat16_hdr_vol_name.strip()))
-        print("            FAT Name: " + str(self.fat16_hdr_fat_name.strip()))
-        #print("          Exec Code: %x" % self.fat16_hdr_exec_code + " (Hex)")
-        print("           Exec Code: ignored here")
-        print("         Exec Marker: %x" % self.fat16_hdr_exec_marker + " (Hex)")
+        print("Ext Signature       : " + str(self.fat16_hdr_ext_sign))
+        print("Serial Number       : " + str(self.fat16_hdr_ser_num))
+        print("Volume Name         : " + str(self.fat16_hdr_vol_name.strip()))
+        print("FAT Name            : " + str(self.fat16_hdr_fat_name.strip()))
+        #print("Exec Code           : %x" % self.fat16_hdr_exec_code + " (Hex)")
+        print("Exec Code           : ignored here")
+        print("Exec Marker         : %x" % self.fat16_hdr_exec_marker + " (Hex)")
 
         print("")
 
@@ -390,19 +393,19 @@ class FATParser(object):
     def print_fat_dir_entry(self, fat_dirent):
         print("----------------------------------------")
         print("IMAGE FAT16 DIRECTORY ENTRY INFO\n")
-        print("              File Name: " + str(fat_dirent['file_name'].strip()))
-        print("         File Extension: " + str(fat_dirent['file_ext'].strip()))
-        print("         File Attribute: " + str(hex(fat_dirent['file_attr'])))
-        print("         User Attribute: " + str(hex(fat_dirent['user_attr'])))
-        print("   File Time Resolution: " + str(hex(fat_dirent['file_timeresolution'])))
-        print("      File Time Created: " + str(hex(fat_dirent['file_timecreated'])))
-        print("      File Date Created: " + str(hex(fat_dirent['file_datecreated'])))
+        print("File Name              : " + str(fat_dirent['file_name'].strip()))
+        print("File Extension         : " + str(fat_dirent['file_ext'].strip()))
+        print("File Attribute         : " + str(hex(fat_dirent['file_attr'])))
+        print("User Attribute         : " + str(hex(fat_dirent['user_attr'])))
+        print("File Time Resolution   : " + str(hex(fat_dirent['file_timeresolution'])))
+        print("File Time Created      : " + str(hex(fat_dirent['file_timecreated'])))
+        print("File Date Created      : " + str(hex(fat_dirent['file_datecreated'])))
         print("File Date Last Accessed: " + str(hex(fat_dirent['file_datelastaccessed'])))
-        print("  File Access Right Map: " + str(hex(fat_dirent['file_accessrightmap'])))
+        print("File Access Right Map  : " + str(hex(fat_dirent['file_accessrightmap'])))
         print("File Time Last Modified: " + str(hex(fat_dirent['file_timelastmodified'])))
         print("File Date Last Modified: " + str(hex(fat_dirent['file_datelastmodified'])))
-        print("     File First Cluster: " + str(fat_dirent['file_firstcluster']))
-        print("              File Size: " + str(fat_dirent['file_bytesize']) + " (bytes)")
+        print("File First Cluster     : " + str(fat_dirent['file_firstcluster']))
+        print("File Size              : " + str(fat_dirent['file_bytesize']) + " (bytes)")
 
         print("")
 

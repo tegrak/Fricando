@@ -230,26 +230,26 @@ class Unpacker(object):
     # Print header info
     #
     def print_header_info(self):
-        print("          Magic: " + self.hdr_magic)
+        print("Magic          : " + self.hdr_magic)
 
-        print("    Kernel Size: " + str(self.hdr_kernel_sz) + " (" + str(self.sec_pg_kernel*self.hdr_page_sz) + " padded)")
-        print(" Kernel Address: " + str(hex(self.hdr_kernel_addr)))
+        print("Kernel Size    : " + str(self.hdr_kernel_sz) + " (" + str(self.sec_pg_kernel*self.hdr_page_sz) + " padded)")
+        print("Kernel Address : " + str(hex(self.hdr_kernel_addr)))
 
-        print("   Ramdisk Size: " + str(self.hdr_ramdisk_sz) + " (" + str(self.sec_pg_ramdisk*self.hdr_page_sz) + " padded)")
+        print("Ramdisk Size   : " + str(self.hdr_ramdisk_sz) + " (" + str(self.sec_pg_ramdisk*self.hdr_page_sz) + " padded)")
         print("Ramdisk Address: " + str(hex(self.hdr_ramdisk_addr)))
 
-        print("    Second Size: " + str(self.hdr_second_sz) + " (" + str(self.sec_pg_second*self.hdr_page_sz) + " padded)")
-        print(" Second Address: " + str(hex(self.hdr_second_addr)))
+        print("Second Size    : " + str(self.hdr_second_sz) + " (" + str(self.sec_pg_second*self.hdr_page_sz) + " padded)")
+        print("Second Address : " + str(hex(self.hdr_second_addr)))
 
-        print("   Tags Address: " + str(hex(self.hdr_tags_addr)))
-        print("      Page Size: " + str(self.hdr_page_sz))
-        print("        DT Size: " + str(self.hdr_dt_sz) + " (" + str(self.sec_pg_dt*self.hdr_page_sz) + " padded)")
-        print("         Unused: " + str(self.hdr_unused))
-        print("           Name: " + str(self.hdr_name))
+        print("Tags Address   : " + str(hex(self.hdr_tags_addr)))
+        print("Page Size      : " + str(self.hdr_page_sz))
+        print("DT Size        : " + str(self.hdr_dt_sz) + " (" + str(self.sec_pg_dt*self.hdr_page_sz) + " padded)")
+        print("Unused         : " + str(self.hdr_unused))
+        print("Name           : " + str(self.hdr_name))
 
-        print("   Command Line: " + str(self.hdr_cmdline))
+        print("Command Line   : " + str(self.hdr_cmdline))
 
-        print("             ID: " + str(hex(self.hdr_id)))
+        print("ID             : " + str(hex(self.hdr_id)))
 
         print("")
 
@@ -259,7 +259,7 @@ class Unpacker(object):
     def print_sig_pad_info(self):
         if self.sec_sz_sig is 0:
             return
-        print("   Sig Pad Size: " + str(self.sec_sz_sig))
+        print("Sig Pad Size   : " + str(self.sec_sz_sig))
 
     #
     # Run routine
