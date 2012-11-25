@@ -398,12 +398,33 @@ class FATParser(object):
         print("File Attribute         : " + str(hex(fat_dirent['file_attr'])))
         print("User Attribute         : " + str(hex(fat_dirent['user_attr'])))
         print("File Time Resolution   : " + str(hex(fat_dirent['file_timeresolution'])))
-        print("File Time Created      : " + str(hex(fat_dirent['file_timecreated'])))
-        print("File Date Created      : " + str(hex(fat_dirent['file_datecreated'])))
-        print("File Date Last Accessed: " + str(hex(fat_dirent['file_datelastaccessed'])))
+
+        ctime_h = (fat_dirent['file_timecreated'] >> 11) & 0x001F
+        ctime_m = (fat_dirent['file_timecreated'] >> 5) & 0x003F
+        ctime_s = (fat_dirent['file_timecreated'] & 0x001F) << 1
+        print("File Time Created      : %d:%d:%d" % (ctime_h, ctime_m, ctime_s))
+
+        cdate_y = ((fat_dirent['file_datecreated'] >> 9) & 0x001F) + 1980
+        cdate_m = (fat_dirent['file_datecreated'] >> 5) & 0x000F
+        cdate_d = fat_dirent['file_datecreated'] & 0x001F
+        print("File Date Created      : %d-%d-%d" % (cdate_y, cdate_m, cdate_d))
+
+        adate_y = ((fat_dirent['file_datelastaccessed'] >> 9) & 0x001F) + 1980
+        adate_m = (fat_dirent['file_datelastaccessed'] >> 5) & 0x000F
+        adate_d = fat_dirent['file_datelastaccessed'] & 0x001F
+        print("File Date Last Accessed: %d-%d-%d" % (adate_y, adate_m, adate_d))
+
         print("File Access Right Map  : " + str(hex(fat_dirent['file_accessrightmap'])))
-        print("File Time Last Modified: " + str(hex(fat_dirent['file_timelastmodified'])))
-        print("File Date Last Modified: " + str(hex(fat_dirent['file_datelastmodified'])))
+
+        mtime_h = (fat_dirent['file_timelastmodified'] >> 11) & 0x001F
+        mtime_m = (fat_dirent['file_timelastmodified'] >> 5) & 0x003F
+        mtime_s = (fat_dirent['file_timelastmodified'] & 0x001F) << 1
+        print("File Time Last Modified: %d:%d:%d" % (mtime_h, mtime_m, mtime_s))
+
+        mdate_y = ((fat_dirent['file_datelastmodified'] >> 9) & 0x001F) + 1980
+        mdate_m = (fat_dirent['file_datelastmodified'] >> 5) & 0x000F
+        mdate_d = fat_dirent['file_datelastmodified'] & 0x001F
+        print("File Date Last Modified: %d-%d-%d" % (mdate_y, mdate_m, mdate_d))
         print("File First Cluster     : " + str(fat_dirent['file_firstcluster']))
         print("File Size              : " + str(fat_dirent['file_bytesize']) + " (bytes)")
 
