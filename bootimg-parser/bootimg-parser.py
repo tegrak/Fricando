@@ -16,10 +16,10 @@
 # Example:
 #
 # To unpack boot.img:
-# $ bootimg-parser.py boot.img
+# python bootimg-parser.py boot.img
 #
 # To pack dir into boot.img:
-# $ bootimg-parser.py bootimg-dir
+# python bootimg-parser.py bootimg-dir
 #
 
 import os, sys

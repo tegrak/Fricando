@@ -16,7 +16,7 @@
 # Example:
 #
 # To parse *.mbn:
-# $ mbnimg-parser.py test.mbn
+# python mbnimg-parser.py test.mbn
 #
 
 import os, sys

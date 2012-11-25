@@ -16,7 +16,7 @@
 # Example:
 #
 # To parse FAT image:
-# $ fatimg-parser.py fat.img
+# python fatimg-parser.py fat.img
 #
 
 import os, sys
