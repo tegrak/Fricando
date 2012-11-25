@@ -28,6 +28,14 @@ from datetime import datetime
 #
 # Global Variable Definition
 #
+banner = '''
+  __      _                     _       
+ / _|_ __(_) ___ __ _ _ __   __| | ___  
+| |_| '__| |/ __/ _` | '_ \ / _` |/ _ \ 
+|  _| |  | | (_| (_| | | | | (_| | (_) |
+|_| |_|  |_|\___\__,_|_| |_|\__,_|\___/ 
+'''
+
 addr_base = 0x80200000
 addr_offset = 0x02000000
 
@@ -399,6 +407,11 @@ def print_usage():
 # Main Entry
 #
 def main():
+    #
+    # Display banner
+    #
+    print(banner)
+
     #
     # Get args list
     #
