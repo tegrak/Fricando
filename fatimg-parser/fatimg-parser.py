@@ -21,6 +21,7 @@
 
 import os, sys
 import getopt
+import copy
 
 #
 # Global Variable Definition
@@ -38,46 +39,59 @@ banner = '''
 #
 
 #
-# Sector size
+# FAT Parameters
 #
-SECTOR_SZ = 512
+FAT_SECTOR_SZ = 512
+FAT_DIR_ENT_LEN = 32
 
 #
 # FAT16 Parameters
 #
-FAT16_ENTRY_SZ        = 2
+FAT16_ENTRY_SZ = 2
+
 FAT16_ROOTDIR_ENT_MAX = 512
-FAT16_CLUSTER_SZ      = (16 * 1024)
-FAT16_CLUSTER_NUM     = (64 * 1024 * 1024) / FAT16_CLUSTER_SZ
-FAT16_SECTOR_NUM      = (64 * 1024 * 1024) / SECTOR_SZ
+
+FAT16_CLUSTER_SZ  = (16 * 1024)
+FAT16_CLUSTER_NUM = (64 * 1024 * 1024) / FAT16_CLUSTER_SZ
+
+FAT16_SECTOR_NUM = (64 * 1024 * 1024) / FAT_SECTOR_SZ
 
 #
 # Class Definition For Parser
 #
-class Parser(object):
+class FATParser(object):
     def __init__(self, img):
         #
         # Init class member
         #
         self.image = img
 
-        self.common_hdr_jumpcode = []
-        self.common_hdr_oem_name = ""
-        self.common_hdr_bytespersec = 0
-        self.common_hdr_secpercluster = 0
-        self.common_hdr_secreserved = 0
-        self.common_hdr_fatcopy_num = 0
-        self.common_hdr_rootdirent_max = 0
-        self.common_hdr_small32mbsec_num = 0
-        self.common_hdr_mediadesc = 0
-        self.common_hdr_secperfat = 0
-        self.common_hdr_secpertrack = 0
-        self.common_hdr_heads_num = 0
-        self.common_hdr_hiddensec_num = 0
-        self.common_hdr_sec_num = 0
+        #
+        # FAT common header
+        #
+        self.fat_common_hdr_jumpcode = []
+        self.fat_common_hdr_oem_name = ""
+        self.fat_common_hdr_bytespersec = 0
+        self.fat_common_hdr_secpercluster = 0
+        self.fat_common_hdr_secreserved = 0
+        self.fat_common_hdr_fatcopy_num = 0
+        self.fat_common_hdr_rootdirent_max = 0
+        self.fat_common_hdr_small32mbsec_num = 0
+        self.fat_common_hdr_mediadesc = 0
+        self.fat_common_hdr_secperfat = 0
+        self.fat_common_hdr_secpertrack = 0
+        self.fat_common_hdr_heads_num = 0
+        self.fat_common_hdr_hiddensec_num = 0
+        self.fat_common_hdr_sec_num = 0
 
-        self.offset_common_hdr = 0
+        #
+        # FAT common header offset
+        #
+        self.offset_fat_common_hdr = 0
 
+        #
+        # FAT16 header
+        #
         self.fat16_hdr_logicaldrive_num = 0
         #self.fat16_hdr_reserved = 0
         self.fat16_hdr_ext_sign = 0
@@ -87,29 +101,54 @@ class Parser(object):
         self.fat16_hdr_exec_code = []
         self.fat16_hdr_exec_marker = []
 
+        #
+        # FAT16 header offset
+        #
         self.offset_fat16_hdr = 0
+
+        #
+        # FAT directory entry list
+        #
+        #
+        # FAT directory entry
+        #
+        self.fat_dirent = {
+            'file_name': "",
+            'file_ext': "",
+            'file_attr': 0,
+            'user_attr': 0,
+            'file_timeresolution': 0,
+            'file_timecreated': 0,
+            'file_datecreated': 0,
+            'file_datelastaccessed': 0,
+            'file_accessrightmap': 0,
+            'file_timelastmodified': 0,
+            'file_datelastmodified': 0,
+            'file_firstcluster': 0,
+            'file_bytesize': 0
+            }
 
         ''' test only
         self.fat16_table_sz = FAT16_CLUSTER_NUM * FAT16_ENTRY_SZ
-        self.fat16_table_sz += (SECTOR_SZ - (self.fat_table_size % SECTOR_SZ))
+        self.fat16_table_sz += (FAT_SECTOR_SZ - (self.fat_table_size % FAT_SECTOR_SZ))
 
-        self.common_hdr_format = struct.Struct('<3s8sHBHBHHBHHHII')
-        self.common_hdr_list = [
-            '\xEB\x3C\x90',                  # jump_code_nop
+        self.fat_common_hdr_format = struct.Struct('<3s8sHBHBHHBHHHII')
+        self.fat_common_hdr_list = [
+            '\xEB\x3C\x90',                    # jump_code_nop
             "MSDOS5.0"+(" "*(11-len("MSDOS5.0"))),
-                                             # oem_name
-            SECTOR_SZ,                       # bytes_per_sec
-            FAT16_CLUSTER_SZ/SECTOR_SZ,      # sec_per_cluster
-            1,                               # reserved_sec
-            2,                               # num_fat_copies
-            FAT16_ROOTDIR_ENT_MAX,           # max_root_dir_ent
-            0,                               # num_sec_small_32mb
-            0xF8,                            # media_desc
-            self.fat16_table_sz/SECTOR_SZ,   # sec_per_fat
-            63,                              # sec_per_track
-            255,                             # num_heads
-            0,                               # num_hidden_sec
-            FAT16_SECTOR_NUM                 # num_sec
+                                               # oem_name
+            FAT_SECTOR_SZ,                     # bytes_per_sec
+            FAT16_CLUSTER_SZ/FAT_SECTOR_SZ,    # sec_per_cluster
+            1,                                 # reserved_sec
+            2,                                 # num_fat_copies
+            FAT16_ROOTDIR_ENT_MAX,             # max_root_dir_ent
+            0,                                 # num_sec_small_32mb
+            0xF8,                              # media_desc
+            self.fat16_table_sz/FAT_SECTOR_SZ, # sec_per_fat
+            63,                                # sec_per_track
+            255,                               # num_heads
+            0,                                 # num_hidden_sec
+            FAT16_SECTOR_NUM                   # num_sec
             ]
 
         self.fat16_hdr_format = struct.Struct('<HBI11s8s448s2s')
@@ -143,63 +182,128 @@ class Parser(object):
         return data
 
     #
-    # Check image ID
+    # Find FAT directory entry
     #
-    def check_image_id(self):
+    def find_fat_dir_entry_helper(self, dir_cluster_data):
+        for i in range(0, len(dir_cluster_data), FAT_DIR_ENT_LEN):
+            dirent = dir_cluster_data[i:i+FAT_DIR_ENT_LEN]
+
+            offset = 0
+            self.fat_dirent['file_name'] = dirent[offset:offset+8]
+
+            offset += 8
+            self.fat_dirent['file_ext'] = dirent[offset:offset+3]
+
+            offset += 3
+            self.fat_dirent['file_attr'] = self.str2int(dirent[offset:offset+1])
+
+            offset += 1
+            self.fat_dirent['user_attr'] = self.str2int(dirent[offset:offset+1])
+
+            offset += 1
+            self.fat_dirent['file_timeresolution'] = self.str2int(dirent[offset:offset+1])
+
+            offset += 1
+            self.fat_dirent['file_timecreated'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_datecreated'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_datelastaccessed'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_accessrightmap'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_timelastmodified'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_datelastmodified'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_firstcluster'] = self.str2int(dirent[offset:offset+2])
+
+            offset += 2
+            self.fat_dirent['file_bytesize'] = self.str2int(dirent[offset:offset+4])
+
+            if self.fat_dirent['file_attr'] != 0:
+                self.print_fat_dir_entry(self.fat_dirent)
+
+    #
+    # Find FAT16 directory entry
+    #
+    def find_fat16_dir_entry(self, dir_table_start, dir_table_len):
+        dir_cluster_data = self.image[dir_table_start:dir_table_start+dir_table_len]
+
+        self.find_fat_dir_entry_helper(dir_cluster_data)
+
+    #
+    # Check FAT image ID
+    #
+    def check_fatimage_id(self):
         pass
 
     #
-    # Parse common header
+    # Parse FAT common header
     #
-    def parse_common_header(self):
-        offset = self.offset_common_hdr
-        self.common_hdr_jumpcode = self.str2int(self.image[offset:offset+3])
+    def parse_fat_common_header(self):
+        offset = self.offset_fat_common_hdr
+        self.fat_common_hdr_jumpcode = self.str2int(self.image[offset:offset+3])
 
         offset += 3
-        self.common_hdr_oem_name = self.image[offset:offset+8]
+        self.fat_common_hdr_oem_name = self.image[offset:offset+8]
 
         offset += 8
-        self.common_hdr_bytespersec = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_bytespersec = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_secpercluster = self.str2int(self.image[offset:offset+1])
+        self.fat_common_hdr_secpercluster = self.str2int(self.image[offset:offset+1])
 
         offset += 1
-        self.common_hdr_secreserved = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_secreserved = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_fatcopy_num = self.str2int(self.image[offset:offset+1])
+        self.fat_common_hdr_fatcopy_num = self.str2int(self.image[offset:offset+1])
 
         offset += 1
-        self.common_hdr_rootdirent_max = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_rootdirent_max = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_small32mbsec_num = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_small32mbsec_num = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_mediadesc = self.str2int(self.image[offset:offset+1])
+        self.fat_common_hdr_mediadesc = self.str2int(self.image[offset:offset+1])
 
         offset += 1
-        self.common_hdr_secperfat = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_secperfat = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_secpertrack = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_secpertrack = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_heads_num = self.str2int(self.image[offset:offset+2])
+        self.fat_common_hdr_heads_num = self.str2int(self.image[offset:offset+2])
 
         offset += 2
-        self.common_hdr_hiddensec_num = self.str2int(self.image[offset:offset+4])
+        self.fat_common_hdr_hiddensec_num = self.str2int(self.image[offset:offset+4])
 
         offset += 4
-        self.common_hdr_sec_num = self.str2int(self.image[offset:offset+4])
+        self.fat_common_hdr_sec_num = self.str2int(self.image[offset:offset+4])
 
         self.offset_fat16_hdr = offset + 4
 
         ''' test only
-        fp.write(self.common_hdr_format.pack(*self.common_hdr_list))
+        fp.write(self.fat_common_hdr_format.pack(*self.fat_common_hdr_list))
         fp.write(self.fat16_hdr_format.pack(*self.fat16_hdr_list))
         fp.close()
+
+        data = fp.read(fat_common_header.size)
+        fat_data = fp.read(SECTOR_SIZE-fat_common_header.size)
+        fp.close()
+        all_bytes = self.fat_common_hdr_format.unpack(data)
+        fat_common_hdr_list['jump_code_nop'] = all_bytes[0]
+        all_bytes = self.fat16_hdr_format.unpack(fat_data)
+        fat16_hdr_list['logical_drive_num'] = all_bytes[0]
         '''
 
     #
@@ -228,25 +332,38 @@ class Parser(object):
         self.fat16_hdr_exec_marker = self.str2int(self.image[offset:offset+2])
 
     #
-    # Print common header info
+    # Parse FAT16 entry
     #
-    def print_common_header_info(self):
+    def parse_fat16_entry(self):
+        #
+        # Find directory entry
+        #
+        dir_table_start = (self.fat_common_hdr_secreserved + (self.fat_common_hdr_fatcopy_num * self.fat_common_hdr_secperfat)) * self.fat_common_hdr_bytespersec
+
+        dir_table_len = self.fat_common_hdr_rootdirent_max * FAT_DIR_ENT_LEN
+
+        self.find_fat16_dir_entry(dir_table_start, dir_table_len)
+
+    #
+    # Print FAT common header info
+    #
+    def print_fat_common_header_info(self):
         print("----------------------------------------")
         print("IMAGE COMMON HEADER INFO\n")
-        print("                     Jump Code: %x" % self.common_hdr_jumpcode + " (Hex)")
-        print("                      OEM Name: " + str(self.common_hdr_oem_name))
-        print("              Bytes Per Sector: " + str(self.common_hdr_bytespersec))
-        print("            Sector Per Cluster: " + str(self.common_hdr_secpercluster))
-        print("               Sector Reserved: " + str(self.common_hdr_secreserved))
-        print("             FAT Copies Number: " + str(self.common_hdr_fatcopy_num))
-        print("Maximum Root Directory Entries: " + str(self.common_hdr_rootdirent_max))
-        print("      Small 32MB Sector Number: " + str(self.common_hdr_small32mbsec_num))
-        print("              Media Descriptor: " + str(hex(self.common_hdr_mediadesc)))
-        print("                Sector Per FAT: " + str(self.common_hdr_secperfat))
-        print("              Sector Per Track: " + str(self.common_hdr_secpertrack))
-        print("                   Head Number: " + str(self.common_hdr_heads_num))
-        print("          Hidden Sector Number: " + str(self.common_hdr_hiddensec_num))
-        print("                 Sector Number: " + str(self.common_hdr_sec_num))
+        print("                     Jump Code: %x" % self.fat_common_hdr_jumpcode + " (Hex)")
+        print("                      OEM Name: " + str(self.fat_common_hdr_oem_name.strip()))
+        print("              Bytes Per Sector: " + str(self.fat_common_hdr_bytespersec))
+        print("            Sector Per Cluster: " + str(self.fat_common_hdr_secpercluster))
+        print("               Sector Reserved: " + str(self.fat_common_hdr_secreserved))
+        print("             FAT Copies Number: " + str(self.fat_common_hdr_fatcopy_num))
+        print("Maximum Root Directory Entries: " + str(self.fat_common_hdr_rootdirent_max))
+        print("      Small 32MB Sector Number: " + str(self.fat_common_hdr_small32mbsec_num))
+        print("              Media Descriptor: " + str(hex(self.fat_common_hdr_mediadesc)))
+        print("                Sector Per FAT: " + str(self.fat_common_hdr_secperfat))
+        print("              Sector Per Track: " + str(self.fat_common_hdr_secpertrack))
+        print("                   Head Number: " + str(self.fat_common_hdr_heads_num))
+        print("          Hidden Sector Number: " + str(self.fat_common_hdr_hiddensec_num))
+        print("                 Sector Number: " + str(self.fat_common_hdr_sec_num))
 
         print("")
 
@@ -259,11 +376,33 @@ class Parser(object):
         print("Logical Drive Number: " + str(self.fat16_hdr_logicaldrive_num))
         print("       Ext Signature: " + str(self.fat16_hdr_ext_sign))
         print("       Serial Number: " + str(self.fat16_hdr_ser_num))
-        print("         Volume Name: " + str(self.fat16_hdr_vol_name))
-        print("            FAT Name: " + str(self.fat16_hdr_fat_name))
+        print("         Volume Name: " + str(self.fat16_hdr_vol_name.strip()))
+        print("            FAT Name: " + str(self.fat16_hdr_fat_name.strip()))
         #print("          Exec Code: %x" % self.fat16_hdr_exec_code + " (Hex)")
         print("           Exec Code: ignored here")
         print("         Exec Marker: %x" % self.fat16_hdr_exec_marker + " (Hex)")
+
+        print("")
+
+    #
+    # Print FAT directory entry info
+    #
+    def print_fat_dir_entry(self, fat_dirent):
+        print("----------------------------------------")
+        print("IMAGE FAT16 DIRECTORY ENTRY INFO\n")
+        print("              File Name: " + str(fat_dirent['file_name'].strip()))
+        print("         File Extension: " + str(fat_dirent['file_ext'].strip()))
+        print("         File Attribute: " + str(hex(fat_dirent['file_attr'])))
+        print("         User Attribute: " + str(hex(fat_dirent['user_attr'])))
+        print("   File Time Resolution: " + str(hex(fat_dirent['file_timeresolution'])))
+        print("      File Time Created: " + str(hex(fat_dirent['file_timecreated'])))
+        print("      File Date Created: " + str(hex(fat_dirent['file_datecreated'])))
+        print("File Date Last Accessed: " + str(hex(fat_dirent['file_datelastaccessed'])))
+        print("  File Access Right Map: " + str(hex(fat_dirent['file_accessrightmap'])))
+        print("File Time Last Modified: " + str(hex(fat_dirent['file_timelastmodified'])))
+        print("File Date Last Modified: " + str(hex(fat_dirent['file_datelastmodified'])))
+        print("     File First Cluster: " + str(fat_dirent['file_firstcluster']))
+        print("              File Size: " + str(fat_dirent['file_bytesize']) + " (bytes)")
 
         print("")
 
@@ -274,29 +413,44 @@ class Parser(object):
         #
         # Check image type ID
         #
-        if self.check_image_id() is False:
+        if self.check_fatimage_id() is False:
             print("\nERROR: invalid image type!\n")
             return
 
         #
-        # Parse common header
+        # Parse FAT common header
         #
-        self.parse_common_header()
+        self.parse_fat_common_header()
 
         #
-        # Print common header info
+        # Print FAT common header info
         #
-        self.print_common_header_info()
+        self.print_fat_common_header_info()
 
         #
-        # Parse FAT16 header
+        # Check FAT type
         #
-        self.parse_fat16_header()
+        fat_name = self.image[self.offset_fat16_hdr+18:self.offset_fat16_hdr+18+8]
+        if fat_name.strip() == 'FAT16':
+            #
+            # Parse FAT16 header
+            #
+            self.parse_fat16_header()
 
-        #
-        # Print FAT16 header info
-        #
-        self.print_fat16_header_info()
+            #
+            # Print FAT16 header info
+            #
+            self.print_fat16_header_info()
+
+            #
+            # Parse FAT16 entry
+            #
+            self.parse_fat16_entry()
+        else:
+            #
+            # Parse FAT32
+            #
+            pass
 
 #
 # Function Definition
@@ -309,7 +463,7 @@ def parse_fatimg(image_file):
     fp = open(image_file, "rb")
 
     image_data = fp.read()
-    parser = Parser(image_data)
+    parser = FATParser(image_data)
     parser.run()
 
     fp.close()
