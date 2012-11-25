@@ -76,6 +76,8 @@ class Parser(object):
         self.common_hdr_hiddensec_num = 0
         self.common_hdr_sec_num = 0
 
+        self.offset_common_hdr = 0
+
         self.fat16_hdr_logicaldrive_num = 0
         #self.fat16_hdr_reserved = 0
         self.fat16_hdr_ext_sign = 0
@@ -84,6 +86,8 @@ class Parser(object):
         self.fat16_hdr_fat_name = ""
         self.fat16_hdr_exec_code = []
         self.fat16_hdr_exec_marker = []
+
+        self.offset_fat16_hdr = 0
 
         ''' test only
         self.fat16_table_sz = FAT16_CLUSTER_NUM * FAT16_ENTRY_SZ
@@ -145,11 +149,52 @@ class Parser(object):
         pass
 
     #
-    # Parse header
+    # Parse common header
     #
-    def parse_header(self):
-        offset = 0
+    def parse_common_header(self):
+        offset = self.offset_common_hdr
         self.common_hdr_jumpcode = self.str2int(self.image[offset:offset+3])
+
+        offset += 3
+        self.common_hdr_oem_name = self.image[offset:offset+8]
+
+        offset += 8
+        self.common_hdr_bytespersec = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_secpercluster = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.common_hdr_secreserved = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_fatcopy_num = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.common_hdr_rootdirent_max = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_small32mbsec_num = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_mediadesc = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.common_hdr_secperfat = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_secpertrack = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_heads_num = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.common_hdr_hiddensec_num = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.common_hdr_sec_num = self.str2int(self.image[offset:offset+4])
+
+        self.offset_fat16_hdr = offset + 4
 
         ''' test only
         fp.write(self.common_hdr_format.pack(*self.common_hdr_list))
@@ -158,11 +203,67 @@ class Parser(object):
         '''
 
     #
-    # Print header info
+    # Parse FAT16 header
     #
-    def print_header_info(self):
+    def parse_fat16_header(self):
+        offset = self.offset_fat16_hdr
+        self.fat16_hdr_logicaldrive_num = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.fat16_hdr_ext_sign = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.fat16_hdr_ser_num = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.fat16_hdr_vol_name = self.image[offset:offset+11]
+
+        offset += 11
+        self.fat16_hdr_fat_name = self.image[offset:offset+8]
+
+        offset += 8
+        self.fat16_hdr_exec_code = self.str2int(self.image[offset:offset+448])
+
+        offset += 448
+        self.fat16_hdr_exec_marker = self.str2int(self.image[offset:offset+2])
+
+    #
+    # Print common header info
+    #
+    def print_common_header_info(self):
         print("----------------------------------------")
-        print("IMAGE HEADER INFO\n")
+        print("IMAGE COMMON HEADER INFO\n")
+        print("                     Jump Code: %x" % self.common_hdr_jumpcode + " (Hex)")
+        print("                      OEM Name: " + str(self.common_hdr_oem_name))
+        print("              Bytes Per Sector: " + str(self.common_hdr_bytespersec))
+        print("            Sector Per Cluster: " + str(self.common_hdr_secpercluster))
+        print("               Sector Reserved: " + str(self.common_hdr_secreserved))
+        print("             FAT Copies Number: " + str(self.common_hdr_fatcopy_num))
+        print("Maximum Root Directory Entries: " + str(self.common_hdr_rootdirent_max))
+        print("      Small 32MB Sector Number: " + str(self.common_hdr_small32mbsec_num))
+        print("              Media Descriptor: " + str(hex(self.common_hdr_mediadesc)))
+        print("                Sector Per FAT: " + str(self.common_hdr_secperfat))
+        print("              Sector Per Track: " + str(self.common_hdr_secpertrack))
+        print("                   Head Number: " + str(self.common_hdr_heads_num))
+        print("          Hidden Sector Number: " + str(self.common_hdr_hiddensec_num))
+        print("                 Sector Number: " + str(self.common_hdr_sec_num))
+
+        print("")
+
+    #
+    # Print FAT16 header info
+    #
+    def print_fat16_header_info(self):
+        print("----------------------------------------")
+        print("IMAGE FAT16 HEADER INFO\n")
+        print("Logical Drive Number: " + str(self.fat16_hdr_logicaldrive_num))
+        print("       Ext Signature: " + str(self.fat16_hdr_ext_sign))
+        print("       Serial Number: " + str(self.fat16_hdr_ser_num))
+        print("         Volume Name: " + str(self.fat16_hdr_vol_name))
+        print("            FAT Name: " + str(self.fat16_hdr_fat_name))
+        #print("          Exec Code: %x" % self.fat16_hdr_exec_code + " (Hex)")
+        print("           Exec Code: ignored here")
+        print("         Exec Marker: %x" % self.fat16_hdr_exec_marker + " (Hex)")
 
         print("")
 
@@ -178,14 +279,24 @@ class Parser(object):
             return
 
         #
-        # Parse header
+        # Parse common header
         #
-        self.parse_header()
+        self.parse_common_header()
 
         #
-        # Print header info
+        # Print common header info
         #
-        self.print_header_info()
+        self.print_common_header_info()
+
+        #
+        # Parse FAT16 header
+        #
+        self.parse_fat16_header()
+
+        #
+        # Print FAT16 header info
+        #
+        self.print_fat16_header_info()
 
 #
 # Function Definition
