@@ -42,7 +42,17 @@ banner = '''
 # FAT Parameters
 #
 FAT_SECTOR_SZ = 512
+
 FAT_DIR_ENT_LEN = 32
+
+FAT_FILE_ATTR = {
+    'READONLY'    : 0x01,
+    'HIDDEN'      : 0x02,
+    'SYSTEM'      : 0x04,
+    'VOLUME LABEL': 0x08,
+    'DIRECTORY'   : 0x10,
+    'ARCHIVE'     : 0x20
+}
 
 #
 # FAT16 Parameters
@@ -395,9 +405,15 @@ class FATParser(object):
         print("IMAGE FAT16 DIRECTORY ENTRY INFO\n")
         print("File Name              : " + str(fat_dirent['file_name'].strip()))
         print("File Extension         : " + str(fat_dirent['file_ext'].strip()))
-        print("File Attribute         : " + str(hex(fat_dirent['file_attr'])))
+
+        file_attr = []
+        for k, v in FAT_FILE_ATTR.items():
+            if v & fat_dirent['file_attr'] != 0:
+                file_attr.append(k)
+        print("File Attribute         : " + str(file_attr))
+
         print("User Attribute         : " + str(hex(fat_dirent['user_attr'])))
-        print("File Time Resolution   : " + str(hex(fat_dirent['file_timeresolution'])))
+        print("File Time Resolution   : " + str(fat_dirent['file_timeresolution']))
 
         ctime_h = (fat_dirent['file_timecreated'] >> 11) & 0x001F
         ctime_m = (fat_dirent['file_timecreated'] >> 5) & 0x003F
