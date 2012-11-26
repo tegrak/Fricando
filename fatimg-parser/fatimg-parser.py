@@ -16,12 +16,11 @@
 # Example:
 #
 # To parse FAT image:
-# python fatimg-parser.py fat.img
+# python fatimg-parser.py -f fat.img -v -c checklist.txt
 #
 
 import os, sys
 import getopt
-import copy
 
 #
 # Global Variable Definition
@@ -34,9 +33,10 @@ banner = '''
 |_| |_|  |_|\___\__,_|_| |_|\__,_|\___/ 
 '''
 
-#
-# Global Variables Definition
-#
+is_pr_verb = False
+
+is_fat_checked = False 
+fat_checklist = ""
 
 #
 # FAT Parameters
@@ -117,9 +117,6 @@ class FATParser(object):
         self.offset_fat16_hdr = 0
 
         #
-        # FAT directory entry list
-        #
-        #
         # FAT directory entry
         #
         self.fat_dirent = {
@@ -138,6 +135,12 @@ class FATParser(object):
             'file_bytesize'         : 0
             }
 
+        #
+        # FAT directory/file list
+        #
+        self.fat_dir_list = []
+        self.fat_file_list = []
+        
         ''' test only
         self.fat16_table_sz = FAT16_CLUSTER_NUM * FAT16_ENTRY_SZ
         self.fat16_table_sz += (FAT_SECTOR_SZ - (self.fat_table_size % FAT_SECTOR_SZ))
@@ -192,56 +195,130 @@ class FATParser(object):
         return data
 
     #
+    # Get FAT16 cluster sector
+    #
+    def get_fat16_cluster_sec(self, cluster_num):
+        return self.fat_common_hdr_secreserved \
+            + (self.fat_common_hdr_fatcopy_num * self.fat_common_hdr_secperfat) \
+            + ((self.fat_common_hdr_rootdirent_max * FAT_DIR_ENT_LEN) / self.fat_common_hdr_bytespersec) \
+            + ((cluster_num - 2) * self.fat_common_hdr_secpercluster)
+
+    #
+    # Read FAT cluster data
+    #
+    def read_fat_cluster(self, cluster_num):
+        offset = self.get_fat16_cluster_sec(cluster_num) * FAT_SECTOR_SZ
+        length = self.fat_common_hdr_secpercluster * self.fat_common_hdr_bytespersec
+        return self.image[offset:offset+length]
+
+    #
+    # Read FAT directory entry
+    #
+    def read_fat_dir_entry(self, dir_cluster_data, index):
+        cluster_data = dir_cluster_data[index:index+FAT_DIR_ENT_LEN]
+
+        offset = 0
+        self.fat_dirent['file_name'] = cluster_data[offset:offset+8]
+
+        offset += 8
+        self.fat_dirent['file_ext'] = cluster_data[offset:offset+3]
+
+        offset += 3
+        self.fat_dirent['file_attr'] = self.str2int(cluster_data[offset:offset+1])
+
+        offset += 1
+        self.fat_dirent['user_attr'] = self.str2int(cluster_data[offset:offset+1])
+
+        offset += 1
+        self.fat_dirent['file_timeresolution'] = self.str2int(cluster_data[offset:offset+1])
+
+        offset += 1
+        self.fat_dirent['file_timecreated'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_datecreated'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_datelastaccessed'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_accessrightmap'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_timelastmodified'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_datelastmodified'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_firstcluster'] = self.str2int(cluster_data[offset:offset+2])
+
+        offset += 2
+        self.fat_dirent['file_bytesize'] = self.str2int(cluster_data[offset:offset+4])
+
+    #
+    # Find FAT file entry
+    #
+    def find_fat_file_entry(self, cluster_num):
+        global is_pr_verb
+
+        cluster_data = self.read_fat_cluster(cluster_num)
+
+        #
+        # Read FAT directory entry of '.'
+        #
+        offset = 0
+        self.read_fat_dir_entry(cluster_data, offset)
+
+        if is_pr_verb is True:
+            self.print_fat_dir_entry(self.fat_dirent)
+
+        #
+        # Read FAT directory entry of '..'
+        #
+        offset += FAT_DIR_ENT_LEN
+        self.read_fat_dir_entry(cluster_data, offset)
+
+        if is_pr_verb is True:
+            self.print_fat_dir_entry(self.fat_dirent)
+
+        #
+        # Read FAT directory and file entry except '.' and '..'
+        #
+        offset += FAT_DIR_ENT_LEN
+        self.read_fat_dir_entry(cluster_data, offset)
+
+        while (self.fat_dirent['file_name'].strip('\x00').strip() != ''):
+            self.fat_file_list.append(self.fat_dirent['file_name'].strip().lower()+'.'+self.fat_dirent['file_ext'].strip().lower())
+
+            if is_pr_verb is True:
+                self.print_fat_dir_entry(self.fat_dirent)
+
+            offset += FAT_DIR_ENT_LEN
+            self.read_fat_dir_entry(cluster_data, offset)
+
+    #
     # Find FAT directory entry
     #
     def find_fat_dir_entry_helper(self, dir_cluster_data):
         for i in range(0, len(dir_cluster_data), FAT_DIR_ENT_LEN):
-            dirent = dir_cluster_data[i:i+FAT_DIR_ENT_LEN]
+            #
+            # Read FAT directory entry
+            #
+            self.read_fat_dir_entry(dir_cluster_data, i)
 
-            offset = 0
-            self.fat_dirent['file_name'] = dirent[offset:offset+8]
+            #
+            # Directory entry is found
+            #
+            if self.fat_dirent['file_attr'] & FAT_FILE_ATTR['DIRECTORY'] != 0:
+                self.fat_dir_list.append(self.fat_dirent['file_name'].strip().lower())
 
-            offset += 8
-            self.fat_dirent['file_ext'] = dirent[offset:offset+3]
+                if is_pr_verb is True:
+                    self.print_fat_dir_entry(self.fat_dirent)
 
-            offset += 3
-            self.fat_dirent['file_attr'] = self.str2int(dirent[offset:offset+1])
-
-            offset += 1
-            self.fat_dirent['user_attr'] = self.str2int(dirent[offset:offset+1])
-
-            offset += 1
-            self.fat_dirent['file_timeresolution'] = self.str2int(dirent[offset:offset+1])
-
-            offset += 1
-            self.fat_dirent['file_timecreated'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_datecreated'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_datelastaccessed'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_accessrightmap'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_timelastmodified'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_datelastmodified'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_firstcluster'] = self.str2int(dirent[offset:offset+2])
-
-            offset += 2
-            self.fat_dirent['file_bytesize'] = self.str2int(dirent[offset:offset+4])
-
-            if self.fat_dirent['file_attr'] != 0:
-                #
-                # Directory entry is found
-                #
-                self.print_fat_dir_entry(self.fat_dirent)
+                self.find_fat_file_entry(self.fat_dirent['file_firstcluster'])
+            else:
+                continue
 
     #
     # Find FAT16 directory entry
@@ -420,12 +497,12 @@ class FATParser(object):
         ctime_s = (fat_dirent['file_timecreated'] & 0x001F) << 1
         print("File Time Created      : %d:%d:%d" % (ctime_h, ctime_m, ctime_s))
 
-        cdate_y = ((fat_dirent['file_datecreated'] >> 9) & 0x001F) + 1980
+        cdate_y = ((fat_dirent['file_datecreated'] >> 9) & 0x007F) + 1980
         cdate_m = (fat_dirent['file_datecreated'] >> 5) & 0x000F
         cdate_d = fat_dirent['file_datecreated'] & 0x001F
         print("File Date Created      : %d-%d-%d" % (cdate_y, cdate_m, cdate_d))
 
-        adate_y = ((fat_dirent['file_datelastaccessed'] >> 9) & 0x001F) + 1980
+        adate_y = ((fat_dirent['file_datelastaccessed'] >> 9) & 0x007F) + 1980
         adate_m = (fat_dirent['file_datelastaccessed'] >> 5) & 0x000F
         adate_d = fat_dirent['file_datelastaccessed'] & 0x001F
         print("File Date Last Accessed: %d-%d-%d" % (adate_y, adate_m, adate_d))
@@ -437,7 +514,7 @@ class FATParser(object):
         mtime_s = (fat_dirent['file_timelastmodified'] & 0x001F) << 1
         print("File Time Last Modified: %d:%d:%d" % (mtime_h, mtime_m, mtime_s))
 
-        mdate_y = ((fat_dirent['file_datelastmodified'] >> 9) & 0x001F) + 1980
+        mdate_y = ((fat_dirent['file_datelastmodified'] >> 9) & 0x007F) + 1980
         mdate_m = (fat_dirent['file_datelastmodified'] >> 5) & 0x000F
         mdate_d = fat_dirent['file_datelastmodified'] & 0x001F
         print("File Date Last Modified: %d-%d-%d" % (mdate_y, mdate_m, mdate_d))
@@ -450,6 +527,8 @@ class FATParser(object):
     # Run routine
     #
     def run(self):
+        global is_pr_verb
+
         #
         # Check image type ID
         #
@@ -465,7 +544,8 @@ class FATParser(object):
         #
         # Print FAT common header info
         #
-        self.print_fat_common_header_info()
+        if is_pr_verb is True:
+            self.print_fat_common_header_info()
 
         #
         # Check FAT type
@@ -480,7 +560,8 @@ class FATParser(object):
             #
             # Print FAT16 header info
             #
-            self.print_fat16_header_info()
+            if is_pr_verb is True:
+                self.print_fat16_header_info()
 
             #
             # Parse FAT16 entry
@@ -492,21 +573,90 @@ class FATParser(object):
             #
             pass
 
+    #
+    # Get FAT directory list
+    #
+    def get_dir_list(self):
+        return self.fat_dir_list
+
+    #
+    # Get FAT file list
+    #
+    def get_file_list(self):
+        return self.fat_file_list
+
 #
 # Function Definition
 #
 
 #
+# Check if file is in FAT image according to checklist
+#
+def is_file_in_checklist(checklist, filename):
+    if filename.lower() in checklist or filename.uppper() in checklist:
+        return True
+    else:
+        return False
+
+#
+# Check file in FAT image according to checklist
+#
+def check_file_in_checklist(file_list):
+    global fat_checklist
+
+    file_missed = []
+
+    for item in fat_checklist:
+        if is_file_in_checklist(file_list, item) is False:
+            file_missed.append(item)
+        else:
+            continue
+
+    return file_missed
+
+#
+# Parse check list
+#
+def parse_checklist(checklist_file):
+    checklist = []
+
+    fp = open(checklist_file, "rb")
+    fp_data = fp.readlines()
+    fp.close()
+
+    for item in fp_data:
+        item_list = item.strip('\n').split(' ')
+
+        for i in item_list:
+            if i != '':
+                checklist.append(i)
+
+    return checklist
+
+#
 # Parse image
 #
 def parse_fatimg(image_file):
-    fp = open(image_file, "rb")
+    global is_fat_checked
 
+    fp = open(image_file, "rb")
     image_data = fp.read()
+    fp.close()
+
     parser = FATParser(image_data)
     parser.run()
 
-    fp.close()
+    if is_fat_checked:
+        print("Checking files in FAT image...")
+
+        file_list = parser.get_file_list()
+
+        file_missed = check_file_in_checklist(file_list)
+        if len(file_missed) == 0:
+            print("\nAll files matched.")
+        else:
+            print("\nThe folling files mismatched!\n")
+            print(file_missed)
 
     ''' test only
     print(hex(ord(image_data[0])))
@@ -520,24 +670,26 @@ def parse_fatimg(image_file):
 # Print usage
 #
 def print_usage():
-    print("USAGE:\n")
-    print("Parse FAT image: ./fatimg-parser.py fat.img\n")
-
-    '''
     print("USAGE: python fatimg-parser.py [OPTION...]")
-    print("Examples:")
-    print("  python fatimg-parser.py -n=fat.img")
-    print("Options:")
-    print("  -d, --dir        Directory to be packed")
-    print("  -n, --name       Container name")
+    print("")
+    print("EXAMPLES:")
+    print("  python fatimg-parser.py -f fat.img -c checklist.txt")
+    print("")
+    print("OPTIONS:")
+    print("  -f, --file       Image file to be parsed")
+    print("  -c, --check      Check list")
     print("  -v, --verbose    Verbose messages")
     print("  -h, --help       Display help message")
-    '''
+    print("")
 
 #
 # Main Entry
 #
 def main():
+    global is_pr_verb
+    global is_fat_checked
+    global fat_checklist
+
     #
     # Display banner
     #
@@ -547,27 +699,51 @@ def main():
     # Get args list
     #
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:n:vh", ["dir=", "name=", "verbose", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "f:c:vh", ["file=", "check=", "verbose", "help"])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
         sys.exit(1)
 
-    '''
     for o, a in opts:
-        if o in ("-d", "--dir"):
-            pass
-        elif o in ("-n", "--name"):
-            pass
+        if o in ("-f", "--file"):
+            image_file = a
+        if o in ("-c", "--check"):
+            is_fat_checked = True
+            checklist = a
         elif o in ("-v", "--verbose"):
-            pass
+            is_pr_verb = True
         elif o in ("-h", "--help"):
             print_usage()
             sys.exit(0)
         else:
-            assert False, "\nERROR: unhandled option!\n"
-    '''
+            continue
 
+    if is_fat_checked is True:
+        if os.access(os.path.join(os.getcwd(), checklist), os.F_OK) is True:
+            fat_checklist = parse_checklist(checklist)
+            if len(fat_checklist) == 0:
+                print("\nERROR: '%s' is empty!\n" % checklist)
+                print_usage()
+                sys.exit(1)
+        else:
+            print("\nERROR: invalid parameter '%s' !\n" % checklist)
+            print_usage()
+            sys.exit(1)
+
+    if os.access(os.path.join(os.getcwd(), image_file), os.F_OK) is True:
+        print("\nParsing FAT image...\n")
+        ret = parse_fatimg(os.path.join(os.getcwd(), image_file))
+        if ret is True:
+            print("\nDone!\n")
+        else:
+            print("\nFailed!\n")
+    else:
+        print("\nERROR: invalid parameter '%s' !\n" % image_file)
+        print_usage()
+        sys.exit(1)
+
+    ''' test only
     args_len = len(args)
     if args_len is 1:
         if os.access(os.path.join(os.getcwd(), args[0]), os.F_OK) is True:
@@ -584,6 +760,7 @@ def main():
     else:
         print("\nERROR: invalid parameter!\n")
         print_usage()
+    '''
 
 #
 # App Entry
