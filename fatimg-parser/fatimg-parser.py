@@ -16,7 +16,7 @@
 # Example:
 #
 # To parse FAT image:
-# python fatimg-parser.py -f fat.img -v -c checklist.txt
+# python fatimg-parser.py -f fat.img -v -c checklist.txt -d fat-dump
 #
 
 import os, sys
@@ -33,10 +33,22 @@ banner = '''
 |_| |_|  |_|\___\__,_|_| |_|\__,_|\___/ 
 '''
 
+#
+# Display verbose messages
+#
 is_pr_verb = False
 
+#
+# Check files in image according to checklist
+#
 is_fat_checked = False 
 fat_checklist = ""
+
+#
+# Dump FAT image into local directory
+#
+is_fat_dumped = False
+fat_dumpdir = ""
 
 #
 # FAT Parameters
@@ -67,7 +79,7 @@ FAT16_CLUSTER_NUM = (64 * 1024 * 1024) / FAT16_CLUSTER_SZ
 FAT16_SECTOR_NUM = (64 * 1024 * 1024) / FAT_SECTOR_SZ
 
 #
-# Class Definition For Parser
+# Class Definition For FAT Parser
 #
 class FATParser(object):
     def __init__(self, img):
@@ -140,6 +152,11 @@ class FATParser(object):
         #
         self.fat_dir_list = []
         self.fat_file_list = []
+
+        #
+        # FAT binary list
+        #
+        self.fat_bin_list = {}
         
         ''' test only
         self.fat16_table_sz = FAT16_CLUSTER_NUM * FAT16_ENTRY_SZ
@@ -212,6 +229,28 @@ class FATParser(object):
         return self.image[offset:offset+length]
 
     #
+    # Read FAT binary file
+    #
+    def read_fat_bin(self, fat_dirent):
+        fat_bin = ""
+
+        file_sz_real = fat_dirent['file_bytesize']
+
+        cluster_sz = self.fat_common_hdr_secpercluster * self.fat_common_hdr_bytespersec
+
+        file_cluster_total = (file_sz_real / cluster_sz)
+        if file_sz_real % cluster_sz != 0:
+            file_cluster_total += 1
+
+        first_cluster_num = fat_dirent['file_firstcluster']
+
+        for i in range(0, file_cluster_total, 1):
+            cluster_num = first_cluster_num + i
+            fat_bin += self.read_fat_cluster(cluster_num)
+
+        return fat_bin[0:file_sz_real]
+
+    #
     # Read FAT directory entry
     #
     def read_fat_dir_entry(self, dir_cluster_data, index):
@@ -270,6 +309,13 @@ class FATParser(object):
         offset = 0
         self.read_fat_dir_entry(cluster_data, offset)
 
+        #
+        # Check if directory entry is null
+        #
+        if self.fat_dirent['file_name'].strip('\x00').strip() == '' \
+                and self.fat_dirent['file_ext'].strip('\x00').strip() == '':
+            return
+
         if is_pr_verb is True:
             self.print_fat_dir_entry(self.fat_dirent)
 
@@ -278,6 +324,13 @@ class FATParser(object):
         #
         offset += FAT_DIR_ENT_LEN
         self.read_fat_dir_entry(cluster_data, offset)
+
+        #
+        # Check if directory entry is null
+        #
+        if self.fat_dirent['file_name'].strip('\x00').strip() == '' \
+                and self.fat_dirent['file_ext'].strip('\x00').strip() == '':
+            return
 
         if is_pr_verb is True:
             self.print_fat_dir_entry(self.fat_dirent)
@@ -289,7 +342,11 @@ class FATParser(object):
         self.read_fat_dir_entry(cluster_data, offset)
 
         while (self.fat_dirent['file_name'].strip('\x00').strip() != ''):
-            self.fat_file_list.append(self.fat_dirent['file_name'].strip().lower()+'.'+self.fat_dirent['file_ext'].strip().lower())
+            file_name = self.fat_dirent['file_name'].strip().lower()+'.'+self.fat_dirent['file_ext'].strip().lower()
+
+            self.fat_file_list.append(file_name)
+
+            self.fat_bin_list[file_name] = self.read_fat_bin(self.fat_dirent)
 
             if is_pr_verb is True:
                 self.print_fat_dir_entry(self.fat_dirent)
@@ -585,6 +642,26 @@ class FATParser(object):
     def get_file_list(self):
         return self.fat_file_list
 
+    #
+    # Dump FAT image file to directory
+    #
+    def dumpto(self, dumpdir):
+        #
+        # No sanity check here
+        #
+        for k, v in self.fat_bin_list.items():
+            file_dir = os.path.join(os.getcwd(), dumpdir)
+            try:
+                fp = open(os.path.join(file_dir, k), "wxb")
+            except OSError, err:
+                print("ERROR: " + str(err))
+                return False
+
+            fp.write(v)
+            fp.close()
+
+        return True
+
 #
 # Function Definition
 #
@@ -638,6 +715,8 @@ def parse_checklist(checklist_file):
 #
 def parse_fatimg(image_file):
     global is_fat_checked
+    global is_fat_dumped
+    global fat_dumpdir
 
     fp = open(image_file, "rb")
     image_data = fp.read()
@@ -646,17 +725,26 @@ def parse_fatimg(image_file):
     parser = FATParser(image_data)
     parser.run()
 
-    if is_fat_checked:
-        print("Checking files in FAT image...")
+    if is_fat_checked is True:
+        print("\nChecking files in FAT image...")
 
         file_list = parser.get_file_list()
 
         file_missed = check_file_in_checklist(file_list)
         if len(file_missed) == 0:
-            print("\nAll files matched.")
+            print("All files matched.")
         else:
-            print("\nThe folling files mismatched!\n")
+            print("The folling files mismatched!")
             print(file_missed)
+
+    if is_fat_dumped is True:
+        print("\nDumping files from FAT image...")
+
+        ret = parser.dumpto(fat_dumpdir)
+        if ret is True:
+            print("All files dumped.")
+        else:
+            print("Failed to dump file!")
 
     ''' test only
     print(hex(ord(image_data[0])))
@@ -678,6 +766,7 @@ def print_usage():
     print("OPTIONS:")
     print("  -f, --file       Image file to be parsed")
     print("  -c, --check      Check list")
+    print("  -d, --dump       Dump image file to directory")
     print("  -v, --verbose    Verbose messages")
     print("  -h, --help       Display help message")
     print("")
@@ -689,6 +778,11 @@ def main():
     global is_pr_verb
     global is_fat_checked
     global fat_checklist
+    global is_fat_dumped
+    global fat_dumpdir
+
+    image_file = ""
+    checklist = ""
 
     #
     # Display banner
@@ -699,7 +793,7 @@ def main():
     # Get args list
     #
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "f:c:vh", ["file=", "check=", "verbose", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "f:c:d:vh", ["file=", "check=", "dump=", "verbose", "help"])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
@@ -708,9 +802,12 @@ def main():
     for o, a in opts:
         if o in ("-f", "--file"):
             image_file = a
-        if o in ("-c", "--check"):
+        elif o in ("-c", "--check"):
             is_fat_checked = True
             checklist = a
+        elif o in ("-d", "--dump"):
+            is_fat_dumped = True
+            fat_dumpdir = a
         elif o in ("-v", "--verbose"):
             is_pr_verb = True
         elif o in ("-h", "--help"):
@@ -719,6 +816,9 @@ def main():
         else:
             continue
 
+    #
+    # Sanity check for '-c'
+    #
     if is_fat_checked is True:
         if os.access(os.path.join(os.getcwd(), checklist), os.F_OK) is True:
             fat_checklist = parse_checklist(checklist)
@@ -731,6 +831,23 @@ def main():
             print_usage()
             sys.exit(1)
 
+    #
+    # Sanity check for '-d'
+    #
+    if is_fat_dumped is True:
+        if os.access(os.path.join(os.getcwd(), fat_dumpdir), os.F_OK) is False:
+            os.makedirs(os.path.join(os.getcwd(), fat_dumpdir))
+
+            #print("\nINFO: '%s' not exist and creat it now\n" % fat_dumpdir)
+
+            if os.access(os.path.join(os.getcwd(), fat_dumpdir), os.F_OK) is False:
+                print("\nERROR: invalid parameter '%s' !\n" % fat_dumpdir)
+                print_usage()
+                sys.exit(1)
+
+    #
+    # Parse FAT image
+    #
     if os.access(os.path.join(os.getcwd(), image_file), os.F_OK) is True:
         print("\nParsing FAT image...\n")
         ret = parse_fatimg(os.path.join(os.getcwd(), image_file))
