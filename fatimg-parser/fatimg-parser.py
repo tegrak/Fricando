@@ -16,7 +16,7 @@
 # Example:
 #
 # To parse FAT image:
-# python fatimg-parser.py -f fat.img -v -c checklist.txt -d fat-dump
+# python fatimg-parser.py -f fat.img -v -s sigverify-list.txt -c compverify-list.txt -d fat-dump
 #
 
 import os, sys
@@ -39,10 +39,10 @@ banner = '''
 is_pr_verb = False
 
 #
-# Check files in image according to checklist
+# Verify file completion in image
 #
-is_fat_checked = False 
-fat_checklist = ""
+is_comp_verified = False 
+compverify_list = ""
 
 #
 # Dump FAT image into local directory
@@ -667,24 +667,24 @@ class FATParser(object):
 #
 
 #
-# Check if file is in FAT image according to checklist
+# Verify if file is in FAT image
 #
-def is_file_in_checklist(checklist, filename):
-    if filename.lower() in checklist or filename.uppper() in checklist:
+def is_file_in_compverify_list(verifylist, filename):
+    if filename in verifylist:
         return True
     else:
         return False
 
 #
-# Check file in FAT image according to checklist
+# Verify file completion in FAT image
 #
-def check_file_in_checklist(file_list):
-    global fat_checklist
+def verify_file_in_compverify_list(file_list):
+    global compverify_list
 
     file_missed = []
 
-    for item in fat_checklist:
-        if is_file_in_checklist(file_list, item) is False:
+    for item in compverify_list:
+        if is_file_in_compverify_list(file_list, item) is False:
             file_missed.append(item)
         else:
             continue
@@ -692,12 +692,12 @@ def check_file_in_checklist(file_list):
     return file_missed
 
 #
-# Parse check list
+# Parse completion verification list
 #
-def parse_checklist(checklist_file):
-    checklist = []
+def parse_compverify_list(cv_list_file):
+    cv_list = []
 
-    fp = open(checklist_file, "rb")
+    fp = open(cv_list_file, "rb")
     fp_data = fp.readlines()
     fp.close()
 
@@ -706,17 +706,19 @@ def parse_checklist(checklist_file):
 
         for i in item_list:
             if i != '':
-                checklist.append(i)
+                cv_list.append(i)
 
-    return checklist
+    return cv_list
 
 #
 # Parse image
 #
 def parse_fatimg(image_file):
-    global is_fat_checked
+    global is_comp_verified
     global is_fat_dumped
     global fat_dumpdir
+
+    ret = False
 
     fp = open(image_file, "rb")
     image_data = fp.read()
@@ -725,17 +727,21 @@ def parse_fatimg(image_file):
     parser = FATParser(image_data)
     parser.run()
 
-    if is_fat_checked is True:
-        print("\nChecking files in FAT image...")
+    if is_comp_verified is True:
+        print("\nVerifying file completion in FAT image...")
 
         file_list = parser.get_file_list()
 
-        file_missed = check_file_in_checklist(file_list)
+        file_missed = verify_file_in_compverify_list(file_list)
         if len(file_missed) == 0:
             print("All files matched.")
+            ret = True
         else:
             print("The folling files mismatched!")
             print(file_missed)
+            ret = False
+    else:
+        ret = True
 
     if is_fat_dumped is True:
         print("\nDumping files from FAT image...")
@@ -752,7 +758,7 @@ def parse_fatimg(image_file):
     print(data_hex[0:4][::-1])
     '''
 
-    return True
+    return ret
 
 #
 # Print usage
@@ -761,11 +767,12 @@ def print_usage():
     print("USAGE: python fatimg-parser.py [OPTION...]")
     print("")
     print("EXAMPLES:")
-    print("  python fatimg-parser.py -f fat.img -c checklist.txt")
+    print("  python fatimg-parser.py -f fat.img -c compverify-list.txt -s sig-verification.txt")
     print("")
     print("OPTIONS:")
     print("  -f, --file       Image file to be parsed")
-    print("  -c, --check      Check list")
+    print("  -c, --compverify Verify completion")
+    print("  -s, --sigverify  Verify signature")
     print("  -d, --dump       Dump image file to directory")
     print("  -v, --verbose    Verbose messages")
     print("  -h, --help       Display help message")
@@ -776,13 +783,15 @@ def print_usage():
 #
 def main():
     global is_pr_verb
-    global is_fat_checked
-    global fat_checklist
+    global is_comp_verified
+    global compverify_list
     global is_fat_dumped
     global fat_dumpdir
 
+    ret = False
+
     image_file = ""
-    checklist = ""
+    cv_list = ""
 
     #
     # Display banner
@@ -793,7 +802,7 @@ def main():
     # Get args list
     #
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "f:c:d:vh", ["file=", "check=", "dump=", "verbose", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "f:c:s:d:vh", ["file=", "compverify=", "sigverify", "dump=", "verbose", "help"])
     except getopt.GetoptError, err:
         print str(err)
         print_usage()
@@ -802,9 +811,12 @@ def main():
     for o, a in opts:
         if o in ("-f", "--file"):
             image_file = a
-        elif o in ("-c", "--check"):
-            is_fat_checked = True
-            checklist = a
+        elif o in ("-c", "--compverify"):
+            is_comp_verified = True
+            cv_list = a
+        elif o in ("-s", "--sigverify"):
+            is_sig_verified = True
+            sv_list = a
         elif o in ("-d", "--dump"):
             is_fat_dumped = True
             fat_dumpdir = a
@@ -819,15 +831,15 @@ def main():
     #
     # Sanity check for '-c'
     #
-    if is_fat_checked is True:
-        if os.access(os.path.join(os.getcwd(), checklist), os.F_OK) is True:
-            fat_checklist = parse_checklist(checklist)
-            if len(fat_checklist) == 0:
-                print("\nERROR: '%s' is empty!\n" % checklist)
+    if is_comp_verified is True:
+        if os.access(os.path.join(os.getcwd(), cv_list), os.F_OK) is True:
+            compverify_list = parse_compverify_list(cv_list)
+            if len(compverify_list) == 0:
+                print("\nERROR: '%s' is empty!\n" % cv_list)
                 print_usage()
                 sys.exit(1)
         else:
-            print("\nERROR: invalid parameter '%s' !\n" % checklist)
+            print("\nERROR: invalid parameter '%s' !\n" % cv_list)
             print_usage()
             sys.exit(1)
 
@@ -878,6 +890,8 @@ def main():
         print("\nERROR: invalid parameter!\n")
         print_usage()
     '''
+
+    return ret
 
 #
 # App Entry

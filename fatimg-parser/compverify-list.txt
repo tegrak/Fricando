@@ -1,0 +1,12 @@
+dsps.b00 dsps.b01 dsps.b02 dsps.b03 dsps.b04 dsps.b05 dsps.mdt
+
+modem.b00 modem.b01 modem.b02 modem.b03 modem.b04 modem.b05 modem.b06 modem.b07 modem.b08 modem.b09 modem.b10 modem.mdt
+
+modem_fw.b00 modem_fw.b01 modem_fw.b02 modem_fw.b03 modem_fw.b04 modem_fw.b05 modem_fw.b09 modem_fw.b10 modem_fw.b11 modem_fw.b12 modem_fw.b13 modem_fw.b15 modem_fw.b16 modem_fw.b23 modem_fw.b24 modem_fw.b25 modem_fw.b27 modem_fw.b28 modem_fw.b31 modem_fw.fli modem_fw.mdt
+
+q6.b00 q6.b01 q6.b03 q6.b04 q6.b05 q6.b06 q6.mdt
+
+tzapps.b00 tzapps.b01 tzapps.b02 tzapps.b03 tzapps.mdt
+
+wcnss.b00 wcnss.b01 wcnss.b02 wcnss.b04 wcnss.b05 wcnss.mdt
+
