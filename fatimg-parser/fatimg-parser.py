@@ -389,7 +389,7 @@ class FATParser(object):
     # Check FAT image ID
     #
     def check_fatimage_id(self):
-        pass
+        return True
 
     #
     # Parse FAT common header
