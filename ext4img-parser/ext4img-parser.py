@@ -21,6 +21,7 @@
 
 import os, sys
 import getopt
+import math
 
 #
 # Global Variable Definition
@@ -97,6 +98,39 @@ EXT4_INODE_NO = {
     'EXT4_GOOD_OLD_FIRST_INO' : 11
 }
 
+EXT4_FEATURE_COMPAT = {
+    'EXT4_FEATURE_COMPAT_DIR_PREALLOC'  : 0x0001,
+    'EXT4_FEATURE_COMPAT_IMAGIC_INODES' : 0x0002,
+    'EXT4_FEATURE_COMPAT_HAS_JOURNAL'   : 0x0004,
+    'EXT4_FEATURE_COMPAT_EXT_ATTR'      : 0x0008,
+    'EXT4_FEATURE_COMPAT_RESIZE_INODE'  : 0x0010,
+    'EXT4_FEATURE_COMPAT_DIR_INDEX'     : 0x0020
+}
+
+EXT4_FEATURE_INCOMPAT = {
+    'EXT4_FEATURE_INCOMPAT_COMPRESSION' : 0x0001,
+    'EXT4_FEATURE_INCOMPAT_FILETYPE'    : 0x0002,
+    'EXT4_FEATURE_INCOMPAT_RECOVER'     : 0x0004,
+    'EXT4_FEATURE_INCOMPAT_JOURNAL_DEV' : 0x0008,
+    'EXT4_FEATURE_INCOMPAT_META_BG'     : 0x0010,
+    'EXT4_FEATURE_INCOMPAT_EXTENTS'     : 0x0040,
+    'EXT4_FEATURE_INCOMPAT_64BIT'       : 0x0080,
+    'EXT4_FEATURE_INCOMPAT_MMP'         : 0x0100,
+    'EXT4_FEATURE_INCOMPAT_FLEX_BG'     : 0x0200,
+    'EXT4_FEATURE_INCOMPAT_EA_INODE'    : 0x0400,
+    'EXT4_FEATURE_INCOMPAT_DIRDATA'     : 0x1000
+}
+
+EXT4_FEATURE_RO_COMPAT = {
+    'EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER' : 0x0001,
+    'EXT4_FEATURE_RO_COMPAT_LARGE_FILE'   : 0x0002,
+    'EXT4_FEATURE_RO_COMPAT_BTREE_DIR'    : 0x0004,
+    'EXT4_FEATURE_RO_COMPAT_HUGE_FILE'    : 0x0008,
+    'EXT4_FEATURE_RO_COMPAT_GDT_CSUM'     : 0x0010,
+    'EXT4_FEATURE_RO_COMPAT_DIR_NLINK'    : 0x0020,
+    'EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE'  : 0x0040
+}
+
 EXT4_HASH_VER = {
     'DX_HASH_LEGACY'            : 0,
     'DX_HASH_HALF_MD4'          : 1,
@@ -115,6 +149,11 @@ class Ext4Parser(object):
         # Init class member
         #
         self.image = img
+
+        #
+        # Ext4 block size
+        #
+        self.ext4_block_sz = EXT4_BLOCK_SZ
 
         #
         # Ext4 super block
@@ -242,13 +281,181 @@ class Ext4Parser(object):
     def parse_ext4_sb(self, offset):
         self.ext4_super_block['s_inodes_count'] = self.str2int(self.image[offset:offset+4])
 
+        offset += 4
+        self.ext4_super_block['s_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_r_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_free_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_free_inodes_count'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_first_data_block'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_log_block_size'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_sz = int(math.pow(2, (10 + self.ext4_super_block['s_log_block_size'])))
+
+        offset += 4
+        self.ext4_super_block['s_obso_log_frag_size'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_blocks_per_group'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_obso_frags_per_group'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_inodes_per_group'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_mtime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_wtime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_mnt_count'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_max_mnt_count'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_magic'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_state'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_errors'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_minor_rev_level'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_lastcheck'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_checkinterval'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_creator_os'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_rev_level'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_def_resuid'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_def_resgid'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_first_ino'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_inode_size'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_block_group_nr'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_feature_compat'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_feature_incompat'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_feature_ro_compat'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_uuid'] = self.str2int(self.image[offset:offset+16])
+
+        offset += 16
+        self.ext4_super_block['s_volume_name'] = self.image[offset:offset+16]
+
+        offset += 16
+        self.ext4_super_block['s_last_mounted'] = self.image[offset:offset+64]
+
+        offset += 64
+        self.ext4_super_block['s_algorithm_usage_bitmap'] = self.str2int(self.image[offset:offset+4])
+
     #
     # Print Ext4 super block info
     #
     def print_ext4_sb_info(self):
         print("----------------------------------------")
         print("Ext4 SUPER BLOCK INFO\n")
+
         print("Total inode count : " + str(self.ext4_super_block['s_inodes_count']))
+        print("Total block count : " + str((self.ext4_super_block['s_blocks_count_hi'] << 32) + self.ext4_super_block['s_blocks_count_lo']))
+        print("Reserved block count : " + str((self.ext4_super_block['s_r_blocks_count_hi'] << 32) + self.ext4_super_block['s_r_blocks_count_lo']))
+        print("Free block count : " + str((self.ext4_super_block['s_free_blocks_count_hi'] << 32) + self.ext4_super_block['s_free_blocks_count_lo']))
+        print("Free inode count : " + str(self.ext4_super_block['s_free_inodes_count']))
+        print("First data block : " + str(self.ext4_super_block['s_first_data_block']))
+        print("Block size: " + str(self.ext4_block_sz))
+        print("Fragment size (obsolete) : " + str(int(math.pow(2, (10 + self.ext4_super_block['s_obso_log_frag_size'])))))
+        print("Blocks per group : " + str(self.ext4_super_block['s_blocks_per_group']))
+        print("Fragments per group (obsolete): " + str(self.ext4_super_block['s_obso_frags_per_group']))
+        print("Inodes per group: " + str(self.ext4_super_block['s_inodes_per_group']))
+        print("Mount time (seconds): " + str(self.ext4_super_block['s_mtime']))
+        print("Write time (seconds): " + str(self.ext4_super_block['s_wtime']))
+        print("Mount count: " + str(self.ext4_super_block['s_mnt_count']))
+        print("Maximum mount count: " + str(self.ext4_super_block['s_max_mnt_count']))
+        print("Magic signature: 0x%X" % self.ext4_super_block['s_magic'])
+
+        for k, v in EXT4_STATE.items():
+            if v == self.ext4_super_block['s_state']:
+                print("File system state: " + k)
+
+        for k, v in EXT4_ERRORS.items():
+            if v == self.ext4_super_block['s_errors']:
+                print("Errors behaviour: " + k)
+
+        print("Minor revision level: " + str(self.ext4_super_block['s_minor_rev_level']))
+        print("Last checked: " + str(self.ext4_super_block['s_lastcheck']))
+        print("Check interval: " + str(self.ext4_super_block['s_checkinterval']))
+
+        for k, v in EXT4_OS.items():
+            if v == self.ext4_super_block['s_creator_os']:
+                print("OS type: " + k)
+
+        for k, v in EXT4_REV_LEVEL.items():
+            if v == self.ext4_super_block['s_rev_level']:
+                print("Revision level: " + k)
+
+        print("Reserved blocks uid: " + str(self.ext4_super_block['s_def_resuid']))
+        print("Reserved blocks gid: " + str(self.ext4_super_block['s_def_resgid']))
+        print("First non-reserved inode: " + str(self.ext4_super_block['s_first_ino']))
+        print("Inode size: " + str(self.ext4_super_block['s_inode_size']))
+        print("Block group number: " + str(self.ext4_super_block['s_block_group_nr']))
+
+        feature_compat = ""
+        for k, v in EXT4_FEATURE_COMPAT.items():
+            if (v & self.ext4_super_block['s_feature_compat']) != 0:
+                feature_compat += " " + k
+        print("Compatible feature: " + feature_compat)
+
+        feature_incompat = ""
+        for k, v in EXT4_FEATURE_INCOMPAT.items():
+            if (v & self.ext4_super_block['s_feature_incompat']) != 0:
+                feature_incompat += " " + k
+        print("Incompatible feature: " + feature_incompat)
+
+        feature_ro_compat = ""
+        for k, v in EXT4_FEATURE_RO_COMPAT.items():
+            if (v & self.ext4_super_block['s_feature_ro_compat']) != 0:
+                feature_ro_compat += " " + k
+        print("Readonly-compatible feature: " + feature_ro_compat)
+
+        print("UUID: %x" % self.ext4_super_block['s_uuid'])
+        print("Volume name: " + self.ext4_super_block['s_volume_name'])
+        print("Last mounted on: " + self.ext4_super_block['s_last_mounted'])
+        print("Bitmpa algorithm usage: " + str(self.ext4_super_block['s_algorithm_usage_bitmap']))
 
     #
     # Run routine
