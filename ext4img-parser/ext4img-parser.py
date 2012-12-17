@@ -140,6 +140,22 @@ EXT4_HASH_VER = {
     'DX_HASH_TEA_UNSIGNED'      : 5
 }
 
+EXT4_DEFAULT_MOUNT_OPTS = {
+    'EXT2_DEFM_DEBUG'          : 0x0001,
+    'EXT2_DEFM_BSDGROUPS'      : 0x0002,
+    'EXT2_DEFM_XATTR_USER'     : 0x0004,
+    'EXT2_DEFM_ACL'            : 0x0008,
+    'EXT2_DEFM_UID16'          : 0x0010,
+    'EXT3_DEFM_JMODE_DATA'     : 0x0020,
+    'EXT3_DEFM_JMODE_ORDERED'  : 0x0040,
+    'EXT3_DEFM_JMODE'          : 0x0060,
+    'EXT3_DEFM_JMODE_WBACK'    : 0x0060,
+    'EXT4_DEFM_NOBARRIER'      : 0x0100,
+    'EXT4_DEFM_BLOCK_VALIDITY' : 0x0200,
+    'EXT4_DEFM_DISCARD'        : 0x0400,
+    'EXT4_DEFM_NODELALLOC'     : 0x0800
+}
+
 #
 # Class Definition For Ext4 Parser
 #
@@ -206,7 +222,7 @@ class Ext4Parser(object):
             #
             's_prealloc_blocks'     : 0,  # # of blocks to try to preallocate for files, u8
             's_prealloc_dir_blocks' : 0,  # # of blocks to preallocate for directories, u8
-            's_reserved_gdt_blocks' : 0,  # umber of reserved GDT entries for future filesystem expansion, le16
+            's_reserved_gdt_blocks' : 0,  # number of reserved GDT entries for future filesystem expansion, le16
 
             #
             # Journaling support valid if EXT4_FEATURE_COMPAT_HAS_JOURNAL set
@@ -218,11 +234,11 @@ class Ext4Parser(object):
             's_hash_seed'          : 0,  # HTREE hash seed, le32[4]
             's_def_hash_version'   : EXT4_HASH_VER['DX_HASH_TEA'],  # Default hash algorithm to use for directory hashes, u8
             's_reserved_char_pad'  : EXT4_JNL_BACKUP_BLOCKS,  # Reserved char padding, u8
-            's_desc_size': 0, # Size of group descriptors, in bytes, if the 64bit incompat feature flag is set, le16
+            's_desc_size'          : 0, # Size of group descriptors, in bytes, if the 64bit incompat feature flag is set, le16
             's_default_mount_opts' : 0x0000,  # Default mount options, le32
             's_first_meta_bg'      : 0,  # First metablock block group, if the meta_bg feature is enabled, le32
             's_mkfs_time'          : 0,  # When the filesystem was created, in seconds since the epoch, le32
-            's_jnl_blocks'         : 0,  # ackup copy of the first 68 bytes of the journal inode, le32[17]
+            's_jnl_blocks'         : 0,  # Backup copy of the first 68 bytes of the journal inode, le32[17]
 
             #
             # 64bit support valid if EXT4_FEATURE_COMPAT_64BIT
@@ -253,7 +269,7 @@ class Ext4Parser(object):
             's_reserved_pad'         : 0,  # Reserved padding, le16
             's_kbytes_written'       : 0,  # Number of KiB written to this filesystem over its lifetime, le64
             's_reserved'             : 0,  # Reserved, u32[160];
-};
+}
 
     #
     # Convert string to integer
@@ -384,6 +400,51 @@ class Ext4Parser(object):
         offset += 64
         self.ext4_super_block['s_algorithm_usage_bitmap'] = self.str2int(self.image[offset:offset+4])
 
+        offset += 4
+        self.ext4_super_block['s_prealloc_blocks'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_super_block['s_prealloc_dir_blocks'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_super_block['s_reserved_gdt_blocks'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_journal_uuid'] = self.str2int(self.image[offset:offset+16])
+
+        offset += 16
+        self.ext4_super_block['s_journal_inum'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_journal_dev'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_last_orphan'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_hash_seed'] = self.str2int(self.image[offset:offset+16])
+
+        offset += 16
+        self.ext4_super_block['s_def_hash_version'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_super_block['s_reserved_char_pad'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_super_block['s_desc_size'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_super_block['s_default_mount_opts'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_first_meta_bg'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_mkfs_time'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_super_block['s_jnl_blocks'] = self.str2int(self.image[offset:offset+68])
+
     #
     # Print Ext4 super block info
     #
@@ -455,7 +516,27 @@ class Ext4Parser(object):
         print("UUID: %x" % self.ext4_super_block['s_uuid'])
         print("Volume name: " + self.ext4_super_block['s_volume_name'])
         print("Last mounted on: " + self.ext4_super_block['s_last_mounted'])
-        print("Bitmpa algorithm usage: " + str(self.ext4_super_block['s_algorithm_usage_bitmap']))
+        print("Bitmap algorithm usage: " + str(self.ext4_super_block['s_algorithm_usage_bitmap']))
+        print("Blocks preallocated for files: " + str(self.ext4_super_block['s_prealloc_blocks']))
+        print("Blocks preallocated for dirs: " + str(self.ext4_super_block['s_prealloc_dir_blocks']))
+        print("Reserved GDT blocks: " + str(self.ext4_super_block['s_reserved_gdt_blocks']))
+        print("Journal UUID: %x" % self.ext4_super_block['s_journal_uuid'])
+        print("Journal inode: " + str(self.ext4_super_block['s_journal_inum']))
+        print("Journal device: " + str(self.ext4_super_block['s_journal_dev']))
+        print("Orphaned inodes to delete: " + str(self.ext4_super_block['s_last_orphan']))
+        print("HTREE hash seed: %x" % self.ext4_super_block['s_hash_seed'])
+        print("Default hash version for dirs hashes: " + str(self.ext4_super_block['s_def_hash_version']))
+        print("Reserved char padding: " + str(self.ext4_super_block['s_reserved_char_pad']))
+        print("Group descriptors size: " + str(self.ext4_super_block['s_desc_size']))
+
+        default_mount_opts = ""
+        for k, v in EXT4_DEFAULT_MOUNT_OPTS.items():
+            if (v & self.ext4_super_block['s_default_mount_opts']) != 0:
+                default_mount_opts  += " " + k
+        print("Default mount options: " + default_mount_opts)
+        print("First metablock block group: " + str(self.ext4_super_block['s_first_meta_bg']))
+        print("Filesystem-created time (seconds): " + str(self.ext4_super_block['s_mkfs_time']))
+        print("Journal backup: %x" % self.ext4_super_block['s_jnl_blocks'])
 
     #
     # Run routine
