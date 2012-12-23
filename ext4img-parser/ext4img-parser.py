@@ -710,12 +710,18 @@ class Ext4Parser(object):
 
             self.parse_ext4_bg_internal(offset)
 
+            #
+            # Print Ext4 block group info
+            #
+            if is_pr_verb is True:
+                self.print_ext4_bg_info(i)
+
     #
     # Print Ext4 super block info
     #
     def print_ext4_sb_info(self):
-        print("----------------------------------------")
-        print("Ext4 SUPER BLOCK INFO\n")
+        print("\n----------------------------------------")
+        print("EXT4 SUPER BLOCK INFO\n")
 
         print("Total inode count              : " + str(self.ext4_super_block['s_inodes_count']))
         print("Total block count              : " + str((self.ext4_super_block['s_blocks_count_hi'] << 32) + self.ext4_super_block['s_blocks_count_lo']))
@@ -849,6 +855,30 @@ class Ext4Parser(object):
         print("Reserved char padding 2          : " + str(self.ext4_super_block['s_reserved_char_pad2']))
         print("Reserved padding                 : " + str(self.ext4_super_block['s_reserved_pad']))
         print("KiB writtten                     : " + str(self.ext4_super_block['s_kbytes_written']))
+
+    #
+    # Print Ext4 block group info
+    #
+    def print_ext4_bg_info(self, bg_index):
+        print("\n----------------------------------------")
+        print("EXT4 BLOCK GROUP #%d INFO\n" % bg_index)
+
+        print("Block bitmap              : " + str((self.ext4_block_group_desc['bg_block_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_block_bitmap_lo']))
+        print("Inode bitmap              : " + str((self.ext4_block_group_desc['bg_inode_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_inode_bitmap_lo']))
+        print("Inode table               : " + str((self.ext4_block_group_desc['bg_inode_table_hi'] << 32) + self.ext4_block_group_desc['bg_inode_table_lo']))
+        print("Free blocks count         : " + str((self.ext4_block_group_desc['bg_free_blocks_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_blocks_count_lo']))
+        print("Free inodes count         : " + str((self.ext4_block_group_desc['bg_free_inodes_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_inodes_count_lo']))
+        print("Used directories count    : " + str((self.ext4_block_group_desc['bg_used_dirs_count_hi'] << 32) + self.ext4_block_group_desc['bg_used_dirs_count_lo']))
+
+        bg_flags = ""
+        for k, v in EXT4_BG_FLAGS.items():
+            if (v & self.ext4_block_group_desc['bg_flags']) != 0:
+                bg_flags += k + " "
+        print("Block group flags         : " + bg_flags)
+
+        print("Exclusion bitmap          : " + str((self.ext4_block_group_desc['bg_exclude_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_exclude_bitmap_lo']))
+        print("Unused inode count        : " + str((self.ext4_block_group_desc['bg_itable_unused_hi'] << 32) + self.ext4_block_group_desc['bg_itable_unused_lo']))
+        print("Group descriptor checksum : " + str(self.ext4_block_group_desc['bg_checksum']))
 
     #
     # Run routine
