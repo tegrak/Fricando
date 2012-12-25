@@ -58,6 +58,12 @@ EXT4_SUPER_MAGIC = 0xEF53
 
 EXT4_JNL_BACKUP_BLOCKS = 1
 
+EXT4_NDIR_BLOCKS = 12
+EXT4_IND_BLOCK   = EXT4_NDIR_BLOCKS
+EXT4_DIND_BLOCK  = EXT4_IND_BLOCK + 1
+EXT4_TIND_BLOCK  = EXT4_DIND_BLOCK + 1
+EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
+
 EXT4_STATE = {
     'EXT4_VALID_FS'  : 0x0001,
     'EXT4_ERROR_FS'  : 0x0002,
@@ -169,6 +175,64 @@ EXT4_BG_FLAGS = {
     'EXT2_BG_INODE_UNINIT' : 0x0001,
     'EXT2_BG_BLOCK_UNINIT' : 0x0002,
     'EXT2_BG_INODE_ZEROED' : 0x0004
+}
+
+EXT4_INODE_MODE = {
+    'S_IXOTH' : 0x1,
+    'S_IWOTH' : 0x2,
+    'S_IROTH' : 0x4,
+    'S_IXGRP' : 0x8,
+    'S_IWGRP' : 0x10,
+    'S_IRGRP' : 0x20,
+    'S_IXUSR' : 0x40,
+    'S_IWUSR' : 0x80,
+    'S_IRUSR' : 0x100,
+    'S_ISVTX' : 0x200,
+    'S_ISGID' : 0x400,
+    'S_ISUID' : 0x800,
+    
+    #
+    # These are mutually-exclusive file types
+    #
+    'S_IFIFO'  : 0x1000,
+    'S_IFCHR'  : 0x2000,
+    'S_IFDIR'  : 0x4000,
+    'S_IFBLK'  : 0x6000,
+    'S_IFREG'  : 0x8000,
+    'S_IFLNK'  : 0xA000,
+    'S_IFSOCK' : 0xC000
+}
+
+EXT4_INODE_FLAGS = {
+    'FILE_SEC_DEL'                   : 0x1,  # This file requires secure deletion. (not implemented)
+    'FILE_UNDEL'                     : 0x2,  # This file should be preserved should undeletion be desired. (not implemented)
+    'FILE_COMPRESSED'                : 0x4,  # File is compressed. (not really implemented)
+    'FILE_WRITE_SYNC'                : 0x8,  # All writes to the file must be synchronous.
+    'FILE_IMMUTABLE'                 : 0x10,  # File is immutable.
+    'FILE_APPENDED_ONLY'             : 0x20,  # File can only be appended.
+    'FILE_NOT_DUMPED'                : 0x40,  # The dump utility should not dump this file.
+    'FILE_NOT_UPDATE_ATIME'          : 0x80,  # Do not update access time.
+    'FILE_DIRTY_COMPRESSED'          : 0x100,  # Dirty compressed file. (not used)
+    'FILE_COMPRESSED_CLUSTERS'       : 0x200,  # File has one or more compressed clusters. (not used)
+    'FILE_NOT_COMPRESSED'            : 0x400,  # Do not compress file. (not used)
+    'FILE_COMPRESS_ERR'              : 0x800,  # Compression error. (not used)
+    'DIR_HASHED_INDEXES'             : 0x1000,  # Directory has hashed indexes.
+    'DIR_AFS_MAGIC'                  : 0x2000,  # AFS magic directory.
+    'FILE_WRITE_THROUGH_JNL'         : 0x4000,  # File data must always be written through the journal.
+    'FILE_TAIL_NOT_MERGED'           : 0x8000,  # File tail should not be merged.
+    'DIR_WRITE_SYNC'                 : 0x10000,  # All directory entry data should be written synchronously (see dirsync).
+    'DIR_TOP_HIERARCHY'              : 0x20000,  # Top of directory hierarchy.
+    'FILE_HUGE'                      : 0x40000,  # This is a huge file.
+    'INODE_USE_EXTENTS'              : 0x80000,  # Inode uses extents.
+    'INODE_USE_LARGE_EXTEND_ATTR'    : 0x200000,  # Inode used for a large extended attribute.
+    'FILE_BLOCKS_ALLOCATED_PAST_EOF' : 0x400000,  # This file has blocks allocated past EOF.
+    'RESERVED_EXT4_LIB'              : 0x80000000,  # Reserved for ext4 library.
+
+    #
+    # Aggregate flags
+    #
+    'USER_VISIBLE'    : 0x4BDFFF,  # User-visible flags.
+    'USER_MODIFIABLE' : 0x4B80FF,  # User-modifiable flags. 
 }
 
 #
@@ -317,6 +381,42 @@ class Ext4Parser(object):
             'bg_reserved3'            : 0,  # Padding to 64 bytes, u32[2]
             }
 
+        #
+        # Ext4 inode table
+        #
+        self.ext4_inode_table = {
+            'i_mode'            : EXT4_INODE_MODE['S_IXOTH'],  # File mode, le16
+            'i_uid'             : 0,  # Lower 16-bits of Owner UID, le16
+            'i_size_lo'         : 0,  # Lower 32-bits of size in bytes, le32
+            'i_atime'           : 0,  # Last access time, in seconds since the epoch, le32
+            'i_ctime'           : 0,  # Last inode change time, in seconds since the epoch, le32
+            'i_mtime'           : 0,  # Last data modification time, in seconds since the epoch, le32
+            'i_dtime'           : 0,  # Deletion Time, in seconds since the epoch, le32
+            'i_gid'             : 0,  # Lower 16-bits of GID, le16
+            'i_links_count'     : 0,  # Hard link count, le16
+            'i_blocks_lo'       : 0,  # Lower 32-bits of block count, le32
+            'i_flags'           : EXT4_INODE_FLAGS['FILE_SEC_DEL'],  # Inode flags, le32
+            'l_i_version'       : 0,  # Version, le32
+            'i_block'           : 0,  # Block map or extent tree, le32[EXT4_N_BLOCKS=15]
+            'i_generation'      : 0,  # File version (for NFS), le32
+            'i_file_acl_lo'     : 0,  # Lower 32-bits of extended attribute block, le32
+            'i_size_high'       : 0,  # Upper 32-bits of file size, le32
+            'i_obso_faddr'      : 0,  # (Obsolete) fragment address, le32
+            'l_i_blocks_high'   : 0,  # Upper 16-bits of the block count, le16
+            'l_i_file_acl_high' : 0,  # Upper 16-bits of the extended attribute block (historically, the file ACL location), le16
+            'l_i_uid_high'      : 0,  # Upper 16-bits of the Owner UID, le16
+            'l_i_gid_high'      : 0,  # Upper 16-bits of the GID, le16
+            'l_i_reserved2'     : 0,  # le32
+            'i_extra_isize'     : 0,  # Size of this inode - 128, le16
+            'i_pad1'            : 0,  # le16
+            'i_ctime_extra'     : 0,  # Extra change time bits. This provides sub-second precision, le32
+            'i_mtime_extra'     : 0,  # Extra modification time bits. This provides sub-second precision, le32
+            'i_atime_extra'     : 0,  # Extra access time bits. This provides sub-second precision, le32
+            'i_crtime'          : 0,  # File creation time, in seconds since the epoch, le32
+            'i_crtime_extra'    : 0,  # Extra file creation time bits. This provides sub-second precision, le32
+            'i_version_hi'      : 0   # Upper 32-bits for version number, le32
+            }
+
     #
     # Convert string to integer
     #
@@ -368,7 +468,7 @@ class Ext4Parser(object):
         if bg == 0 or bg == 1:
             return True
 
-        if is_power_of(bg, 3) or is_power_of(bg, 5) or is_power_of(bg, 7):
+        if self.is_power_of(bg, 3) or self.is_power_of(bg, 5) or self.is_power_of(bg, 7):
             return True
 
         return False
@@ -619,9 +719,9 @@ class Ext4Parser(object):
         self.ext4_super_block['s_reserved'] = self.str2int(self.image[offset:offset+640])
 
     #
-    # Parse Ext4 block group internally
+    # Parse Ext4 block group descriptor internally
     #
-    def parse_ext4_bg_internal(self, offset):
+    def parse_ext4_bg_desc_internal(self, offset):
         self.ext4_block_group_desc['bg_block_bitmap_lo'] = self.str2int(self.image[offset:offset+4])
 
         offset += 4
@@ -686,6 +786,21 @@ class Ext4Parser(object):
             self.ext4_block_group_desc['bg_reserved3'] = self.str2int(self.image[offset:offset+8])
 
     #
+    # Parse Ext4 block group descriptor
+    #
+    def parse_ext4_bg_desc(self, offset):
+        bg_num = self.get_bg_num()
+
+        for i in range(0, bg_num, 1):
+            self.parse_ext4_bg_desc_internal(offset + i * self.ext4_super_block['s_desc_size'])
+
+            #
+            # Print Ext4 block group descriptor info according to block group #0
+            #
+            if is_pr_verb is True:
+                self.print_ext4_bg_desc_info(i)
+
+    #
     # Parse Ext4 block group
     #
     def parse_ext4_bg(self):
@@ -697,24 +812,22 @@ class Ext4Parser(object):
             if self.is_ext4_bg_has_sb(i) is True:
                 if i == 0:
                     #
-                    # Offset = Group 0 Padding + Super Block Size
+                    # Offset = Super Block Size (Group 0 Padding is included)
                     #
-                    offset = EXT4_GROUP_0_PAD_SZ + (self.get_sb_blocks() * EXT4_BLOCK_SZ)
+                    offset = self.get_sb_blocks() * EXT4_BLOCK_SZ
                 else:
                     #
                     # Offset = Super Block Size
                     #
-                    offset = (i * blocks_per_group + self.get_sb_blocks() * EXT4_BLOCK_SZ)
+                    offset = (i * blocks_per_group + self.get_sb_blocks()) * EXT4_BLOCK_SZ
             else:
                 offset = i * blocks_per_group * EXT4_BLOCK_SZ
 
-            self.parse_ext4_bg_internal(offset)
-
             #
-            # Print Ext4 block group info
+            # Parse Ext4 block group descriptor according to block group #0
             #
-            if is_pr_verb is True:
-                self.print_ext4_bg_info(i)
+            if i == 0:
+                self.parse_ext4_bg_desc(offset)
 
     #
     # Print Ext4 super block info
@@ -857,15 +970,15 @@ class Ext4Parser(object):
         print("KiB writtten                     : " + str(self.ext4_super_block['s_kbytes_written']))
 
     #
-    # Print Ext4 block group info
+    # Print Ext4 block group descriptors info
     #
-    def print_ext4_bg_info(self, bg_index):
+    def print_ext4_bg_desc_info(self, bg_index):
         print("\n----------------------------------------")
-        print("EXT4 BLOCK GROUP #%d INFO\n" % bg_index)
+        print("EXT4 BLOCK GROUP DESCRIPTOR #%d INFO\n" % bg_index)
 
-        print("Block bitmap              : " + str((self.ext4_block_group_desc['bg_block_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_block_bitmap_lo']))
-        print("Inode bitmap              : " + str((self.ext4_block_group_desc['bg_inode_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_inode_bitmap_lo']))
-        print("Inode table               : " + str((self.ext4_block_group_desc['bg_inode_table_hi'] << 32) + self.ext4_block_group_desc['bg_inode_table_lo']))
+        print("Block bitmap at           : " + str((self.ext4_block_group_desc['bg_block_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_block_bitmap_lo']))
+        print("Inode bitmap at           : " + str((self.ext4_block_group_desc['bg_inode_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_inode_bitmap_lo']))
+        print("Inode table at            : " + str((self.ext4_block_group_desc['bg_inode_table_hi'] << 32) + self.ext4_block_group_desc['bg_inode_table_lo']))
         print("Free blocks count         : " + str((self.ext4_block_group_desc['bg_free_blocks_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_blocks_count_lo']))
         print("Free inodes count         : " + str((self.ext4_block_group_desc['bg_free_inodes_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_inodes_count_lo']))
         print("Used directories count    : " + str((self.ext4_block_group_desc['bg_used_dirs_count_hi'] << 32) + self.ext4_block_group_desc['bg_used_dirs_count_lo']))
@@ -876,7 +989,7 @@ class Ext4Parser(object):
                 bg_flags += k + " "
         print("Block group flags         : " + bg_flags)
 
-        print("Exclusion bitmap          : " + str((self.ext4_block_group_desc['bg_exclude_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_exclude_bitmap_lo']))
+        print("Exclusion bitmap at       : " + str((self.ext4_block_group_desc['bg_exclude_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_exclude_bitmap_lo']))
         print("Unused inode count        : " + str((self.ext4_block_group_desc['bg_itable_unused_hi'] << 32) + self.ext4_block_group_desc['bg_itable_unused_lo']))
         print("Group descriptor checksum : " + str(self.ext4_block_group_desc['bg_checksum']))
 
