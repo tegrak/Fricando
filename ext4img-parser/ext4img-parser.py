@@ -474,9 +474,9 @@ class Ext4Parser(object):
         return False
 
     #
-    # Get block group number
+    # Get block group count
     #
-    def get_bg_num(self):
+    def get_bg_count(self):
         blocks_count = (self.ext4_super_block['s_blocks_count_hi'] << 32) + self.ext4_super_block['s_blocks_count_lo']
         bg_num = self.div_round_up(blocks_count - self.ext4_super_block['s_first_data_block'], self.ext4_super_block['s_blocks_per_group'])
 
@@ -493,19 +493,19 @@ class Ext4Parser(object):
     #
     def get_bg_desc_blocks(self):
         if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_64BIT'] != 0 and self.ext4_super_block['s_desc_size'] > 32:
-            return self.div_round_up(self.get_bg_num() * 64, EXT4_BLOCK_SZ)
+            return self.div_round_up(self.get_bg_count() * 64, EXT4_BLOCK_SZ)
         else:
             #
             # Refer to 's_desc_size'
             # if 'EXT4_FEATURE_COMPAT_HAS_JOURNAL' is set
             #
-            return self.div_round_up(self.get_bg_num() * 32, EXT4_BLOCK_SZ)
+            return self.div_round_up(self.get_bg_count() * 32, EXT4_BLOCK_SZ)
 
     #
     # Get reserved GDT's blocks
     #
     def get_bg_desc_reserve_blocks(self):
-        return self.div_round_up(self.get_bg_num() * 1024 * self.get_bg_desc_sz(), EXT4_BLOCK_SZ) - self.get_bg_desc_blocks()
+        return self.div_round_up(self.get_bg_count() * 1024 * self.get_bg_desc_sz(), EXT4_BLOCK_SZ) - self.get_bg_desc_blocks()
 
     #
     # Get data block bitmap's blocks
@@ -518,6 +518,12 @@ class Ext4Parser(object):
     #
     def get_inode_bitmap_blocks(self):
         return 1
+
+    #
+    # Get inode count used
+    #
+    def get_inode_count_used(self):
+        return self.ext4_super_block['s_inodes_count'] - self.ext4_super_block['s_free_inodes_count']
 
     #
     # Parse Ext4 super block
@@ -620,10 +626,10 @@ class Ext4Parser(object):
         self.ext4_super_block['s_uuid'] = self.str2int(self.image[offset:offset+16])
 
         offset += 16
-        self.ext4_super_block['s_volume_name'] = self.image[offset:offset+16]
+        self.ext4_super_block['s_volume_name'] = self.image[offset:offset+16].split("\x00")[0]
 
         offset += 16
-        self.ext4_super_block['s_last_mounted'] = self.image[offset:offset+64]
+        self.ext4_super_block['s_last_mounted'] = self.image[offset:offset+64].split("\x00")[0]
 
         offset += 64
         self.ext4_super_block['s_algorithm_usage_bitmap'] = self.str2int(self.image[offset:offset+4])
@@ -786,12 +792,144 @@ class Ext4Parser(object):
             self.ext4_block_group_desc['bg_reserved3'] = self.str2int(self.image[offset:offset+8])
 
     #
+    # Parse Ext4 inode in inode table internally
+    #
+    def parse_ext4_bg_inode_internal(self, offset):
+        self.ext4_inode_table['i_mode'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_uid'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_size_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_atime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_ctime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_mtime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_dtime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_gid'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_links_count'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_blocks_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_flags'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['l_i_version'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_block'] = self.str2int(self.image[offset:offset+60])
+
+        offset += 60
+        self.ext4_inode_table['i_generation'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_file_acl_lo'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_size_high'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_obso_faddr'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['l_i_blocks_high'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['l_i_file_acl_high'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['l_i_uid_high'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['l_i_gid_high'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['l_i_reserved2'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_extra_isize'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_pad1'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_inode_table['i_ctime_extra'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_mtime_extra'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_atime_extra'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_crtime'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_crtime_extra'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
+
+    #
+    # Parse Ext4 inode in inode table
+    #
+    def parse_ext4_bg_inode(self, bg_num):
+        inode_num = self.get_inode_count_used()
+
+        if inode_num > (bg_num * self.ext4_super_block['s_inodes_per_group']):
+            length = self.ext4_super_block['s_inodes_per_group']
+        else:
+            length = (bg_num * self.ext4_super_block['s_inodes_per_group']) - inode_num
+
+        offset = ((self.ext4_block_group_desc['bg_inode_table_hi'] << 32) + self.ext4_block_group_desc['bg_inode_table_lo']) * EXT4_BLOCK_SZ
+
+        for i in range(0, length, 1):
+            self.parse_ext4_bg_inode_internal(offset + i * self.ext4_super_block['s_inode_size'])
+
+            #
+            # Print Ext4 inode info in inode table
+            #
+            if is_pr_verb is True:
+                if self.ext4_inode_table['i_mode'] != 0 and self.ext4_inode_table['i_flags'] != 0:
+                    self.print_ext4_bg_inode_info((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
+
+    #
     # Parse Ext4 block group descriptor
     #
-    def parse_ext4_bg_desc(self, offset):
-        bg_num = self.get_bg_num()
+    def parse_ext4_bg_desc(self, bg_num):
+        blocks_per_group = self.ext4_super_block['s_blocks_per_group']
 
-        for i in range(0, bg_num, 1):
+        if self.is_ext4_bg_has_sb(bg_num) is True:
+            if bg_num == 0:
+                #
+                # Offset = Super Block Size (Group 0 Padding is included)
+                #
+                offset = self.get_sb_blocks() * EXT4_BLOCK_SZ
+            else:
+                #
+                # Offset = Super Block Size
+                #
+                offset = (bg_num * blocks_per_group + self.get_sb_blocks()) * EXT4_BLOCK_SZ
+        else:
+            offset = bg_num * blocks_per_group * EXT4_BLOCK_SZ
+
+        bg_count = self.get_bg_count()
+
+        for i in range(0, bg_count, 1):
             self.parse_ext4_bg_desc_internal(offset + i * self.ext4_super_block['s_desc_size'])
 
             #
@@ -800,34 +938,23 @@ class Ext4Parser(object):
             if is_pr_verb is True:
                 self.print_ext4_bg_desc_info(i)
 
+            #
+            # Parse Ext4 inode in inode table
+            #
+            self.parse_ext4_bg_inode(i)
+
     #
     # Parse Ext4 block group
     #
     def parse_ext4_bg(self):
-        bg_num = self.get_bg_num()
+        bg_count = self.get_bg_count()
 
-        blocks_per_group = self.ext4_super_block['s_blocks_per_group']
-
-        for i in range(0, bg_num, 1):
-            if self.is_ext4_bg_has_sb(i) is True:
-                if i == 0:
-                    #
-                    # Offset = Super Block Size (Group 0 Padding is included)
-                    #
-                    offset = self.get_sb_blocks() * EXT4_BLOCK_SZ
-                else:
-                    #
-                    # Offset = Super Block Size
-                    #
-                    offset = (i * blocks_per_group + self.get_sb_blocks()) * EXT4_BLOCK_SZ
-            else:
-                offset = i * blocks_per_group * EXT4_BLOCK_SZ
-
+        for i in range(0, bg_count, 1):
             #
             # Parse Ext4 block group descriptor according to block group #0
             #
             if i == 0:
-                self.parse_ext4_bg_desc(offset)
+                self.parse_ext4_bg_desc(i)
 
     #
     # Print Ext4 super block info
@@ -994,6 +1121,54 @@ class Ext4Parser(object):
         print("Group descriptor checksum : " + str(self.ext4_block_group_desc['bg_checksum']))
 
     #
+    # Print Ext4 inode info in inode table
+    #
+    def print_ext4_bg_inode_info(self, inode_index):
+        print("\n----------------------------------------")
+        print("EXT4 INODE #%d INFO\n" % inode_index)
+
+        i_mode_val = self.ext4_inode_table['i_mode']
+        i_mode_mutually_exclusive = i_mode_val & 0xF000
+        i_mode_str = ""
+        if i_mode_mutually_exclusive == EXT4_INODE_MODE['S_IFLNK']:
+            i_mode_str = 'S_IFLNK'
+        elif i_mode_mutually_exclusive == EXT4_INODE_MODE['S_IFSOCK']:
+            i_mode_str = 'S_IFSOCK'
+        i_mode_val &= 0xFFF
+
+        for k, v in EXT4_INODE_MODE.items():
+            if (v & i_mode_val) != 0:
+                i_mode_str += k + " "
+        print("File mode                      : " + i_mode_str)
+
+        print("UID                            : " + str((self.ext4_inode_table['l_i_uid_high'] << 32) + self.ext4_inode_table['i_uid']))
+        print("File size                      : " + str((self.ext4_inode_table['i_size_high'] << 32) + self.ext4_inode_table['i_size_lo']))
+        print("File access time               : " + str(self.ext4_inode_table['i_atime']))
+        print("File change time               : " + str(self.ext4_inode_table['i_ctime']))
+        print("File modification time         : " + str(self.ext4_inode_table['i_mtime']))
+        print("File deletion time             : " + str(self.ext4_inode_table['i_dtime']))
+        print("GID                            : " + str((self.ext4_inode_table['l_i_gid_high'] << 32) + self.ext4_inode_table['i_gid']))
+        print("Hard link count                : " + str(self.ext4_inode_table['i_links_count']))
+        print("Block count                    : " + str((self.ext4_inode_table['l_i_blocks_high'] << 32) + self.ext4_inode_table['i_blocks_lo']))
+
+        i_flags = ""
+        for k, v in EXT4_INODE_FLAGS.items():
+            if (v & self.ext4_inode_table['i_flags']) != 0:
+                i_flags += k + " "
+        print("Inode flags                    : " + i_flags)
+
+        print("Version number                 : " + str((self.ext4_inode_table['i_version_hi'] << 32) + self.ext4_inode_table['l_i_version']))
+        print("File version                   : " + str(self.ext4_inode_table['i_generation']))
+        print("Extended attribute block / ACL : " + str((self.ext4_inode_table['l_i_file_acl_high'] << 32) + self.ext4_inode_table['i_file_acl_lo']))
+        print("Fragment address (obsolete)    : " + str(self.ext4_inode_table['i_obso_faddr']))
+        print("Inode size                     : " + str(self.ext4_inode_table['i_extra_isize']))
+        print("Extra change time              : " + str(self.ext4_inode_table['i_ctime_extra']))
+        print("Extra modification time        : " + str(self.ext4_inode_table['i_mtime_extra']))
+        print("Extra access time              : " + str(self.ext4_inode_table['i_atime_extra']))
+        print("File creation time             : " + str(self.ext4_inode_table['i_crtime']))
+        print("Extra file creation time       : " + str(self.ext4_inode_table['i_crtime_extra']))
+
+    #
     # Run routine
     #
     def run(self):
@@ -1120,6 +1295,14 @@ def main():
             sys.exit(0)
         else:
             continue
+
+    #
+    # Sanity check for parameters
+    #
+    if image_file == "":
+        print("\nERROR: invalid parameter!\n")
+        print_usage()
+        sys.exit(1)
 
     #
     # Sanity check for '-d'
