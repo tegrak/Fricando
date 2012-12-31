@@ -397,7 +397,7 @@ class Ext4Parser(object):
             'i_blocks_lo'       : 0,  # Lower 32-bits of block count, le32
             'i_flags'           : EXT4_INODE_FLAGS['FILE_SEC_DEL'],  # Inode flags, le32
             'l_i_version'       : 0,  # Version, le32
-            'i_block'           : 0,  # Block map or extent tree, le32[EXT4_N_BLOCKS=15]
+            'i_block'           : 0,  # Block map for ext2/3 or extent tree for ext4 (the extents flag must be set), le32[EXT4_N_BLOCKS=15]
             'i_generation'      : 0,  # File version (for NFS), le32
             'i_file_acl_lo'     : 0,  # Lower 32-bits of extended attribute block, le32
             'i_size_high'       : 0,  # Upper 32-bits of file size, le32
@@ -415,6 +415,44 @@ class Ext4Parser(object):
             'i_crtime'          : 0,  # File creation time, in seconds since the epoch, le32
             'i_crtime_extra'    : 0,  # Extra file creation time bits. This provides sub-second precision, le32
             'i_version_hi'      : 0   # Upper 32-bits for version number, le32
+            }
+
+        #
+        # Ext4 extent tree
+        #
+
+        #
+        # Ext4 extent header
+        #
+        self.ext4_extent_header = {
+            'eh_magic'      : 0xF30A,  # Magic number, le16
+            'eh_entries'    : 0,  # Number of valid entries following the header, le16
+            'eh_max'        : 0,  # Maximum number of entries that could follow the header, le16
+            'eh_depth'      : 0,  # Depth of this extent node in the extent tree;
+                                  # 0 = this extent node points to data blocks;
+                                  # otherwise, this extent node points to other extent nodes, le16
+            'eh_generation' : 0,  # Generation of the tree (Used by Lustre, but not standard ext4), le32
+            }
+
+        #
+        # Ext4 extent index node
+        #
+        self.ext4_extent_idx = {
+            'ei_block'   : 0,  # This index node covers file blocks from 'block' onward, le32
+            'ei_leaf_lo' : 0,  # Lower 32-bits of the block number of the extent node that is the next level lower in the tree;
+                               # The tree node pointed to can be either another internal node or a leaf node, described below, le32
+            'ei_leaf_hi' : 0,  # Upper 16-bits of the previous field, le16
+            'ei_unused'  : 0,  # u16
+            }
+
+        #
+        # Ext4 extent leaf node
+        #
+        self.ext4_extent = {
+            'ee_block'    : 0,  # First file block number that this extent covers, le32
+            'ee_len'      : 0,  # Number of blocks covered by extent, le16
+            'ee_start_hi' : 0,  # Upper 16-bits of the block number to which this extent points, le16
+            'ee_start_lo' : 0,  # Lower 32-bits of the block number to which this extent points, le32
             }
 
     #
@@ -830,8 +868,11 @@ class Ext4Parser(object):
         offset += 4
         self.ext4_inode_table['l_i_version'] = self.str2int(self.image[offset:offset+4])
 
+        #
+        # Parse Ext4 extent tree
+        #
         offset += 4
-        self.ext4_inode_table['i_block'] = self.str2int(self.image[offset:offset+60])
+        self.parse_ext4_extent_tree(offset)
 
         offset += 60
         self.ext4_inode_table['i_generation'] = self.str2int(self.image[offset:offset+4])
@@ -885,17 +926,60 @@ class Ext4Parser(object):
         self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
 
     #
+    # Parse Ext4 extent tree
+    #
+    def parse_ext4_extent_tree(self, offset):
+        self.ext4_inode_table['i_block'] = self.str2int(self.image[offset:offset+60])
+
+        if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS'] != 0:
+            self.ext4_extent_header['eh_magic'] = self.str2int(self.image[offset:offset+2])
+
+            offset += 2
+            self.ext4_extent_header['eh_entries'] = self.str2int(self.image[offset:offset+2])
+
+            offset += 2
+            self.ext4_extent_header['eh_max'] = self.str2int(self.image[offset:offset+2])
+
+            offset += 2
+            self.ext4_extent_header['eh_depth'] = self.str2int(self.image[offset:offset+2])
+
+            offset += 2
+            self.ext4_extent_header['eh_generation'] = self.str2int(self.image[offset:offset+4])
+
+            if self.ext4_extent_header['eh_depth'] > 0:
+                offset += 4
+                self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
+
+                offset += 4
+                self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
+
+                offset += 4
+                self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
+
+                offset += 2
+                self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
+            elif self.ext4_extent_header['eh_depth'] == 0:
+                offset += 2
+                self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
+
+                offset += 4
+                self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
+
+                offset += 2
+                self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
+
+                offset += 2
+                self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
+            else:
+                pass
+
+    #
     # Parse Ext4 inode in inode table
     #
     def parse_ext4_bg_inode(self, bg_num):
-        inode_num = self.get_inode_count_used()
-
-        if inode_num > (bg_num * self.ext4_super_block['s_inodes_per_group']):
-            length = self.ext4_super_block['s_inodes_per_group']
-        else:
-            length = (bg_num * self.ext4_super_block['s_inodes_per_group']) - inode_num
-
         offset = ((self.ext4_block_group_desc['bg_inode_table_hi'] << 32) + self.ext4_block_group_desc['bg_inode_table_lo']) * EXT4_BLOCK_SZ
+
+        length = self.ext4_super_block['s_inodes_per_group'] - ((self.ext4_block_group_desc['bg_free_inodes_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_inodes_count_lo'])
 
         for i in range(0, length, 1):
             self.parse_ext4_bg_inode_internal(offset + i * self.ext4_super_block['s_inode_size'])
@@ -1158,6 +1242,28 @@ class Ext4Parser(object):
         print("Inode flags                    : " + i_flags)
 
         print("Version number                 : " + str((self.ext4_inode_table['i_version_hi'] << 32) + self.ext4_inode_table['l_i_version']))
+
+        if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS'] != 0:
+            print("Extent tree                    : ")
+            print("  Header                       : ")
+            print("    Magic number               : " + str(hex(self.ext4_extent_header['eh_magic'])))
+            print("    Number of valid entries    : " + str(self.ext4_extent_header['eh_entries']))
+            print("    Max number of entries      : " + str(self.ext4_extent_header['eh_max']))
+            print("    Depth of extent node       : " + str(self.ext4_extent_header['eh_depth']))
+            print("    Generation of the tree     : " + str(self.ext4_extent_header['eh_generation']))
+
+            if self.ext4_extent_header['eh_depth'] > 0:
+                print("  Index node                   : ")
+                print("    File blocks                : " + str(self.ext4_extent_idx['ei_block']))
+                print("    Next level node block num  : " + str((self.ext4_extent_idx['ei_leaf_hi'] << 32) + self.ext4_extent_idx['ei_leaf_lo']))
+            elif self.ext4_extent_header['eh_depth'] == 0:
+                print("  Leaf node                    : ")
+                print("    First file blocks num      : " + str(self.ext4_extent['ee_block']))
+                print("    Blocks num                 : " + str(self.ext4_extent['ee_len']))
+                print("    Blocks num pointed         : " + str((self.ext4_extent['ee_start_hi'] << 32) + self.ext4_extent['ee_start_lo']))
+            else:
+                pass
+
         print("File version                   : " + str(self.ext4_inode_table['i_generation']))
         print("Extended attribute block / ACL : " + str((self.ext4_inode_table['l_i_file_acl_high'] << 32) + self.ext4_inode_table['i_file_acl_lo']))
         print("Fragment address (obsolete)    : " + str(self.ext4_inode_table['i_obso_faddr']))
