@@ -449,10 +449,10 @@ class Ext4Parser(object):
         # Ext4 extent leaf node
         #
         self.ext4_extent = {
-            'ee_block'    : 0,  # First file block number that this extent covers, le32
+            'ee_block'    : 0,  # First file logical block number that this extent covers, le32
             'ee_len'      : 0,  # Number of blocks covered by extent, le16
-            'ee_start_hi' : 0,  # Upper 16-bits of the block number to which this extent points, le16
-            'ee_start_lo' : 0,  # Lower 32-bits of the block number to which this extent points, le32
+            'ee_start_hi' : 0,  # Upper 16-bits of physical block number to which this extent points, le16
+            'ee_start_lo' : 0,  # Lower 32-bits of physical block number to which this extent points, le32
             }
 
     #
@@ -1258,9 +1258,9 @@ class Ext4Parser(object):
                 print("    Next level node block num  : " + str((self.ext4_extent_idx['ei_leaf_hi'] << 32) + self.ext4_extent_idx['ei_leaf_lo']))
             elif self.ext4_extent_header['eh_depth'] == 0:
                 print("  Leaf node                    : ")
-                print("    First file blocks num      : " + str(self.ext4_extent['ee_block']))
+                print("    First logical blocks num   : " + str(self.ext4_extent['ee_block']))
                 print("    Blocks num                 : " + str(self.ext4_extent['ee_len']))
-                print("    Blocks num pointed         : " + str((self.ext4_extent['ee_start_hi'] << 32) + self.ext4_extent['ee_start_lo']))
+                print("    First Physical blocks num  : " + str((self.ext4_extent['ee_start_hi'] << 32) + self.ext4_extent['ee_start_lo']))
             else:
                 pass
 
