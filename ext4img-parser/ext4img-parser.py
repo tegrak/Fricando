@@ -22,6 +22,7 @@
 import os, sys
 import getopt
 import math
+import time
 
 #
 # Global Variable Definition
@@ -1044,6 +1045,8 @@ class Ext4Parser(object):
     # Print Ext4 super block info
     #
     def print_ext4_sb_info(self):
+        t = lambda x : x != 0 and time.ctime(x) or "n/a"
+
         print("\n----------------------------------------")
         print("EXT4 SUPER BLOCK INFO\n")
 
@@ -1058,8 +1061,8 @@ class Ext4Parser(object):
         print("Blocks per group               : " + str(self.ext4_super_block['s_blocks_per_group']))
         print("Fragments per group (obsolete) : " + str(self.ext4_super_block['s_obso_frags_per_group']))
         print("Inodes per group               : " + str(self.ext4_super_block['s_inodes_per_group']))
-        print("Mount time (seconds)           : " + str(self.ext4_super_block['s_mtime']))
-        print("Write time (seconds)           : " + str(self.ext4_super_block['s_wtime']))
+        print("Mount time                     : " + t(self.ext4_super_block['s_mtime']))
+        print("Write time                     : " + t(self.ext4_super_block['s_wtime']))
         print("Mount count                    : " + str(self.ext4_super_block['s_mnt_count']))
         print("Maximum mount count            : " + str(self.ext4_super_block['s_max_mnt_count']))
         print("Magic signature                : 0x%X" % self.ext4_super_block['s_magic'])
@@ -1154,7 +1157,7 @@ class Ext4Parser(object):
         print("Default mount options                : " + default_mount_opts)
 
         print("First metablock block group          : " + str(self.ext4_super_block['s_first_meta_bg']))
-        print("Filesystem-created time (seconds)    : " + str(self.ext4_super_block['s_mkfs_time']))
+        print("Filesystem-created time              : " + t(self.ext4_super_block['s_mkfs_time']))
         print("Journal backup                       : %x" % self.ext4_super_block['s_jnl_blocks'])
 
         print("")
@@ -1208,6 +1211,8 @@ class Ext4Parser(object):
     # Print Ext4 inode info in inode table
     #
     def print_ext4_bg_inode_info(self, inode_index):
+        t = lambda x : x != 0 and time.ctime(x) or "n/a"
+
         print("\n----------------------------------------")
         print("EXT4 INODE #%d INFO\n" % inode_index)
 
@@ -1227,10 +1232,10 @@ class Ext4Parser(object):
 
         print("UID                            : " + str((self.ext4_inode_table['l_i_uid_high'] << 32) + self.ext4_inode_table['i_uid']))
         print("File size                      : " + str((self.ext4_inode_table['i_size_high'] << 32) + self.ext4_inode_table['i_size_lo']))
-        print("File access time               : " + str(self.ext4_inode_table['i_atime']))
-        print("File change time               : " + str(self.ext4_inode_table['i_ctime']))
-        print("File modification time         : " + str(self.ext4_inode_table['i_mtime']))
-        print("File deletion time             : " + str(self.ext4_inode_table['i_dtime']))
+        print("File access time               : " + t(self.ext4_inode_table['i_atime']))
+        print("File change time               : " + t(self.ext4_inode_table['i_ctime']))
+        print("File modification time         : " + t(self.ext4_inode_table['i_mtime']))
+        print("File deletion time             : " + t(self.ext4_inode_table['i_dtime']))
         print("GID                            : " + str((self.ext4_inode_table['l_i_gid_high'] << 32) + self.ext4_inode_table['i_gid']))
         print("Hard link count                : " + str(self.ext4_inode_table['i_links_count']))
         print("Block count                    : " + str((self.ext4_inode_table['l_i_blocks_high'] << 32) + self.ext4_inode_table['i_blocks_lo']))
@@ -1246,7 +1251,7 @@ class Ext4Parser(object):
         if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS'] != 0:
             print("Extent tree                    : ")
             print("  Header                       : ")
-            print("    Magic number               : " + str(hex(self.ext4_extent_header['eh_magic'])))
+            print("    Magic number               : 0x%X" % self.ext4_extent_header['eh_magic'])
             print("    Number of valid entries    : " + str(self.ext4_extent_header['eh_entries']))
             print("    Max number of entries      : " + str(self.ext4_extent_header['eh_max']))
             print("    Depth of extent node       : " + str(self.ext4_extent_header['eh_depth']))
@@ -1268,11 +1273,11 @@ class Ext4Parser(object):
         print("Extended attribute block / ACL : " + str((self.ext4_inode_table['l_i_file_acl_high'] << 32) + self.ext4_inode_table['i_file_acl_lo']))
         print("Fragment address (obsolete)    : " + str(self.ext4_inode_table['i_obso_faddr']))
         print("Inode size                     : " + str(self.ext4_inode_table['i_extra_isize']))
-        print("Extra change time              : " + str(self.ext4_inode_table['i_ctime_extra']))
-        print("Extra modification time        : " + str(self.ext4_inode_table['i_mtime_extra']))
-        print("Extra access time              : " + str(self.ext4_inode_table['i_atime_extra']))
-        print("File creation time             : " + str(self.ext4_inode_table['i_crtime']))
-        print("Extra file creation time       : " + str(self.ext4_inode_table['i_crtime_extra']))
+        print("Extra change time              : " + t(self.ext4_inode_table['i_ctime_extra']))
+        print("Extra modification time        : " + t(self.ext4_inode_table['i_mtime_extra']))
+        print("Extra access time              : " + t(self.ext4_inode_table['i_atime_extra']))
+        print("File creation time             : " + t(self.ext4_inode_table['i_crtime']))
+        print("Extra file creation time       : " + t(self.ext4_inode_table['i_crtime_extra']))
 
     #
     # Run routine
