@@ -65,17 +65,19 @@ EXT4_DIND_BLOCK  = EXT4_IND_BLOCK + 1
 EXT4_TIND_BLOCK  = EXT4_DIND_BLOCK + 1
 EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
 
+EXT4_NAME_LEN = 255
+
 EXT4_STATE = {
     'EXT4_VALID_FS'  : 0x0001,
     'EXT4_ERROR_FS'  : 0x0002,
     'EXT4_ORPHAN_FS' : 0x0004
-}
+    }
 
 EXT4_ERRORS = {
     'EXT4_ERRORS_CONTINUE' : 1,
     'EXT4_ERRORS_RO'       : 2,
     'EXT4_ERRORS_PANIC'    : 3
-}
+    }
 
 EXT4_OS = {
     'EXT4_OS_LINUX'   : 0,
@@ -83,17 +85,17 @@ EXT4_OS = {
     'EXT4_OS_MASIX'   : 2,
     'EXT4_OS_FREEBSD' : 3,
     'EXT4_OS_LITES'   : 4
-}
+    }
 
 EXT4_REV_LEVEL = {
     'EXT4_GOOD_OLD_REV' : 0,
     'EXT4_DYNAMIC_REV'  : 1
-}
+    }
 
 EXT4_DEF_RESERVED_ID = {
     'EXT4_DEF_RESUID' : 0,
     'EXT4_DEF_RESGID' : 0
-}
+    }
 
 EXT4_INODE_NO = {
     'EXT4_BAD_INO'            : 1,
@@ -103,7 +105,7 @@ EXT4_INODE_NO = {
     'EXT4_RESIZE_INO'         : 7,
     'EXT4_JOURNAL_INO'        : 8,
     'EXT4_GOOD_OLD_FIRST_INO' : 11
-}
+    }
 
 EXT4_FEATURE_COMPAT = {
     'EXT4_FEATURE_COMPAT_DIR_PREALLOC'  : 0x0001,
@@ -112,7 +114,7 @@ EXT4_FEATURE_COMPAT = {
     'EXT4_FEATURE_COMPAT_EXT_ATTR'      : 0x0008,
     'EXT4_FEATURE_COMPAT_RESIZE_INODE'  : 0x0010,
     'EXT4_FEATURE_COMPAT_DIR_INDEX'     : 0x0020
-}
+    }
 
 EXT4_FEATURE_INCOMPAT = {
     'EXT4_FEATURE_INCOMPAT_COMPRESSION' : 0x0001,
@@ -126,7 +128,7 @@ EXT4_FEATURE_INCOMPAT = {
     'EXT4_FEATURE_INCOMPAT_FLEX_BG'     : 0x0200,
     'EXT4_FEATURE_INCOMPAT_EA_INODE'    : 0x0400,
     'EXT4_FEATURE_INCOMPAT_DIRDATA'     : 0x1000
-}
+    }
 
 EXT4_FEATURE_RO_COMPAT = {
     'EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER' : 0x0001,
@@ -136,7 +138,7 @@ EXT4_FEATURE_RO_COMPAT = {
     'EXT4_FEATURE_RO_COMPAT_GDT_CSUM'     : 0x0010,
     'EXT4_FEATURE_RO_COMPAT_DIR_NLINK'    : 0x0020,
     'EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE'  : 0x0040
-}
+    }
 
 EXT4_DEFAULT_HASH_VER = {
     'DX_HASH_LEGACY'            : 0,
@@ -145,7 +147,7 @@ EXT4_DEFAULT_HASH_VER = {
     'DX_HASH_LEGACY_UNSIGNED'   : 3,
     'DX_HASH_HALF_MD4_UNSIGNED' : 4,
     'DX_HASH_TEA_UNSIGNED'      : 5
-}
+    }
 
 EXT4_DEFAULT_MOUNT_OPTS = {
     'EXT2_DEFM_DEBUG'          : 0x0001,
@@ -161,7 +163,7 @@ EXT4_DEFAULT_MOUNT_OPTS = {
     'EXT4_DEFM_BLOCK_VALIDITY' : 0x0200,
     'EXT4_DEFM_DISCARD'        : 0x0400,
     'EXT4_DEFM_NODELALLOC'     : 0x0800
-}
+    }
 
 EXT4_MISC_FLAGS = {
     'EXT2_FLAGS_SIGNED_HASH'   : 0x0001,
@@ -170,13 +172,13 @@ EXT4_MISC_FLAGS = {
     'EXT2_FLAGS_IS_SNAPSHOT'   : 0x0010,
     'EXT2_FLAGS_FIX_SNAPSHOT'  : 0x0020,
     'EXT2_FLAGS_FIX_EXCLUDE'   : 0x0040
-}
+    }
 
 EXT4_BG_FLAGS = {
     'EXT2_BG_INODE_UNINIT' : 0x0001,
     'EXT2_BG_BLOCK_UNINIT' : 0x0002,
     'EXT2_BG_INODE_ZEROED' : 0x0004
-}
+    }
 
 EXT4_INODE_MODE = {
     'S_IXOTH' : 0x1,
@@ -202,7 +204,7 @@ EXT4_INODE_MODE = {
     'S_IFREG'  : 0x8000,
     'S_IFLNK'  : 0xA000,
     'S_IFSOCK' : 0xC000
-}
+    }
 
 EXT4_INODE_FLAGS = {
     'FILE_SEC_DEL'                   : 0x1,  # This file requires secure deletion. (not implemented)
@@ -234,7 +236,18 @@ EXT4_INODE_FLAGS = {
     #
     'USER_VISIBLE'    : 0x4BDFFF,  # User-visible flags.
     'USER_MODIFIABLE' : 0x4B80FF,  # User-modifiable flags. 
-}
+    }
+
+EXT4_FILE_TYPE = {
+    'UNKNOWN'       : 0x0,
+    'REGULAR_FILE'  : 0x1,
+    'DIRECTORY'     : 0x2,
+    'CHAR_DEV_FILE' : 0x3,
+    'BLK_DEV_FILE'  : 0x4,
+    'FIFO'          : 0x5,
+    'SOCKET'        : 0x6,
+    'SYMBOLIC_LINK' : 0x7
+    }
 
 #
 # Class Definition For Ext4 Parser
@@ -454,6 +467,26 @@ class Ext4Parser(object):
             'ee_len'      : 0,  # Number of blocks covered by extent, le16
             'ee_start_hi' : 0,  # Upper 16-bits of physical block number to which this extent points, le16
             'ee_start_lo' : 0,  # Lower 32-bits of physical block number to which this extent points, le32
+            }
+
+        #
+        # Ext4 directory entry
+        #
+        self.ext4_dir_entry = {
+            'inode'    : 0,  # Number of the inode that this directory entry points to, le32
+            'rec_len'  : 0,  # Length of this directory entry, le16
+            'name_len' : 0,  # Length of the file name, le16
+            'name'     : "",  # File name, char[EXT4_NAME_LEN]
+        }
+
+        #
+        # Ext4 directory entry 2
+        self.ext4_dir_entry_2 = {
+            'inode'     : 0,  # Number of the inode that this directory entry points to, le32
+            'rec_len'   : 0,  # Length of this directory entry, le16
+            'name_len'  : 0,  # Length of the file name, u8
+            'file_type' : EXT4_FILE_TYPE['UNKNOWN'],  # File type code, u8
+            'name'      : "",  # File name, char[EXT4_NAME_LEN]
             }
 
     #
@@ -1219,11 +1252,12 @@ class Ext4Parser(object):
         i_mode_val = self.ext4_inode_table['i_mode']
         i_mode_mutually_exclusive = i_mode_val & 0xF000
         i_mode_str = ""
-        if i_mode_mutually_exclusive == EXT4_INODE_MODE['S_IFLNK']:
-            i_mode_str = 'S_IFLNK'
-        elif i_mode_mutually_exclusive == EXT4_INODE_MODE['S_IFSOCK']:
-            i_mode_str = 'S_IFSOCK'
+        for k, v in EXT4_INODE_MODE.items():
+            if v == i_mode_mutually_exclusive:
+                i_mode_str = k
+                break
         i_mode_val &= 0xFFF
+        i_mode_str += " "
 
         for k, v in EXT4_INODE_MODE.items():
             if (v & i_mode_val) != 0:
