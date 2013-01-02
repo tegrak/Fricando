@@ -961,32 +961,42 @@ class Ext4Parser(object):
             offset += 2
             self.ext4_extent_header['eh_generation'] = self.str2int(self.image[offset:offset+4])
 
-            if self.ext4_extent_header['eh_depth'] > 0:
-                offset += 4
-                self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
+            for i in range(0, self.ext4_extent_header['eh_entries'], 1):
+                if self.ext4_extent_header['eh_depth'] > 0:
+                    offset += 4
+                    self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
 
-                offset += 4
-                self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
+                    offset += 4
+                    self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
 
-                offset += 4
-                self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
+                    offset += 4
+                    self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
 
-                offset += 2
-                self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
-            elif self.ext4_extent_header['eh_depth'] == 0:
-                offset += 4
-                self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
+                    offset += 2
+                    self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
 
-                offset += 4
-                self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
+                    #
+                    # Parse Ext4 extent tree's leaf nodes
+                    #
+                    '''
+                    Add code here
+                    '''
+                elif self.ext4_extent_header['eh_depth'] == 0:
+                    offset += 4
+                    self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
 
-                offset += 2
-                self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
+                    offset += 4
+                    self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
 
-                offset += 2
-                self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
-            else:
-                pass
+                    offset += 2
+                    self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
+
+                    offset += 2
+                    self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
+                else:
+                    pass
+        else:
+            pass
 
     #
     # Parse Ext4 inode in inode table internally
@@ -1112,7 +1122,8 @@ class Ext4Parser(object):
             #
             # Parse Ext4 directory entries
             #
-            self.parse_ext4_dir_entry((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
+            if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC:
+                self.parse_ext4_dir_entry((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
 
     #
     # Parse Ext4 block group descriptor
