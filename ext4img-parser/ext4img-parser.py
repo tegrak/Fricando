@@ -58,6 +58,7 @@ EXT4_GROUP_0_PAD_SZ = 1024
 EXT4_SUPER_MAGIC = 0xEF53
 
 EXT4_JNL_BACKUP_BLOCKS = 1
+EXT4_JNL_INODE = 8
 
 EXT4_NDIR_BLOCKS = 12
 EXT4_IND_BLOCK   = EXT4_NDIR_BLOCKS
@@ -946,57 +947,54 @@ class Ext4Parser(object):
     def parse_ext4_extent_tree(self, offset):
         self.ext4_inode_table['i_block'] = self.str2int(self.image[offset:offset+60])
 
-        if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS'] != 0:
-            self.ext4_extent_header['eh_magic'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_extent_header['eh_magic'] = self.str2int(self.image[offset:offset+2])
 
-            offset += 2
-            self.ext4_extent_header['eh_entries'] = self.str2int(self.image[offset:offset+2])
+        offset += 2
+        self.ext4_extent_header['eh_entries'] = self.str2int(self.image[offset:offset+2])
 
-            offset += 2
-            self.ext4_extent_header['eh_max'] = self.str2int(self.image[offset:offset+2])
+        offset += 2
+        self.ext4_extent_header['eh_max'] = self.str2int(self.image[offset:offset+2])
 
-            offset += 2
-            self.ext4_extent_header['eh_depth'] = self.str2int(self.image[offset:offset+2])
+        offset += 2
+        self.ext4_extent_header['eh_depth'] = self.str2int(self.image[offset:offset+2])
 
-            offset += 2
-            self.ext4_extent_header['eh_generation'] = self.str2int(self.image[offset:offset+4])
+        offset += 2
+        self.ext4_extent_header['eh_generation'] = self.str2int(self.image[offset:offset+4])
 
-            for i in range(0, self.ext4_extent_header['eh_entries'], 1):
-                if self.ext4_extent_header['eh_depth'] > 0:
-                    offset += 4
-                    self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
+        for i in range(0, self.ext4_extent_header['eh_entries'], 1):
+            if self.ext4_extent_header['eh_depth'] > 0:
+                offset += 4
+                self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
 
-                    offset += 4
-                    self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
+                offset += 4
+                self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
 
-                    offset += 4
-                    self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
+                offset += 4
+                self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
 
-                    offset += 2
-                    self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
+                offset += 2
+                self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
 
-                    #
-                    # Parse Ext4 extent tree's leaf nodes
-                    #
-                    '''
-                    Add code here
-                    '''
-                elif self.ext4_extent_header['eh_depth'] == 0:
-                    offset += 4
-                    self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
+                #
+                # Parse Ext4 extent tree's leaf nodes
+                #
+                '''
+                Add code here
+                '''
+            elif self.ext4_extent_header['eh_depth'] == 0:
+                offset += 4
+                self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
 
-                    offset += 4
-                    self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
+                offset += 4
+                self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
 
-                    offset += 2
-                    self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
+                offset += 2
+                self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
 
-                    offset += 2
-                    self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
-                else:
-                    pass
-        else:
-            pass
+                offset += 2
+                self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
+            else:
+                pass
 
     #
     # Parse Ext4 inode in inode table internally
@@ -1039,6 +1037,8 @@ class Ext4Parser(object):
 
         #
         # Parse Ext4 extent tree
+        #
+        # 'EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS']' MUST set for Ext4
         #
         offset += 4
         self.parse_ext4_extent_tree(offset)
@@ -1095,11 +1095,60 @@ class Ext4Parser(object):
         self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
 
     #
+    # Parse Ext4 directory entries internally
+    #
+    def parse_ext4_dir_entry_internal(self, offset):
+        rec_len = 0
+
+        if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES'] != 0:
+            #
+            # Parse Ext4 htree directory entries
+            #
+            '''
+            Add code here
+            '''
+        else:
+            #
+            # Parse Ext4 linear directory entries
+            #
+            self.ext4_dir_entry_2['inode'] = self.str2int(self.image[offset:offset+4])
+
+            offset += 4
+            self.ext4_dir_entry_2['rec_len'] = self.str2int(self.image[offset:offset+2])
+            rec_len = self.ext4_dir_entry_2['rec_len']
+
+            offset += 2
+            self.ext4_dir_entry_2['name_len'] = self.str2int(self.image[offset:offset+1])
+
+            offset += 1
+            self.ext4_dir_entry_2['file_type'] = self.str2int(self.image[offset:offset+1])
+
+            offset += 1
+            self.ext4_dir_entry_2['name'] = self.image[offset:offset+self.ext4_dir_entry_2['name_len']]
+
+        return rec_len
+
+    #
     # Parse Ext4 directory entries
     #
     def parse_ext4_dir_entry(self, inode_index):
-        if is_pr_verb is True:
-            self.print_ext4_dir_entry_info(inode_index)
+        offset = ((self.ext4_extent['ee_start_hi'] << 32) + self.ext4_extent['ee_start_lo']) * EXT4_BLOCK_SZ
+        length = self.ext4_extent['ee_len'] * EXT4_BLOCK_SZ
+
+        i = 0
+        while i < length:
+            dent_len = self.parse_ext4_dir_entry_internal(offset + i)
+
+            if is_pr_verb is True:
+                if (self.ext4_inode_table['i_mode'] & 0xF000) == EXT4_INODE_MODE['S_IFDIR']:
+                    if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES'] != 0:
+                        if self.dx_root['dot_inode'] != 0:
+                            self.print_ext4_htree_dir_entry_info(inode_index)
+                    else:
+                        if self.ext4_dir_entry_2['inode'] != 0:
+                            self.print_ext4_linear_dir_entry_info(inode_index)
+
+            i += dent_len
 
     #
     # Parse Ext4 inode in inode table
@@ -1112,18 +1161,21 @@ class Ext4Parser(object):
         for i in range(0, length, 1):
             self.parse_ext4_bg_inode_internal(offset + i * self.ext4_super_block['s_inode_size'])
 
+            inode_index = (bg_num * self.ext4_super_block['s_inodes_per_group']) + i
+
             #
             # Print Ext4 inode info in inode table
             #
             if is_pr_verb is True:
                 if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC:
-                    self.print_ext4_bg_inode_info((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
+                    self.print_ext4_bg_inode_info(inode_index)
 
             #
-            # Parse Ext4 directory entries
+            # Parse Ext4 directory entries, journal inode igored
             #
-            if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC:
-                self.parse_ext4_dir_entry((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
+            if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC and self.ext4_extent_header['eh_depth'] == 0:
+                if (inode_index + 1) != EXT4_JNL_INODE:
+                    self.parse_ext4_dir_entry(inode_index)
 
     #
     # Parse Ext4 block group descriptor
@@ -1347,7 +1399,7 @@ class Ext4Parser(object):
         t = lambda x : x != 0 and time.ctime(x) or "n/a"
 
         print("\n----------------------------------------")
-        print("EXT4 INODE #%d INFO\n" % inode_index)
+        print("EXT4 INODE #%d INFO\n" % (inode_index + 1))
 
         i_mode_val = self.ext4_inode_table['i_mode']
         i_mode_mutually_exclusive = i_mode_val & 0xF000
@@ -1416,26 +1468,30 @@ class Ext4Parser(object):
     #
     # Print Ext4 linear directory entries info
     #
-    def print_ext4_linear_dir_entry_info(self):
-        pass
+    def print_ext4_linear_dir_entry_info(self, inode_index):
+        print("\n----------------------------------------")
+        '''
+        print("EXT4 DIRECTORY ENTRY #%d INFO\n" % (inode_index + 1))
+        '''
+
+        print("Inode number : " + str(self.ext4_dir_entry_2['inode']))
+        print("Directory entry size : " + str(self.ext4_dir_entry_2['rec_len']))
+        print("File name length : " + str(self.ext4_dir_entry_2['name_len']))
+
+        file_type = ""
+        for k, v in EXT4_FILE_TYPE.items():
+            if v == self.ext4_dir_entry_2['file_type']:
+                file_type += k + " "
+                break
+        print("File type : " + file_type)
+
+        print("File name : " + str(self.ext4_dir_entry_2['name'][0:self.ext4_dir_entry_2['rec_len']]))
 
     #
     # Print Ext4 hash tree directory entries info
     #
-    def print_ext4_htree_dir_entry_info(self):
+    def print_ext4_htree_dir_entry_info(self, inode_index):
         pass
-
-    #
-    # Print Ext4 directory entries info
-    #
-    def print_ext4_dir_entry_info(self, inode_index):
-        print("\n----------------------------------------")
-        print("EXT4 DIRECTORY ENTRY #%d INFO\n" % inode_index)
-
-        if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES']:
-            self.print_ext4_htree_dir_entry_info()
-        else:
-            self.print_ext4_linear_dir_entry_info()
 
     #
     # Run routine
