@@ -16,7 +16,7 @@
 # Example:
 #
 # To parse Ext4 image:
-# python ext4img-parser.py -f ext4.img -v -d ext4-dump
+# python ext4img-parser.py -v -f ext4.img -d ext4-dump
 #
 
 import os, sys
@@ -68,6 +68,8 @@ EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
 EXT4_EXTENT_TREE_MAGIC = 0xF30A
 
 EXT4_NAME_LEN = 255
+
+EXT4_HTREE_NAME_LEN = 4
 
 EXT4_STATE = {
     'EXT4_VALID_FS'  : 0x0001,
@@ -249,6 +251,15 @@ EXT4_FILE_TYPE = {
     'FIFO'          : 0x5,
     'SOCKET'        : 0x6,
     'SYMBOLIC_LINK' : 0x7
+    }
+
+EXT4_HASH_VERSION = {
+    'LEGACY'            : 0x0,
+    'HALF_MD4'          : 0x1,
+    'TEA'               : 0x2,
+    'LEGACY_UNSIGNED'   : 0x3,
+    'HALF_MD4_UNSIGNED' : 0x4,
+    'TEA_UNSIGNED'      : 0x5
     }
 
 #
@@ -472,7 +483,11 @@ class Ext4Parser(object):
             }
 
         #
-        # Ext4 directory entry
+        # Ext4 linear directory entries
+        #
+
+        #
+        # Ext4 linear directory entry, used if 'file_type' not set
         #
         self.ext4_dir_entry = {
             'inode'    : 0,  # Number of the inode that this directory entry points to, le32
@@ -482,13 +497,73 @@ class Ext4Parser(object):
         }
 
         #
-        # Ext4 directory entry 2
+        # Ext4 linear directory entry 2, used as default
+        #
         self.ext4_dir_entry_2 = {
             'inode'     : 0,  # Number of the inode that this directory entry points to, le32
             'rec_len'   : 0,  # Length of this directory entry, le16
             'name_len'  : 0,  # Length of the file name, u8
             'file_type' : EXT4_FILE_TYPE['UNKNOWN'],  # File type code, u8
             'name'      : "",  # File name, char[EXT4_NAME_LEN]
+            }
+
+        #
+        # Ext4 hash tree directory entries, used if 'EXT4_INODE_FLAGS['DIR_HASHED_INDEXES']' set
+        #
+
+        #
+        # Ext4 htree directory root
+        #
+        self.dx_root = {
+            'dot_inode'         : 0,  # Inode number of this directory, le32
+            'dot_rec_len'       : 0,  # Length of this record, 12, le16
+            'dot_name_len'      : 0,  # Length of the name, 1, u8
+            'dot_file_type'     : 0,  # File type of this entry, 0x2 (directory) (if the feature flag is set), u8
+            'dot_name'          : "",  # ".\0\0\0", char[EXT4_HTREE_NAME_LEN]
+            'dot_dot_inode'     : 0,  # Inode number of parent directory, le32
+            'dot_dot_rec_len'   : 0,  # Record length, block_size - 12, le16
+            'dot_dot_name_len'  : 0,  # Length of the name, u8
+            'dot_dot_file_type' : 0,  # File type of this entry, 0x2 (directory) (if the feature flag is set), u8
+            'dot_dot_name'      : "",   # "..\0\0", char[EXT4_HTREE_NAME_LEN]
+            'reserved_zero'     : 0,  # Zero, le32
+            'hash_version'      : EXT4_HASH_VERSION['LEGACY'],  # Hash version, u8
+            'info_length'       : 0,  # Length of the tree information, u8
+            'indirect_levels'   : 0,  # Depth of the htree, u8
+            'unused_flags'      : 0,  # u8
+            'limit'             : 0,  # Maximum number of dx_entries that can follow this header, le16
+            'count'             : 0,  # Actual number of dx_entries that follow this header, le16
+            'block'             : 0,  # The block number (within the directory file) that goes with hash=0, le32
+            
+            #
+            # Type of 'dx_entry'
+            #
+            'entries'           : 0,  # As many 8-byte 'dx_entry' as fits in the rest of the data block, le32[2]
+            }
+
+        #
+        # Ext4 htree directory interior node
+        #
+        self.dx_node = {
+            'fake_inode'     : 0,  # Zero, to make it look like this entry is not in use, le32
+            'fake_rec_len'   : 0,  # The size of the block, in order to hide all of the dx_node data, le16
+            'fake_name_len'  : 0,  # Zero. There is no name for this "unused" directory entry, u8
+            'fake_file_type' : 0,  # Zero. There is no file type for this "unused" directory entry, u8
+            'limit'          : 0,  # Maximum number of dx_entries that can follow this header, le16
+            'count'          : 0,  # Actual number of dx_entries that follow this header, le16
+            'block'          : 0,  # The block number (within the directory file) that goes with the lowest hash value of this block. This value is stored in the parent block, le32
+
+            #
+            # Type of 'dx_entry'
+            #
+            'entries'        : 0,  # As many 8-byte 'dx_entry' as fits in the rest of the data block, le32[2]
+            }
+
+        #
+        # Ext4 htree directory entry
+        #
+        self.dx_entry = {
+            'hash'  : 0,  # Hash code, le32
+            'block' : 0,  # Block number (within the directory file, not filesystem blocks) of the next node in the htree, le32
             }
 
     #
@@ -1010,6 +1085,13 @@ class Ext4Parser(object):
         self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
 
     #
+    # Parse Ext4 directory entries
+    #
+    def parse_ext4_dir_entry(self, inode_index):
+        if is_pr_verb is True:
+            self.print_ext4_dir_entry_info(inode_index)
+
+    #
     # Parse Ext4 inode in inode table
     #
     def parse_ext4_bg_inode(self, bg_num):
@@ -1026,6 +1108,11 @@ class Ext4Parser(object):
             if is_pr_verb is True:
                 if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC:
                     self.print_ext4_bg_inode_info((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
+
+            #
+            # Parse Ext4 directory entries
+            #
+            self.parse_ext4_dir_entry((bg_num * self.ext4_super_block['s_inodes_per_group']) + i)
 
     #
     # Parse Ext4 block group descriptor
@@ -1314,6 +1401,30 @@ class Ext4Parser(object):
         print("Extra access time              : " + t(self.ext4_inode_table['i_atime_extra']))
         print("File creation time             : " + t(self.ext4_inode_table['i_crtime']))
         print("Extra file creation time       : " + t(self.ext4_inode_table['i_crtime_extra']))
+
+    #
+    # Print Ext4 linear directory entries info
+    #
+    def print_ext4_linear_dir_entry_info(self):
+        pass
+
+    #
+    # Print Ext4 hash tree directory entries info
+    #
+    def print_ext4_htree_dir_entry_info(self):
+        pass
+
+    #
+    # Print Ext4 directory entries info
+    #
+    def print_ext4_dir_entry_info(self, inode_index):
+        print("\n----------------------------------------")
+        print("EXT4 DIRECTORY ENTRY #%d INFO\n" % inode_index)
+
+        if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES']:
+            self.print_ext4_htree_dir_entry_info()
+        else:
+            self.print_ext4_linear_dir_entry_info()
 
     #
     # Run routine
