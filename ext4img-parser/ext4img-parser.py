@@ -53,24 +53,28 @@ EXT4_BLOCK_SZ       = 4096
 EXT4_MIN_BLOCK_SIZE = 1024
 EXT4_MAX_BLOCK_SIZE = 65536
 
-EXT4_GROUP_0_PAD_SZ = 1024
-
-EXT4_SUPER_MAGIC = 0xEF53
-
-EXT4_JNL_BACKUP_BLOCKS = 1
-EXT4_JNL_INODE = 8
-
 EXT4_NDIR_BLOCKS = 12
 EXT4_IND_BLOCK   = EXT4_NDIR_BLOCKS
 EXT4_DIND_BLOCK  = EXT4_IND_BLOCK + 1
 EXT4_TIND_BLOCK  = EXT4_DIND_BLOCK + 1
 EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
 
+EXT4_GROUP_0_PAD_SZ = 1024
+
+EXT4_SUPER_MAGIC = 0xEF53
+
+EXT4_INODE_ENTRY_SZ = 128
+
 EXT4_EXTENT_TREE_MAGIC = 0xF30A
 
 EXT4_NAME_LEN = 255
 
 EXT4_HTREE_NAME_LEN = 4
+
+EXT4_XATTR_MAGIC = 0xEA020000
+
+EXT4_JNL_BACKUP_BLOCKS = 1
+EXT4_JNL_INODE = 8
 
 EXT4_STATE = {
     'EXT4_VALID_FS'  : 0x0001,
@@ -565,6 +569,36 @@ class Ext4Parser(object):
         self.dx_entry = {
             'hash'  : 0,  # Hash code, le32
             'block' : 0,  # Block number (within the directory file, not filesystem blocks) of the next node in the htree, le32
+            }
+
+        #
+        # Ext4 extended attributes
+        #
+
+        #
+        # Ext4 extended attributes header
+        #
+        self.ext4_xattr_header = {
+            'h_magic'    : EXT4_XATTR_MAGIC,  # Magic number for identification, le32
+            'h_refcount' : 0,  # Reference count, le32
+            'h_blocks'   : 0,  # Number of disk blocks used, le32
+            'h_hash'     : 0,  # Hash value of all attributes, le32
+            'h_reserved' : 0,  # le32[4]
+            }
+
+        #
+        # Ext4 extended attributes entry
+        #
+        self.ext4_xattr_entry = {
+            'e_name_len'    : 0,  # Length of name, u8
+            'e_name_index'  : 0,  # Attribute name index, u8
+            'e_value_offs'  : 0,  # Location of this attribute's value on the disk block where it is stored,
+                                  # Multiple attributes can share the same value, le16
+            'e_value_block' : 0,  # The disk block where the value is stored,
+                                  # Zero indicates the value is in the same block as this entry, le32
+            'e_value_size'  : 0,  # Length of attribute value, le32
+            'e_hash'        : 0,  # Hash value of name and value, le32
+            'e_name'        : "",  # Attribute name. Does not include trailing NULL, char['e_name_len']
             }
 
     #
@@ -1095,6 +1129,54 @@ class Ext4Parser(object):
         self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
 
     #
+    # Parse Ext4 extended attributes, especially for ACLs
+    #
+    def parse_ext4_xattr(self, offset):
+        self.ext4_xattr_header['h_magic'] = self.str2int(self.image[offset:offset+4])
+
+        if self.ext4_xattr_header['h_magic'] != EXT4_XATTR_MAGIC:
+            return
+
+        offset += 4
+        self.ext4_xattr_header['h_refcount'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_header['h_blocks'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_header['h_hash'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_header['h_reserved'] = self.str2int(self.image[offset:offset+16])
+
+        offset += 16
+        self.ext4_xattr_entry['e_name_len'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_xattr_entry['e_name_index'] = self.str2int(self.image[offset:offset+1])
+
+        offset += 1
+        self.ext4_xattr_entry['e_value_offs'] = self.str2int(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_xattr_entry['e_value_block'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_entry['e_value_size'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_entry['e_hash'] = self.str2int(self.image[offset:offset+4])
+
+        offset += 4
+        self.ext4_xattr_entry['e_name'] = self.image[offset:offset+self.ext4_xattr_entry['e_name_len']] + '\x00'
+
+        #
+        # Print Ext4 extended attributes info
+        #
+        if is_pr_verb is True:
+            self.print_ext4_xattr_info()
+
+    #
     # Parse Ext4 directory entries internally
     #
     def parse_ext4_dir_entry_internal(self, offset):
@@ -1159,9 +1241,14 @@ class Ext4Parser(object):
         length = self.ext4_super_block['s_inodes_per_group'] - ((self.ext4_block_group_desc['bg_free_inodes_count_hi'] << 32) + self.ext4_block_group_desc['bg_free_inodes_count_lo'])
 
         for i in range(0, length, 1):
+            inode_index = (bg_num * self.ext4_super_block['s_inodes_per_group']) + i
+
             self.parse_ext4_bg_inode_internal(offset + i * self.ext4_super_block['s_inode_size'])
 
-            inode_index = (bg_num * self.ext4_super_block['s_inodes_per_group']) + i
+            #
+            # Parse Ext4 extended attributes, especially for ACLs
+            #
+            self.parse_ext4_xattr(offset + EXT4_INODE_ENTRY_SZ + self.ext4_inode_table['i_extra_isize'] + i * self.ext4_super_block['s_inode_size'])
 
             #
             # Print Ext4 inode info in inode table
@@ -1458,12 +1545,18 @@ class Ext4Parser(object):
         print("File version                   : " + str(self.ext4_inode_table['i_generation']))
         print("Extended attribute block / ACL : " + str((self.ext4_inode_table['l_i_file_acl_high'] << 32) + self.ext4_inode_table['i_file_acl_lo']))
         print("Fragment address (obsolete)    : " + str(self.ext4_inode_table['i_obso_faddr']))
-        print("Inode size                     : " + str(self.ext4_inode_table['i_extra_isize']))
+        print("Extra inode size               : " + str(self.ext4_inode_table['i_extra_isize']))
         print("Extra change time              : " + t(self.ext4_inode_table['i_ctime_extra']))
         print("Extra modification time        : " + t(self.ext4_inode_table['i_mtime_extra']))
         print("Extra access time              : " + t(self.ext4_inode_table['i_atime_extra']))
         print("File creation time             : " + t(self.ext4_inode_table['i_crtime']))
         print("Extra file creation time       : " + t(self.ext4_inode_table['i_crtime_extra']))
+
+    #
+    # Print Ext4 extended attributes info
+    #
+    def print_ext4_xattr_info(self):
+        pass
 
     #
     # Print Ext4 linear directory entries info
