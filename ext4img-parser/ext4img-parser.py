@@ -49,32 +49,34 @@ ext4_dumpdir = ""
 #
 # Ext4 Parameters
 #
+
+#
+# Ext4 Block Size
+#
 EXT4_BLOCK_SZ       = 4096
 EXT4_MIN_BLOCK_SIZE = 1024
 EXT4_MAX_BLOCK_SIZE = 65536
 
-EXT4_NDIR_BLOCKS = 12
-EXT4_IND_BLOCK   = EXT4_NDIR_BLOCKS
-EXT4_DIND_BLOCK  = EXT4_IND_BLOCK + 1
-EXT4_TIND_BLOCK  = EXT4_DIND_BLOCK + 1
-EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
+#
+# Ext4 Inode
+#
+EXT4_BAD_INO            = 1
+EXT4_ROOT_INO           = 2
+EXT4_BOOT_LOADER_INO    = 5
+EXT4_UNDEL_DIR_INO      = 6
+EXT4_RESIZE_INO         = 7
+EXT4_JOURNAL_INO        = 8
+EXT4_GOOD_OLD_FIRST_INO = 11
 
+#
+# Ext4 Block Group
+#
 EXT4_GROUP_0_PAD_SZ = 1024
 
+#
+# Ext4 Super Block
+#
 EXT4_SUPER_MAGIC = 0xEF53
-
-EXT4_INODE_ENTRY_SZ = 128
-
-EXT4_EXTENT_TREE_MAGIC = 0xF30A
-
-EXT4_NAME_LEN = 255
-
-EXT4_HTREE_NAME_LEN = 4
-
-EXT4_XATTR_MAGIC = 0xEA020000
-
-EXT4_JNL_BACKUP_BLOCKS = 1
-EXT4_JNL_INODE = 8
 
 EXT4_STATE = {
     'EXT4_VALID_FS'  : 0x0001,
@@ -149,15 +151,6 @@ EXT4_FEATURE_RO_COMPAT = {
     'EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE'  : 0x0040
     }
 
-EXT4_DEFAULT_HASH_VER = {
-    'DX_HASH_LEGACY'            : 0,
-    'DX_HASH_HALF_MD4'          : 1,
-    'DX_HASH_TEA'               : 2,
-    'DX_HASH_LEGACY_UNSIGNED'   : 3,
-    'DX_HASH_HALF_MD4_UNSIGNED' : 4,
-    'DX_HASH_TEA_UNSIGNED'      : 5
-    }
-
 EXT4_DEFAULT_MOUNT_OPTS = {
     'EXT2_DEFM_DEBUG'          : 0x0001,
     'EXT2_DEFM_BSDGROUPS'      : 0x0002,
@@ -183,11 +176,25 @@ EXT4_MISC_FLAGS = {
     'EXT2_FLAGS_FIX_EXCLUDE'   : 0x0040
     }
 
+#
+# Ext4 Block Group Descriptors
+#
 EXT4_BG_FLAGS = {
     'EXT2_BG_INODE_UNINIT' : 0x0001,
     'EXT2_BG_BLOCK_UNINIT' : 0x0002,
     'EXT2_BG_INODE_ZEROED' : 0x0004
     }
+
+#
+# Ext4 Inode Table
+#
+EXT4_INODE_ENTRY_SZ = 128
+
+EXT4_NDIR_BLOCKS = 12
+EXT4_IND_BLOCK   = EXT4_NDIR_BLOCKS
+EXT4_DIND_BLOCK  = EXT4_IND_BLOCK + 1
+EXT4_TIND_BLOCK  = EXT4_DIND_BLOCK + 1
+EXT4_N_BLOCKS    = EXT4_TIND_BLOCK + 1
 
 EXT4_INODE_MODE = {
     'S_IXOTH' : 0x1,
@@ -216,55 +223,118 @@ EXT4_INODE_MODE = {
     }
 
 EXT4_INODE_FLAGS = {
-    'FILE_SEC_DEL'                   : 0x1,  # This file requires secure deletion. (not implemented)
-    'FILE_UNDEL'                     : 0x2,  # This file should be preserved should undeletion be desired. (not implemented)
-    'FILE_COMPRESSED'                : 0x4,  # File is compressed. (not really implemented)
-    'FILE_WRITE_SYNC'                : 0x8,  # All writes to the file must be synchronous.
-    'FILE_IMMUTABLE'                 : 0x10,  # File is immutable.
-    'FILE_APPENDED_ONLY'             : 0x20,  # File can only be appended.
-    'FILE_NOT_DUMPED'                : 0x40,  # The dump utility should not dump this file.
-    'FILE_NOT_UPDATE_ATIME'          : 0x80,  # Do not update access time.
-    'FILE_DIRTY_COMPRESSED'          : 0x100,  # Dirty compressed file. (not used)
-    'FILE_COMPRESSED_CLUSTERS'       : 0x200,  # File has one or more compressed clusters. (not used)
-    'FILE_NOT_COMPRESSED'            : 0x400,  # Do not compress file. (not used)
-    'FILE_COMPRESS_ERR'              : 0x800,  # Compression error. (not used)
-    'DIR_HASHED_INDEXES'             : 0x1000,  # Directory has hashed indexes.
-    'DIR_AFS_MAGIC'                  : 0x2000,  # AFS magic directory.
-    'FILE_WRITE_THROUGH_JNL'         : 0x4000,  # File data must always be written through the journal.
-    'FILE_TAIL_NOT_MERGED'           : 0x8000,  # File tail should not be merged.
-    'DIR_WRITE_SYNC'                 : 0x10000,  # All directory entry data should be written synchronously (see dirsync).
-    'DIR_TOP_HIERARCHY'              : 0x20000,  # Top of directory hierarchy.
-    'FILE_HUGE'                      : 0x40000,  # This is a huge file.
-    'INODE_USE_EXTENTS'              : 0x80000,  # Inode uses extents.
-    'INODE_USE_LARGE_EXTEND_ATTR'    : 0x200000,  # Inode used for a large extended attribute.
-    'FILE_BLOCKS_ALLOCATED_PAST_EOF' : 0x400000,  # This file has blocks allocated past EOF.
-    'RESERVED_EXT4_LIB'              : 0x80000000,  # Reserved for ext4 library.
+    'EXT4_SECRM_FL'        : 0x1,  # This file requires secure deletion. (not implemented)
+    'EXT4_UNRM_FL'         : 0x2,  # This file should be preserved should undeletion be desired. (not implemented)
+    'EXT4_COMPR_FL'        : 0x4,  # File is compressed. (not really implemented)
+    'EXT4_SYNC_FL'         : 0x8,  # All writes to the file must be synchronous.
+    'EXT4_IMMUTABLE_FL'    : 0x10,  # File is immutable.
+    'EXT4_APPEND_FL'       : 0x20,  # File can only be appended.
+    'EXT4_NODUMP_FL'       : 0x40,  # The dump utility should not dump this file.
+    'EXT4_NOATIME_FL'      : 0x80,  # Do not update access time.
+    'EXT4_DIRTY_FL'        : 0x100,  # Dirty compressed file. (not used)
+    'EXT4_COMPRBLK_FL'     : 0x200,  # File has one or more compressed clusters. (not used)
+    'EXT4_NOCOMPR_FL'      : 0x400,  # Do not compress file. (not used)
+    'EXT4_ECOMPR_FL'       : 0x800,  # Compression error. (not used)
+    'EXT4_INDEX_FL'        : 0x1000,  # Directory has hashed indexes.
+    'EXT4_IMAGIC_FL'       : 0x2000,  # AFS magic directory.
+    'EXT4_JOURNAL_DATA_FL' : 0x4000,  # File data must always be written through the journal.
+    'EXT4_NOTAIL_FL'       : 0x8000,  # File tail should not be merged.
+    'EXT4_DIRSYNC_FL'      : 0x10000,  # All directory entry data should be written synchronously (see dirsync).
+    'EXT4_TOPDIR_FL'       : 0x20000,  # Top of directory hierarchy.
+    'EXT4_HUGE_FILE_FL'    : 0x40000,  # This is a huge file.
+    'EXT4_EXTENTS_FL'      : 0x80000,  # Inode uses extents.
+    'EXT4_EA_INODE_FL'     : 0x200000,  # Inode used for a large extended attribute.
+    'EXT4_EOFBLOCKS_FL'    : 0x400000,  # This file has blocks allocated past EOF.
+    'EXT4_RESERVED_FL'     : 0x80000000,  # Reserved for ext4 library.
 
     #
     # Aggregate flags
     #
-    'USER_VISIBLE'    : 0x4BDFFF,  # User-visible flags.
-    'USER_MODIFIABLE' : 0x4B80FF,  # User-modifiable flags. 
+    'EXT4_FL_USER_VISIBLE'    : 0x4BDFFF,  # User-visible flags.
+    'EXT4_FL_USER_MODIFIABLE' : 0x4B80FF,  # User-modifiable flags. 
     }
+
+#
+# Ext4 Extent Tree
+#
+EXT4_EXTENT_TREE_MAGIC = 0xF30A
+
+#
+# Ext4 Directory Entries
+#
+EXT4_NAME_LEN = 255
+
+EXT4_HTREE_NAME_LEN = 4
 
 EXT4_FILE_TYPE = {
-    'UNKNOWN'       : 0x0,
-    'REGULAR_FILE'  : 0x1,
-    'DIRECTORY'     : 0x2,
-    'CHAR_DEV_FILE' : 0x3,
-    'BLK_DEV_FILE'  : 0x4,
-    'FIFO'          : 0x5,
-    'SOCKET'        : 0x6,
-    'SYMBOLIC_LINK' : 0x7
+    'EXT4_FT_UNKNOWN'  : 0x0,
+    'EXT4_FT_REG_FILE' : 0x1,
+    'EXT4_FT_DIR'      : 0x2,
+    'EXT4_FT_CHRDEV'   : 0x3,
+    'EXT4_FT_BLKDEV'   : 0x4,
+    'EXT4_FT_FIFO'     : 0x5,
+    'EXT4_FT_SOCK'     : 0x6,
+    'EXT4_FT_SYMLINK'  : 0x7
     }
 
+#
+# Ext4 Extended Attributes
+#
+EXT4_XATTR_MAGIC = 0xEA020000
+
+#
+# Ext4 Journal, jbd2
+#
+EXT4_JNL_BACKUP_BLOCKS = 1
+
+JBD2_MAGIC_NUMBER = 0xC03B3998
+
+#
+# i.e., 'JBD2_CHECKSUM_BYTES = (32 / sizeof(u32))'
+#
+JBD2_CHECKSUM_BYTES = (32 / 4)
+
+EXT4_JNL_BLOCK_TYPE = {
+    'JBD2_DESCRIPTOR_BLOCK'    : 1,
+    'JBD2_COMMIT_BLOCK'        : 2,
+    'JBD2_SUPERBLOCK_V1'       : 3,
+    'JBD2_SUPERBLOCK_V2'       : 4,
+    'JBD2_REVOKE_BLOCK'        : 5
+    }
+
+EXT4_JNL_FEATURE_COMPAT = {
+    'JBD2_FEATURE_COMPAT_CHECKSUM' : 0x00000001
+    }
+
+EXT4_JNL_FEATURE_INCOMPAT = {
+    'JBD2_FEATURE_INCOMPAT_REVOKE'       : 0x00000001,
+    'JBD2_FEATURE_INCOMPAT_64BIT'        : 0x00000002,
+    'JBD2_FEATURE_INCOMPAT_ASYNC_COMMIT' : 0x00000004
+    }
+
+EXT4_JNL_FLAGS = {
+    'JBD2_FLAG_ESCAPE'    : 1,
+    'JBD2_FLAG_SAME_UUID' : 2,
+    'JBD2_FLAG_DELETED'   : 4,
+    'JBD2_FLAG_LAST_TAG'  : 8
+    }
+
+EXT4_JNL_CHKSUM_TYPE = {
+    'JBD2_CRC32_CHKSUM' : 1,
+    'JBD2_MD5_CHKSUM'   : 2,
+    'JBD2_SHA1_CHKSUM'  : 3
+    }
+
+#
+# Ext4 Hash
+#
 EXT4_HASH_VERSION = {
-    'LEGACY'            : 0x0,
-    'HALF_MD4'          : 0x1,
-    'TEA'               : 0x2,
-    'LEGACY_UNSIGNED'   : 0x3,
-    'HALF_MD4_UNSIGNED' : 0x4,
-    'TEA_UNSIGNED'      : 0x5
+    'DX_HASH_LEGACY'            : 0x0,
+    'DX_HASH_HALF_MD4'          : 0x1,
+    'DX_HASH_TEA'               : 0x2,
+    'DX_HASH_LEGACY_UNSIGNED'   : 0x3,
+    'DX_HASH_HALF_MD4_UNSIGNED' : 0x4,
+    'DX_HASH_TEA_UNSIGNED'      : 0x5
     }
 
 #
@@ -343,7 +413,7 @@ class Ext4Parser(object):
             's_journal_dev'        : 0,  # Device number of journal file, if the external journal feature flag is set, le32
             's_last_orphan'        : 0,  # Start of list of orphaned inodes to delete, le32
             's_hash_seed'          : 0,  # HTREE hash seed, le32[4]
-            's_def_hash_version'   : EXT4_DEFAULT_HASH_VER['DX_HASH_TEA'],  # Default hash algorithm to use for directory hashes, u8
+            's_def_hash_version'   : EXT4_HASH_VERSION['DX_HASH_TEA'],  # Default hash algorithm to use for directory hashes, u8
             's_reserved_char_pad'  : EXT4_JNL_BACKUP_BLOCKS,  # Reserved char padding, u8
             's_desc_size'          : 0, # Size of group descriptors, in bytes, if the 64bit incompat feature flag is set, le16
             's_default_mount_opts' : 0x0000,  # Default mount options, le32
@@ -427,7 +497,7 @@ class Ext4Parser(object):
             'i_gid'             : 0,  # Lower 16-bits of GID, le16
             'i_links_count'     : 0,  # Hard link count, le16
             'i_blocks_lo'       : 0,  # Lower 32-bits of block count, le32
-            'i_flags'           : EXT4_INODE_FLAGS['FILE_SEC_DEL'],  # Inode flags, le32
+            'i_flags'           : EXT4_INODE_FLAGS['EXT4_SECRM_FL'],  # Inode flags, le32
             'l_i_version'       : 0,  # Version, le32
             'i_block'           : 0,  # Block map for ext2/3 or extent tree for ext4 (the extents flag must be set), le32[EXT4_N_BLOCKS=15]
             'i_generation'      : 0,  # File version (for NFS), le32
@@ -508,12 +578,12 @@ class Ext4Parser(object):
             'inode'     : 0,  # Number of the inode that this directory entry points to, le32
             'rec_len'   : 0,  # Length of this directory entry, le16
             'name_len'  : 0,  # Length of the file name, u8
-            'file_type' : EXT4_FILE_TYPE['UNKNOWN'],  # File type code, u8
+            'file_type' : EXT4_FILE_TYPE['EXT4_FT_UNKNOWN'],  # File type code, u8
             'name'      : "",  # File name, char[EXT4_NAME_LEN]
             }
 
         #
-        # Ext4 hash tree directory entries, used if 'EXT4_INODE_FLAGS['DIR_HASHED_INDEXES']' set
+        # Ext4 hash tree directory entries, used if 'EXT4_INODE_FLAGS['EXT4_INDEX_FL']' set
         #
 
         #
@@ -531,7 +601,7 @@ class Ext4Parser(object):
             'dot_dot_file_type' : 0,  # File type of this entry, 0x2 (directory) (if the feature flag is set), u8
             'dot_dot_name'      : "",   # "..\0\0", char[EXT4_HTREE_NAME_LEN]
             'reserved_zero'     : 0,  # Zero, le32
-            'hash_version'      : EXT4_HASH_VERSION['LEGACY'],  # Hash version, u8
+            'hash_version'      : EXT4_HASH_VERSION['DX_HASH_LEGACY'],  # Hash version, u8
             'info_length'       : 0,  # Length of the tree information, u8
             'indirect_levels'   : 0,  # Depth of the htree, u8
             'unused_flags'      : 0,  # u8
@@ -599,6 +669,109 @@ class Ext4Parser(object):
             'e_value_size'  : 0,  # Length of attribute value, le32
             'e_hash'        : 0,  # Hash value of name and value, le32
             'e_name'        : "",  # Attribute name. Does not include trailing NULL, char['e_name_len']
+            }
+
+        #
+        # Ext4 journal, jbd2
+        #
+
+        #
+        # Ext4 journal block header
+        #
+        self.journal_header_s = {
+            'h_magic'     : JBD2_MAGIC_NUMBER,  # jbd2 magic number, be32
+            'h_blocktype' : EXT4_JNL_BLOCK_TYPE['JBD2_DESCRIPTOR_BLOCK'],  # Description of what this block contains, be32
+            'h_sequence'  : 0,  # The transaction ID that goes with this block, be32
+            }
+
+        #
+        # Ext4 journal super block
+        #
+        self.journal_superblock_s = {
+            's_header'            : 0,  # Common header identifying this as a superblock, be32[3]
+
+            #
+            # Static information describing the journal.
+            #
+            's_blocksize'         : 0,  # Journal device block size, be32
+            's_maxlen'            : 0,  # Total number of blocks in this journal, be32
+            's_first'             : 0,  # First block of log information, be32
+
+            #
+            # Dynamic information describing the current state of the log.
+            #
+            's_sequence'          : 0,  # First commit ID expected in log, be32
+            's_start'             : 0,  # Block number of the start of log. If zero, the journal is clean, be32
+            's_errno'             : 0,  # Error value, as set by jbd2_journal_abort(), be32
+
+            #
+            # The remaining fields are only valid in a version 2 superblock.
+            #
+            's_feature_compat'    : EXT4_JNL_FEATURE_COMPAT['JBD2_FEATURE_COMPAT_CHECKSUM'],  # Compatible feature set, be32
+            's_feature_incompat'  : EXT4_JNL_FEATURE_INCOMPAT['JBD2_FEATURE_INCOMPAT_REVOKE'],  # Incompatible feature set, be32
+            's_feature_ro_compat' : 0,  # Read-only compatible feature set. There aren't any of these currently, be32
+            's_uuid'              : 0,  # 128-bit uuid for journal.
+                                        # This is compared against the copy in the ext4 super block at mount time, u8[16]
+            's_nr_users'          : 0,  # Number of file systems sharing this journal, be32
+            's_dynsuper'          : 0,  # Location of dynamic super block copy, be32
+            's_max_transaction'   : 0,  # Limit of journal blocks per transaction, be32
+            's_max_trans_data'    : 0,  # Limit of data blocks per transaction, be32
+            's_padding'           : 0,  # u32[44]
+            's_users'             : 0,  # ids of all file systems sharing the log, u8[16*48]
+            }
+
+        #
+        # Ext4 journal descriptor block
+        #
+        self.journal_block_tag_s = {
+            't_blocknr'      : 0,  # Lower 32-bits of the location of where the corresponding data block should end up on disk, be32
+            't_flags'        : EXT4_JNL_FLAGS['JBD2_FLAG_ESCAPE'],  # Flags that go with the descriptor, be32
+
+            #
+            # This next field is only present
+            # if the super block indicates support for 64-bit block numbers.
+            # i.e., EXT4_JNL_FEATURE_INCOMPAT['JBD2_FEATURE_INCOMPAT_64BIT'] set
+            #
+            't_blocknr_high' : 0,  # Upper 32-bits of the location of where the corresponding data block should end up on disk, be32
+
+            #
+            # This field appears to be open coded.
+            # It always comes at the end of the tag, after t_flags or t_blocknr_high.
+            # This field is not present if the "same UUID" flag is set,
+            # i.e., EXT4_JNL_FLAGS['JBD2_FLAG_SAME_UUID'] set
+            #
+            'uuid'           : 0,  # A UUID to go with this tag.
+                                   # This field appears to be copied from a field in struct journal_s that is never set,
+                                   # which means that the UUID is probably all zeroes. Or perhaps it will contain garbage, char[16]
+            }
+
+        self.journal_desc_block_s = {
+            'db_header'    : 0,  # Common header, be32[3]
+            'db_block_tag' : 0,  # Enough tags either to fill up the block
+                                 # or to describe all the data blocks that follow this descriptor block, sizeof('journal_block_tag_s')
+            }
+
+        #
+        # Ext4 journal revocation block
+        #
+        self.jbd2_journal_revoke_header_s = {
+            'r_header' : 0,  # Common block header, be32[3]
+            'r_count'  : 0,  # Number of bytes used in this block, be32
+            'blocks'   : 0,  # Blocks to revoke, be32/be64
+            }
+
+        #
+        # Ext4 journal commit block
+        #
+        self.commit_header = {
+            'c_header'      : 0,  # Common block header, be32[3]
+            'h_chksum_type' : EXT4_JNL_CHKSUM_TYPE['JBD2_CRC32_CHKSUM'],
+                                  # The type of checksum to use to verify the integrity of the data blocks in the transaction, unsigned char
+            'h_chksum_size' : 0,  # The number of bytes used by the checksum, unsigned char
+            'h_padding'     : 0,  # unsigned char[2]
+            'h_chksum'      : 0,  # 32 bytes of space to store checksums, be32[JBD2_CHECKSUM_BYTES]
+            'h_commit_sec'  : 0,  # The time that the transaction was committed, in seconds since the epoch, be64
+            'h_commit_nsec' : 0,  # Nanoseconds component of the above timestamp, be32
             }
 
     #
@@ -1182,7 +1355,7 @@ class Ext4Parser(object):
     def parse_ext4_dir_entry_internal(self, offset):
         rec_len = 0
 
-        if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES'] != 0:
+        if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['EXT4_INDEX_FL'] != 0:
             #
             # Parse Ext4 htree directory entries
             #
@@ -1223,7 +1396,7 @@ class Ext4Parser(object):
 
             if is_pr_verb is True:
                 if (self.ext4_inode_table['i_mode'] & 0xF000) == EXT4_INODE_MODE['S_IFDIR']:
-                    if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['DIR_HASHED_INDEXES'] != 0:
+                    if self.ext4_inode_table['i_flags'] & EXT4_INODE_FLAGS['EXT4_INDEX_FL'] != 0:
                         if self.dx_root['dot_inode'] != 0:
                             self.print_ext4_htree_dir_entry_info(inode_index)
                     else:
@@ -1261,7 +1434,7 @@ class Ext4Parser(object):
             # Parse Ext4 directory entries, journal inode igored
             #
             if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC and self.ext4_extent_header['eh_depth'] == 0:
-                if (inode_index + 1) != EXT4_JNL_INODE:
+                if (inode_index + 1) != EXT4_JOURNAL_INO:
                     self.parse_ext4_dir_entry(inode_index)
 
     #
@@ -1318,6 +1491,7 @@ class Ext4Parser(object):
     #
     def print_ext4_sb_info(self):
         t = lambda x : x != 0 and time.ctime(x) or "n/a"
+        s = lambda x : x == "" and "n/a" or x
 
         print("\n----------------------------------------")
         print("EXT4 SUPER BLOCK INFO\n")
@@ -1339,25 +1513,41 @@ class Ext4Parser(object):
         print("Maximum mount count            : " + str(self.ext4_super_block['s_max_mnt_count']))
         print("Magic signature                : 0x%X" % self.ext4_super_block['s_magic'])
 
+        state = ""
         for k, v in EXT4_STATE.items():
             if v == self.ext4_super_block['s_state']:
-                print("File system state              : " + k)
+                state = k
+                break
+        state = s(state)
+        print("File system state              : " + state)
 
+        errors = ""
         for k, v in EXT4_ERRORS.items():
             if v == self.ext4_super_block['s_errors']:
-                print("Errors behaviour               : " + k)
+                errors = k
+                break
+        errors = s(errors)
+        print("Errors behaviour               : " + errors)
 
         print("Minor revision level           : " + str(self.ext4_super_block['s_minor_rev_level']))
         print("Last checked                   : " + str(self.ext4_super_block['s_lastcheck']))
         print("Check interval                 : " + str(self.ext4_super_block['s_checkinterval']))
 
+        creator_os = ""
         for k, v in EXT4_OS.items():
             if v == self.ext4_super_block['s_creator_os']:
-                print("OS type                        : " + k)
+                creator_os = k
+                break
+        creator_os = s(creator_os)
+        print("OS type                        : " + creator_os)
 
+        rev_level = ""
         for k, v in EXT4_REV_LEVEL.items():
             if v == self.ext4_super_block['s_rev_level']:
-                print("Revision level                 : " + k)
+                rev_level = k
+                break
+        rev_level = s(rev_level)
+        print("Revision level                 : " + rev_level)
 
         print("Reserved blocks uid            : " + str(self.ext4_super_block['s_def_resuid']))
         print("Reserved blocks gid            : " + str(self.ext4_super_block['s_def_resgid']))
@@ -1375,23 +1565,26 @@ class Ext4Parser(object):
         for k, v in EXT4_FEATURE_COMPAT.items():
             if (v & self.ext4_super_block['s_feature_compat']) != 0:
                 feature_compat += k + " "
+        feature_compat = s(feature_compat)
         print("Compatible feature          : " + feature_compat)
 
         feature_incompat = ""
         for k, v in EXT4_FEATURE_INCOMPAT.items():
             if (v & self.ext4_super_block['s_feature_incompat']) != 0:
                 feature_incompat += k + " "
+        feature_incompat = s(feature_incompat)
         print("Incompatible feature        : " + feature_incompat)
 
         feature_ro_compat = ""
         for k, v in EXT4_FEATURE_RO_COMPAT.items():
             if (v & self.ext4_super_block['s_feature_ro_compat']) != 0:
                 feature_ro_compat += k + " "
+        feature_ro_compat = s(feature_ro_compat)
         print("Readonly-compatible feature : " + feature_ro_compat)
 
         print("UUID                        : %x" % self.ext4_super_block['s_uuid'])
-        print("Volume name                 : " + self.ext4_super_block['s_volume_name'])
-        print("Last mounted on             : " + self.ext4_super_block['s_last_mounted'])
+        print("Volume name                 : " + s(self.ext4_super_block['s_volume_name']))
+        print("Last mounted on             : " + s(self.ext4_super_block['s_last_mounted']))
         print("Bitmap algorithm usage      : " + str(self.ext4_super_block['s_algorithm_usage_bitmap']))
 
         print("")
@@ -1415,9 +1608,13 @@ class Ext4Parser(object):
         print("Orphaned inodes to delete            : " + str(self.ext4_super_block['s_last_orphan']))
         print("HTREE hash seed                      : %x" % self.ext4_super_block['s_hash_seed'])
 
-        for k, v in EXT4_DEFAULT_HASH_VER.items():
+        def_hash_version = ""
+        for k, v in EXT4_HASH_VERSION.items():
             if v == self.ext4_super_block['s_def_hash_version']:
-                print("Default hash version for dirs hashes : " + k)
+                def_hash_version = k
+                break
+        def_hash_version = s(def_hash_version)
+        print("Default hash version for dirs hashes : " + def_hash_version)
 
         print("Reserved char padding                : " + str(self.ext4_super_block['s_reserved_char_pad']))
         print("Group descriptors size               : " + str(self.ext4_super_block['s_desc_size']))
@@ -1426,6 +1623,7 @@ class Ext4Parser(object):
         for k, v in EXT4_DEFAULT_MOUNT_OPTS.items():
             if (v & self.ext4_super_block['s_default_mount_opts']) != 0:
                 default_mount_opts += k + " "
+        default_mount_opts = s(default_mount_opts)
         print("Default mount options                : " + default_mount_opts)
 
         print("First metablock block group          : " + str(self.ext4_super_block['s_first_meta_bg']))
@@ -1444,6 +1642,7 @@ class Ext4Parser(object):
         for k, v in EXT4_MISC_FLAGS.items():
             if (v & self.ext4_super_block['s_flags']) != 0:
                 misc_flags += k + " "
+        misc_flags = s(misc_flags)
         print("Misc flags                       : " + misc_flags)
 
         print("RAID stride                      : " + str(self.ext4_super_block['s_raid_stride']))
@@ -1459,6 +1658,8 @@ class Ext4Parser(object):
     # Print Ext4 block group descriptors info
     #
     def print_ext4_bg_desc_info(self, bg_index):
+        s = lambda x : x == "" and "n/a" or x
+
         print("\n----------------------------------------")
         print("EXT4 BLOCK GROUP DESCRIPTOR #%d INFO\n" % bg_index)
 
@@ -1473,6 +1674,7 @@ class Ext4Parser(object):
         for k, v in EXT4_BG_FLAGS.items():
             if (v & self.ext4_block_group_desc['bg_flags']) != 0:
                 bg_flags += k + " "
+        bg_flags = s(bg_flags)
         print("Block group flags         : " + bg_flags)
 
         print("Exclusion bitmap at       : " + str((self.ext4_block_group_desc['bg_exclude_bitmap_hi'] << 32) + self.ext4_block_group_desc['bg_exclude_bitmap_lo']))
@@ -1484,6 +1686,7 @@ class Ext4Parser(object):
     #
     def print_ext4_bg_inode_info(self, inode_index):
         t = lambda x : x != 0 and time.ctime(x) or "n/a"
+        s = lambda x : x == "" and "n/a" or x
 
         print("\n----------------------------------------")
         print("EXT4 INODE #%d INFO\n" % (inode_index + 1))
@@ -1495,12 +1698,14 @@ class Ext4Parser(object):
             if v == i_mode_mutually_exclusive:
                 i_mode_str = k
                 break
+        if i_mode_str != "":
+            i_mode_str += " "
         i_mode_val &= 0xFFF
-        i_mode_str += " "
 
         for k, v in EXT4_INODE_MODE.items():
             if (v & i_mode_val) != 0:
                 i_mode_str += k + " "
+        i_mode_str = s(i_mode_str)
         print("File mode                      : " + i_mode_str)
 
         print("UID                            : " + str((self.ext4_inode_table['l_i_uid_high'] << 32) + self.ext4_inode_table['i_uid']))
@@ -1517,13 +1722,14 @@ class Ext4Parser(object):
         for k, v in EXT4_INODE_FLAGS.items():
             if (v & self.ext4_inode_table['i_flags']) != 0:
                 i_flags += k + " "
+        i_flags = s(i_flags)
         print("Inode flags                    : " + i_flags)
 
         print("Version number                 : " + str((self.ext4_inode_table['i_version_hi'] << 32) + self.ext4_inode_table['l_i_version']))
 
         if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_EXTENTS'] != 0:
-            print("Extent tree                    : ")
-            print("  Header                       : ")
+            print("Extent tree                      ")
+            print("  Header                         ")
             print("    Magic number               : 0x%X" % self.ext4_extent_header['eh_magic'])
             print("    Number of valid entries    : " + str(self.ext4_extent_header['eh_entries']))
             print("    Max number of entries      : " + str(self.ext4_extent_header['eh_max']))
@@ -1531,11 +1737,11 @@ class Ext4Parser(object):
             print("    Generation of the tree     : " + str(self.ext4_extent_header['eh_generation']))
 
             if self.ext4_extent_header['eh_depth'] > 0:
-                print("  Index node                   : ")
+                print("  Index node                     ")
                 print("    File blocks                : " + str(self.ext4_extent_idx['ei_block']))
                 print("    Next level node block num  : " + str((self.ext4_extent_idx['ei_leaf_hi'] << 32) + self.ext4_extent_idx['ei_leaf_lo']))
             elif self.ext4_extent_header['eh_depth'] == 0:
-                print("  Leaf node                    : ")
+                print("  Leaf node                      ")
                 print("    First logical blocks num   : " + str(self.ext4_extent['ee_block']))
                 print("    Blocks num                 : " + str(self.ext4_extent['ee_len']))
                 print("    First Physical blocks num  : " + str((self.ext4_extent['ee_start_hi'] << 32) + self.ext4_extent['ee_start_lo']))
@@ -1562,23 +1768,26 @@ class Ext4Parser(object):
     # Print Ext4 linear directory entries info
     #
     def print_ext4_linear_dir_entry_info(self, inode_index):
+        s = lambda x : x == "" and "n/a" or x
+
         print("\n----------------------------------------")
         '''
         print("EXT4 DIRECTORY ENTRY #%d INFO\n" % (inode_index + 1))
         '''
 
-        print("Inode number : " + str(self.ext4_dir_entry_2['inode']))
+        print("Inode number         : " + str(self.ext4_dir_entry_2['inode']))
         print("Directory entry size : " + str(self.ext4_dir_entry_2['rec_len']))
-        print("File name length : " + str(self.ext4_dir_entry_2['name_len']))
+        print("File name length     : " + str(self.ext4_dir_entry_2['name_len']))
 
         file_type = ""
         for k, v in EXT4_FILE_TYPE.items():
             if v == self.ext4_dir_entry_2['file_type']:
-                file_type += k + " "
+                file_type = k
                 break
-        print("File type : " + file_type)
+        file_type = s(file_type)
+        print("File type            : " + file_type)
 
-        print("File name : " + str(self.ext4_dir_entry_2['name'][0:self.ext4_dir_entry_2['rec_len']]))
+        print("File name            : " + str(self.ext4_dir_entry_2['name'][0:self.ext4_dir_entry_2['rec_len']]))
 
     #
     # Print Ext4 hash tree directory entries info
