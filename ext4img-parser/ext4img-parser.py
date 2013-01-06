@@ -775,9 +775,9 @@ class Ext4Parser(object):
             }
 
     #
-    # Convert string to integer
+    # Convert string to integer with little-endian order
     #
-    def str2int(self, str_list):
+    def str2int_le(self, str_list):
         i = 0
         data = 0
         str_len = len(str_list)
@@ -785,6 +785,22 @@ class Ext4Parser(object):
         while (i < str_len):
             data += ord(str_list[i]) << (i * 8)
             i += 1
+
+        return data
+
+    #
+    # Convert string to integer with big-endian order
+    #
+    def str2int_be(self, str_list):
+        i = 0
+        data = 0
+        str_len = len(str_list)
+        j = str_len - 1
+
+        while (i < str_len):
+            data += ord(str_list[j]) << (i * 8)
+            i += 1
+            j -= 1
 
         return data
 
@@ -886,101 +902,101 @@ class Ext4Parser(object):
     # Parse Ext4 super block
     #
     def parse_ext4_sb(self, offset):
-        self.ext4_super_block['s_inodes_count'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_inodes_count'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_blocks_count_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_r_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_r_blocks_count_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_free_blocks_count_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_free_blocks_count_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_free_inodes_count'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_free_inodes_count'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_first_data_block'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_first_data_block'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_log_block_size'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_log_block_size'] = self.str2int_le(self.image[offset:offset+4])
         self.ext4_block_sz = int(math.pow(2, (10 + self.ext4_super_block['s_log_block_size'])))
 
         offset += 4
-        self.ext4_super_block['s_obso_log_frag_size'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_obso_log_frag_size'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_blocks_per_group'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_blocks_per_group'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_obso_frags_per_group'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_obso_frags_per_group'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_inodes_per_group'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_inodes_per_group'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_mtime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_mtime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_wtime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_wtime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_mnt_count'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_mnt_count'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_max_mnt_count'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_max_mnt_count'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_magic'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_magic'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_state'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_state'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_errors'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_errors'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_minor_rev_level'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_minor_rev_level'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_lastcheck'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_lastcheck'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_checkinterval'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_checkinterval'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_creator_os'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_creator_os'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_rev_level'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_rev_level'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_def_resuid'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_def_resuid'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_def_resgid'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_def_resgid'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_first_ino'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_first_ino'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_inode_size'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_inode_size'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_block_group_nr'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_block_group_nr'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_feature_compat'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_feature_compat'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_feature_incompat'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_feature_incompat'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_feature_ro_compat'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_feature_ro_compat'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_uuid'] = self.str2int(self.image[offset:offset+16])
+        self.ext4_super_block['s_uuid'] = self.str2int_le(self.image[offset:offset+16])
 
         offset += 16
         self.ext4_super_block['s_volume_name'] = self.image[offset:offset+16].split("\x00")[0]
@@ -989,198 +1005,203 @@ class Ext4Parser(object):
         self.ext4_super_block['s_last_mounted'] = self.image[offset:offset+64].split("\x00")[0]
 
         offset += 64
-        self.ext4_super_block['s_algorithm_usage_bitmap'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_algorithm_usage_bitmap'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_prealloc_blocks'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_prealloc_blocks'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_prealloc_dir_blocks'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_prealloc_dir_blocks'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_reserved_gdt_blocks'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_reserved_gdt_blocks'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_journal_uuid'] = self.str2int(self.image[offset:offset+16])
+        self.ext4_super_block['s_journal_uuid'] = self.str2int_le(self.image[offset:offset+16])
 
         offset += 16
-        self.ext4_super_block['s_journal_inum'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_journal_inum'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_journal_dev'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_journal_dev'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_last_orphan'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_last_orphan'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_hash_seed'] = self.str2int(self.image[offset:offset+16])
+        self.ext4_super_block['s_hash_seed'] = self.str2int_le(self.image[offset:offset+16])
 
         offset += 16
-        self.ext4_super_block['s_def_hash_version'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_def_hash_version'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_reserved_char_pad'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_reserved_char_pad'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_desc_size'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_desc_size'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_default_mount_opts'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_default_mount_opts'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_first_meta_bg'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_first_meta_bg'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_mkfs_time'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_mkfs_time'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_jnl_blocks'] = self.str2int(self.image[offset:offset+68])
+        self.ext4_super_block['s_jnl_blocks'] = self.str2int_le(self.image[offset:offset+68])
 
         offset += 68
-        self.ext4_super_block['s_blocks_count_hi'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_blocks_count_hi'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_r_blocks_count_hi'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_r_blocks_count_hi'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_free_blocks_count_hi'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_free_blocks_count_hi'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_min_extra_isize'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_min_extra_isize'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_want_extra_isize'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_want_extra_isize'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_flags'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_flags'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_raid_stride'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_raid_stride'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_mmp_interval'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_mmp_interval'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_mmp_block'] = self.str2int(self.image[offset:offset+8])
+        self.ext4_super_block['s_mmp_block'] = self.str2int_le(self.image[offset:offset+8])
 
         offset += 8
-        self.ext4_super_block['s_raid_stripe_width'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_super_block['s_raid_stripe_width'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_super_block['s_log_groups_per_flex'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_log_groups_per_flex'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_reserved_char_pad2'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_super_block['s_reserved_char_pad2'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_super_block['s_reserved_pad'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_super_block['s_reserved_pad'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_super_block['s_kbytes_written'] = self.str2int(self.image[offset:offset+8])
+        self.ext4_super_block['s_kbytes_written'] = self.str2int_le(self.image[offset:offset+8])
 
         offset += 8
-        self.ext4_super_block['s_reserved'] = self.str2int(self.image[offset:offset+640])
+        self.ext4_super_block['s_reserved'] = self.str2int_le(self.image[offset:offset+640])
+
+        #
+        # Print Ext4 super block info
+        #
+        self.print_ext4_sb_info()
 
     #
     # Parse Ext4 block group descriptor internally
     #
     def parse_ext4_bg_desc_internal(self, offset):
-        self.ext4_block_group_desc['bg_block_bitmap_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_group_desc['bg_block_bitmap_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_block_group_desc['bg_inode_bitmap_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_group_desc['bg_inode_bitmap_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_block_group_desc['bg_inode_table_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_group_desc['bg_inode_table_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_block_group_desc['bg_free_blocks_count_lo'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_free_blocks_count_lo'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_block_group_desc['bg_free_inodes_count_lo'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_free_inodes_count_lo'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_block_group_desc['bg_used_dirs_count_lo'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_used_dirs_count_lo'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_block_group_desc['bg_flags'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_flags'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_block_group_desc['bg_exclude_bitmap_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_group_desc['bg_exclude_bitmap_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_block_group_desc['bg_reserved1'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_block_group_desc['bg_reserved1'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_block_group_desc['bg_itable_unused_lo'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_itable_unused_lo'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_block_group_desc['bg_checksum'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_block_group_desc['bg_checksum'] = self.str2int_le(self.image[offset:offset+2])
 
         if self.ext4_super_block['s_feature_incompat'] & EXT4_FEATURE_INCOMPAT['EXT4_FEATURE_INCOMPAT_64BIT'] != 0 and self.ext4_super_block['s_desc_size'] > 32:
             offset += 2
-            self.ext4_block_group_desc['bg_block_bitmap_hi'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_block_group_desc['bg_block_bitmap_hi'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_block_group_desc['bg_inode_bitmap_hi'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_block_group_desc['bg_inode_bitmap_hi'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_block_group_desc['bg_inode_table_hi'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_block_group_desc['bg_inode_table_hi'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_block_group_desc['bg_free_blocks_count_hi'] = self.str2int(self.image[offset:offset+2])
+            self.ext4_block_group_desc['bg_free_blocks_count_hi'] = self.str2int_le(self.image[offset:offset+2])
 
             offset += 2
-            self.ext4_block_group_desc['bg_free_inodes_count_hi'] = self.str2int(self.image[offset:offset+2])
+            self.ext4_block_group_desc['bg_free_inodes_count_hi'] = self.str2int_le(self.image[offset:offset+2])
 
             offset += 2
-            self.ext4_block_group_desc['bg_used_dirs_count_hi'] = self.str2int(self.image[offset:offset+2])
+            self.ext4_block_group_desc['bg_used_dirs_count_hi'] = self.str2int_le(self.image[offset:offset+2])
 
             offset += 2
-            self.ext4_block_group_desc['bg_itable_unused_hi'] = self.str2int(self.image[offset:offset+2])
+            self.ext4_block_group_desc['bg_itable_unused_hi'] = self.str2int_le(self.image[offset:offset+2])
 
             offset += 2
-            self.ext4_block_group_desc['bg_exclude_bitmap_hi'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_block_group_desc['bg_exclude_bitmap_hi'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_block_group_desc['bg_reserved2'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_block_group_desc['bg_reserved2'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_block_group_desc['bg_reserved3'] = self.str2int(self.image[offset:offset+8])
+            self.ext4_block_group_desc['bg_reserved3'] = self.str2int_le(self.image[offset:offset+8])
 
     #
     # Parse Ext4 extent tree
     #
     def parse_ext4_extent_tree(self, offset):
-        self.ext4_inode_table['i_block'] = self.str2int(self.image[offset:offset+60])
+        self.ext4_inode_table['i_block'] = self.str2int_le(self.image[offset:offset+60])
 
-        self.ext4_extent_header['eh_magic'] = self.str2int(self.image[offset:offset+2])
-
-        offset += 2
-        self.ext4_extent_header['eh_entries'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_extent_header['eh_magic'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_extent_header['eh_max'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_extent_header['eh_entries'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_extent_header['eh_depth'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_extent_header['eh_max'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_extent_header['eh_generation'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_extent_header['eh_depth'] = self.str2int_le(self.image[offset:offset+2])
+
+        offset += 2
+        self.ext4_extent_header['eh_generation'] = self.str2int_le(self.image[offset:offset+4])
 
         for i in range(0, self.ext4_extent_header['eh_entries'], 1):
             if self.ext4_extent_header['eh_depth'] > 0:
                 offset += 4
-                self.ext4_extent_idx['ei_block'] = self.str2int(self.image[offset:offset+4])
+                self.ext4_extent_idx['ei_block'] = self.str2int_le(self.image[offset:offset+4])
 
                 offset += 4
-                self.ext4_extent_idx['ei_leaf_lo'] = self.str2int(self.image[offset:offset+4])
+                self.ext4_extent_idx['ei_leaf_lo'] = self.str2int_le(self.image[offset:offset+4])
 
                 offset += 4
-                self.ext4_extent_idx['ei_leaf_hi'] = self.str2int(self.image[offset:offset+2])
+                self.ext4_extent_idx['ei_leaf_hi'] = self.str2int_le(self.image[offset:offset+2])
 
                 offset += 2
-                self.ext4_extent_idx['ei_unused'] = self.str2int(self.image[offset:offset+2])
+                self.ext4_extent_idx['ei_unused'] = self.str2int_le(self.image[offset:offset+2])
 
                 #
                 # Parse Ext4 extent tree's leaf nodes
@@ -1190,16 +1211,16 @@ class Ext4Parser(object):
                 '''
             elif self.ext4_extent_header['eh_depth'] == 0:
                 offset += 4
-                self.ext4_extent['ee_block'] = self.str2int(self.image[offset:offset+4])
+                self.ext4_extent['ee_block'] = self.str2int_le(self.image[offset:offset+4])
 
                 offset += 4
-                self.ext4_extent['ee_len'] = self.str2int(self.image[offset:offset+2])
+                self.ext4_extent['ee_len'] = self.str2int_le(self.image[offset:offset+2])
 
                 offset += 2
-                self.ext4_extent['ee_start_hi'] = self.str2int(self.image[offset:offset+2])
+                self.ext4_extent['ee_start_hi'] = self.str2int_le(self.image[offset:offset+2])
 
                 offset += 2
-                self.ext4_extent['ee_start_lo'] = self.str2int(self.image[offset:offset+4])
+                self.ext4_extent['ee_start_lo'] = self.str2int_le(self.image[offset:offset+4])
             else:
                 pass
 
@@ -1207,40 +1228,40 @@ class Ext4Parser(object):
     # Parse Ext4 inode in inode table internally
     #
     def parse_ext4_bg_inode_internal(self, offset):
-        self.ext4_inode_table['i_mode'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_mode'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_uid'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_uid'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_size_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_size_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_atime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_atime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_ctime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_ctime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_mtime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_mtime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_dtime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_dtime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_gid'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_gid'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_links_count'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_links_count'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_blocks_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_blocks_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_flags'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_flags'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['l_i_version'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['l_i_version'] = self.str2int_le(self.image[offset:offset+4])
 
         #
         # Parse Ext4 extent tree
@@ -1251,94 +1272,94 @@ class Ext4Parser(object):
         self.parse_ext4_extent_tree(offset)
 
         offset += 60
-        self.ext4_inode_table['i_generation'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_generation'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_file_acl_lo'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_file_acl_lo'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_size_high'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_size_high'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_obso_faddr'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_obso_faddr'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['l_i_blocks_high'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['l_i_blocks_high'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['l_i_file_acl_high'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['l_i_file_acl_high'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['l_i_uid_high'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['l_i_uid_high'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['l_i_gid_high'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['l_i_gid_high'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['l_i_reserved2'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['l_i_reserved2'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_extra_isize'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_extra_isize'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_pad1'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_inode_table['i_pad1'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_inode_table['i_ctime_extra'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_ctime_extra'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_mtime_extra'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_mtime_extra'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_atime_extra'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_atime_extra'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_crtime'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_crtime'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_crtime_extra'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_crtime_extra'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_inode_table['i_version_hi'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_inode_table['i_version_hi'] = self.str2int_le(self.image[offset:offset+4])
 
     #
     # Parse Ext4 extended attributes, especially for ACLs
     #
     def parse_ext4_xattr(self, offset):
-        self.ext4_xattr_header['h_magic'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_header['h_magic'] = self.str2int_le(self.image[offset:offset+4])
 
         if self.ext4_xattr_header['h_magic'] != EXT4_XATTR_MAGIC:
             return
 
         offset += 4
-        self.ext4_xattr_header['h_refcount'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_header['h_refcount'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_xattr_header['h_blocks'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_header['h_blocks'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_xattr_header['h_hash'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_header['h_hash'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_xattr_header['h_reserved'] = self.str2int(self.image[offset:offset+16])
+        self.ext4_xattr_header['h_reserved'] = self.str2int_le(self.image[offset:offset+16])
 
         offset += 16
-        self.ext4_xattr_entry['e_name_len'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_xattr_entry['e_name_len'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_xattr_entry['e_name_index'] = self.str2int(self.image[offset:offset+1])
+        self.ext4_xattr_entry['e_name_index'] = self.str2int_le(self.image[offset:offset+1])
 
         offset += 1
-        self.ext4_xattr_entry['e_value_offs'] = self.str2int(self.image[offset:offset+2])
+        self.ext4_xattr_entry['e_value_offs'] = self.str2int_le(self.image[offset:offset+2])
 
         offset += 2
-        self.ext4_xattr_entry['e_value_block'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_entry['e_value_block'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_xattr_entry['e_value_size'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_entry['e_value_size'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
-        self.ext4_xattr_entry['e_hash'] = self.str2int(self.image[offset:offset+4])
+        self.ext4_xattr_entry['e_hash'] = self.str2int_le(self.image[offset:offset+4])
 
         offset += 4
         self.ext4_xattr_entry['e_name'] = self.image[offset:offset+self.ext4_xattr_entry['e_name_len']] + '\x00'
@@ -1366,22 +1387,31 @@ class Ext4Parser(object):
             #
             # Parse Ext4 linear directory entries
             #
-            self.ext4_dir_entry_2['inode'] = self.str2int(self.image[offset:offset+4])
+            self.ext4_dir_entry_2['inode'] = self.str2int_le(self.image[offset:offset+4])
 
             offset += 4
-            self.ext4_dir_entry_2['rec_len'] = self.str2int(self.image[offset:offset+2])
+            self.ext4_dir_entry_2['rec_len'] = self.str2int_le(self.image[offset:offset+2])
             rec_len = self.ext4_dir_entry_2['rec_len']
 
             offset += 2
-            self.ext4_dir_entry_2['name_len'] = self.str2int(self.image[offset:offset+1])
+            self.ext4_dir_entry_2['name_len'] = self.str2int_le(self.image[offset:offset+1])
 
             offset += 1
-            self.ext4_dir_entry_2['file_type'] = self.str2int(self.image[offset:offset+1])
+            self.ext4_dir_entry_2['file_type'] = self.str2int_le(self.image[offset:offset+1])
 
             offset += 1
             self.ext4_dir_entry_2['name'] = self.image[offset:offset+self.ext4_dir_entry_2['name_len']]
 
         return rec_len
+
+    #
+    # Parse Ext4 journal
+    #
+    def parse_ext4_journal(self, inode_index):
+        pass
+
+        if is_pr_verb is True:
+            self.print_ext4_journal_info(inode_index)
 
     #
     # Parse Ext4 directory entries
@@ -1434,7 +1464,9 @@ class Ext4Parser(object):
             # Parse Ext4 directory entries, journal inode igored
             #
             if self.ext4_extent_header['eh_magic'] == EXT4_EXTENT_TREE_MAGIC and self.ext4_extent_header['eh_depth'] == 0:
-                if (inode_index + 1) != EXT4_JOURNAL_INO:
+                if (inode_index + 1) == EXT4_JOURNAL_INO:
+                    self.parse_ext4_journal(inode_index)
+                else:
                     self.parse_ext4_dir_entry(inode_index)
 
     #
@@ -1465,8 +1497,7 @@ class Ext4Parser(object):
             #
             # Print Ext4 block group descriptor info according to block group #0
             #
-            if is_pr_verb is True:
-                self.print_ext4_bg_desc_info(i)
+            self.print_ext4_bg_desc_info(i)
 
             #
             # Parse Ext4 inode in inode table
@@ -1796,11 +1827,15 @@ class Ext4Parser(object):
         pass
 
     #
+    # Print Ext4 journal info
+    #
+    def print_ext4_journal_info(self, inode_index):
+        pass
+
+    #
     # Run routine
     #
     def run(self):
-        global is_pr_verb
-
         #
         # Check image type magic signature
         #
@@ -1813,12 +1848,6 @@ class Ext4Parser(object):
         #
         offset = EXT4_GROUP_0_PAD_SZ
         self.parse_ext4_sb(offset)
-
-        #
-        # Print Ext4 super block info
-        #
-        if is_pr_verb is True:
-            self.print_ext4_sb_info()
 
         #
         # Parse Ext4 block group
