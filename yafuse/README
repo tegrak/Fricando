@@ -1,0 +1,29 @@
+
+INTRODUCTION
+============
+
+yafuse, yet another fuse, is developed to support for Ext4 and FAT file system in user space.
+
+
+QUICK INSTALLATION
+==================
+
+Linux: Make sure you have the basic development tools and the kernel includes 
+the FUSE kernel module. Then unpack the source tarball and type:  
+
+	./configure
+	make
+	make install      # or 'sudo make install' if you aren't root.
+
+The list of options for building specific configurations is displayed by
+typing :
+
+	./configure --help
+
+
+USAGE
+=====
+
+N/A
+
+
