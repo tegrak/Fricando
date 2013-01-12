@@ -174,7 +174,11 @@ test "${enable_really_static}" = "yes" && enable_library="no"
 
 # Settings
 pkgconfigdir="\$(libdir)/pkgconfig"
+libext4includedir="\$(includedir)/libext4"
+libfat32includedir="\$(includedir)/libfat32"
 AC_SUBST([pkgconfigdir])
+AC_SUBST([libext4includedir])
+AC_SUBST([libfat32includedir])
 AC_SUBST([YAFUSE_VERSION])
 AC_SUBST([LIBEXT4_VERSION])
 AC_SUBST([LIBFAT32_VERSION])
@@ -188,8 +192,8 @@ AM_CONDITIONAL([INSTALL_LIBRARY], [test "${enable_library}" = "yes"])
 AC_CONFIG_FILES([
 	Makefile
 	include/Makefile
-	include/ext4/Makefile
-	include/fat32/Makefile
+	include/libext4/Makefile
+	include/libfat32/Makefile
 	libext4/Makefile
 	libfat32/Makefile
 	src/Makefile])

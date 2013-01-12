@@ -21,4 +21,3 @@ install-exec-hook:
 	$(LDCONFIG)
 endif
 
-endif
