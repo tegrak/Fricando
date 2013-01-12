@@ -22,9 +22,9 @@
 # Autoconf
 AC_PREREQ(2.59)
 AC_INIT([yafuse],[2013.1.12],[angersax@gmail.com])
-YAFUSE_VERSION="1.0.0"
-LIBEXT4_VERSION="1.0.0"
-LIBFAT32_VERSION="1.0.0"
+YAFUSE_VERSION="1"
+LIBEXT4_VERSION="1"
+LIBFAT32_VERSION="1"
 AC_CONFIG_SRCDIR([src/main.c])
 
 # Environment
