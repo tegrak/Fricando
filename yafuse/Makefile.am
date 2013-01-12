@@ -28,6 +28,12 @@ SUBDIRS = include libext4 libfat32 src
 
 doc_DATA = README
 
+dist-hook:
+	$(MKDIR_P) "$(distdir)/m4"
+
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
+
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
 

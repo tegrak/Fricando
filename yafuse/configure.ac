@@ -195,7 +195,9 @@ AC_CONFIG_FILES([
 	include/libext4/Makefile
 	include/libfat32/Makefile
 	libext4/Makefile
+	libext4/libext4.pc
 	libfat32/Makefile
+	libfat32/libfat32.pc
 	src/Makefile])
 AC_OUTPUT
 
