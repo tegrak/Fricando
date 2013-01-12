@@ -25,7 +25,7 @@ AC_INIT([yafuse],[2013.1.12],[angersax@gmail.com])
 YAFUSE_VERSION="1.0.0"
 LIBEXT4_VERSION="1.0.0"
 LIBFAT32_VERSION="1.0.0"
-AC_CONFIG_SRCDIR([src/yafuse.c])
+AC_CONFIG_SRCDIR([src/main.c])
 
 # Environment
 AC_CANONICAL_HOST
