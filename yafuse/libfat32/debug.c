@@ -23,9 +23,41 @@
 #include "config.h"
 #endif
 
-#include "include/libfat32/debug.h"
+#ifdef HAVE_STDIO_H
+#include <stdio.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
 #endif
 
+#include "debug.h"
+
+/*
+ * Macro Definition
+ */
+
+/*
+ * Type Definition
+ */
+
+/*
+ * Global Variable Definition
+ */
+
+/*
+ * Function Declaration
+ */
+
+/*
+ * Function Definition
+ */

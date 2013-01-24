@@ -23,10 +23,6 @@
 #include "config.h"
 #endif
 
-#ifdef DEBUG
-// Add code here
-#endif
-
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
@@ -48,18 +44,106 @@
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
-#include <signal.h>
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 
-const char *usage = \
-  "\n \
-  Usage:   yafuse [option] <device|image_file>\n\n \
-  Options: \n\n \
-  Example: \n\n";
+#ifdef DEBUG
+// Add code here
+#endif
 
-int main(int argc, char *argv[])
+#include "subsystem.h"
+
+/*
+ * Macro Definition
+ */
+
+/*
+ * Type Definition
+ */
+
+/*
+ * Global Variable Definition
+ */
+/* Option string */
+#define OPTION_STR  "hVv"
+
+/* Subsystem name */
+#define SS_NAME  "yafuse"
+
+/*
+ * Function Declaration
+ */
+static void print_usage();
+
+/*
+ * Function Definition
+ */
+/*
+ * Print usage
+ */
+static void print_usage()
 {
+  fprintf(stdout, "\n");
+  fprintf(stdout, "Usage:  yafuse [option] <device|image_file>\n");
+  fprintf(stdout, "\n");
+  fprintf(stdout, "Options:\n");
+  fprintf(stdout, "  -h    print this help, then exit\n");
+  fprintf(stdout, "  -V    print version number, then exit\n");
+  fprintf(stdout, "  -v    verbosely report processing\n");
+  fprintf(stdout, "\n");
+  fprintf(stdout, "Example:\n");
+  fprintf(stdout, "  yafuse -v sample.ext4\n");
+  fprintf(stdout, "\n");
+}
+
+int32_t main(int argc, char *argv[])
+{
+  int32_t c = 0;
+  int32_t verbose = 0;
+  const char *fs_name = NULL;
+  int32_t ss_idx = 0;
+  int32_t ret = 0;
+
+  /*
+   * Parse options
+   */
+  while ((c = getopt(argc, argv, OPTION_STR)) != EOF) {
+    switch (c) {
+    case 'V':
+      fprintf(stdout, "yafuse 1.0\n");
+      exit(0);
+    case 'v':
+      verbose = 1;
+      break;
+    default:
+      print_usage();
+      return 1;
+    }
+  }
+
+  /*
+   * Create subsystem
+   */
+  if (optind < argc) {
+    fs_name = argv[optind];
+  } else {
+    fs_name = NULL;
+  }
+
+  ss_idx = ss_create(SS_NAME, fs_name, &ret);
+  if (ret != 0) {
+    fprintf(stderr, "ERROR: failed to create subsystem!\n");
+    return ret;
+  }
+
+  ss_delete(ss_idx);
+
   return 0;
 }

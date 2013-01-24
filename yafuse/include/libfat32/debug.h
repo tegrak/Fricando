@@ -26,8 +26,24 @@
 #include "config.h"
 #endif
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 #ifdef DEBUG
 // Add code here
 #endif
+
+/*
+ * Macro Definition
+ */
+
+/*
+ * Type Definition
+ */
+
+/*
+ * Function Declaration
+ */
 
 #endif /* _DEBUG_H */
