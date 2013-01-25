@@ -54,7 +54,7 @@
  */
 #define SS_OPT_TBL_NUM_MAX  (20)
 
-#define SS_PROMPT_DEFAULT  "# "
+#define SS_PROMPT_DEFAULT  "$ "
 #define SS_PROMPT_DEFAULT_LEN  (2)
 
 /*
@@ -67,10 +67,11 @@ typedef struct {
 /*
  * Function Declaration
  */
-static void help_ss_helper(int32_t fs_idx);
 static int32_t help_ss(int32_t argc, char **argv);
+static int32_t history_ss(int32_t argc, char **argv);
 static int32_t quit_ss(int32_t argc, char **argv);
 
+static void ss_auto_completion();
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
 static void ss_exec_line(int32_t fs_idx, const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
@@ -90,6 +91,11 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   },
 
   [1] = {
+    .opt_hdl = history_ss,
+    .opt_cmd = "history",
+  },
+
+  [2] = {
     .opt_hdl = quit_ss,
     .opt_cmd = "quit",
   },
@@ -98,36 +104,42 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
 /*
  * Function Definition
  */
-static void help_ss_helper(int32_t fs_idx)
+static int32_t help_ss(int32_t argc, char **argv)
 {
   int32_t opt_num = 0;
   const char *opt_cmd = NULL;
   int32_t i = 0;
-
-  fprintf(stdout, "command list:\n");
-
-  opt_num = fs_opt_num(fs_idx);
-
-  for (i = 0; i < opt_num; ++i) {
-    opt_cmd = fs_opt_cmd_enum(fs_idx, i);
-    fprintf(stdout, "%s\n", opt_cmd);
-  }
-}
-
-static int32_t help_ss(int32_t argc, char **argv)
-{
   int32_t fs_idx = -1;
 
-  if (argc <= 0 || argv == NULL) {
-    return -1;
+  fprintf(stdout, "command list: ");
+
+  for (i = 0; i < SS_OPT_TBL_NUM_MAX; ++i) {
+    if (ss_opt_tbl[i].opt_hdl != NULL) {
+      fprintf(stdout, "%s ", ss_opt_tbl[i].opt_cmd);
+    } else {
+      break;
+    }
   }
 
-  fs_idx = atoi(argv[0]);
-  if (fs_idx >= 0 && fs_idx < FS_TYPE_NUM_MAX) {
-    help_ss_helper(fs_idx);
+  if (argc > 0 && argv != NULL) {
+    fs_idx = atoi(argv[0]);
+    if (fs_idx >= 0 && fs_idx < FS_TYPE_NUM_MAX) {
+      opt_num = fs_opt_num(fs_idx);
+      for (i = 0; i < opt_num; ++i) {
+	opt_cmd = fs_opt_cmd_enum(fs_idx, i);
+	fprintf(stdout, "%s ", opt_cmd);
+      }
+    }
   }
+
+  fprintf(stdout, "\n");
 
   return 0;
+}
+
+static int32_t history_ss(int32_t argc, char **argv)
+{
+  return -1;
 }
 
 static int32_t quit_ss(int32_t argc, char **argv)
@@ -135,6 +147,13 @@ static int32_t quit_ss(int32_t argc, char **argv)
   ss_data.abort = 1;
 
   return 0;
+}
+
+/*
+ * Auto completion for subsystem command
+ */
+static void ss_auto_completion()
+{
 }
 
 /*
@@ -208,7 +227,6 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
 {
   int32_t fs_idx = -1;
   const char *line = NULL;
-  int32_t ret = 0;
 
   /*
    * Open filesystem
