@@ -306,12 +306,12 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
    */
   ret = fs_register(fs_opt_tbl_ext4);
   if (ret != 0) {
-    fprintf(stderr, "ERROR: failed to register Ext4 operation table!\n");
+    fprintf(stderr, "WARNING: failed to register Ext4 operation table!\n");
   }
 
   ret = fs_register(fs_opt_tbl_fat32);
   if (ret != 0) {
-    fprintf(stderr, "ERROR: failed to register FAT32 operation table!\n");
+    fprintf(stderr, "WARNING: failed to register FAT32 operation table!\n");
   }
 
   if (ss_name == NULL) {
