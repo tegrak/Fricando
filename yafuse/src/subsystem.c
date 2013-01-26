@@ -57,6 +57,8 @@
 #define SS_PROMPT_DEFAULT  "$ "
 #define SS_PROMPT_DEFAULT_LEN  (2)
 
+#define SS_HISTORY_BUF_LEN  (20)
+
 /*
  * Type Definition
  */
@@ -71,6 +73,7 @@ static int32_t help_ss(int32_t argc, char **argv);
 static int32_t history_ss(int32_t argc, char **argv);
 static int32_t quit_ss(int32_t argc, char **argv);
 
+static void ss_add_history(const char *line);
 static void ss_auto_completion();
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
 static void ss_exec_line(int32_t fs_idx, const char *line);
@@ -100,6 +103,9 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
     .opt_cmd = "quit",
   },
 };
+
+static const char* ss_history_buf[SS_HISTORY_BUF_LEN];
+static int32_t ss_history_buf_idx;
 
 /*
  * Function Definition
@@ -139,7 +145,19 @@ static int32_t help_ss(int32_t argc, char **argv)
 
 static int32_t history_ss(int32_t argc, char **argv)
 {
-  return -1;
+  int32_t index = 0;
+  int32_t i = 0, j = 0;
+
+  index = ss_history_buf_idx % SS_HISTORY_BUF_LEN;
+
+  for (i = 0, j = 0; i < SS_HISTORY_BUF_LEN; ++i, ++index) {
+    index %= SS_HISTORY_BUF_LEN;
+    if (ss_history_buf[index] != NULL) {
+      fprintf(stdout, "%d  %s\n", j++, ss_history_buf[index]);
+    }
+  }
+
+  return 0;
 }
 
 static int32_t quit_ss(int32_t argc, char **argv)
@@ -147,6 +165,19 @@ static int32_t quit_ss(int32_t argc, char **argv)
   ss_data.abort = 1;
 
   return 0;
+}
+
+/*
+ * Add subsystem command to command history
+ */
+static void ss_add_history(const char *line)
+{
+  if (line == NULL || strlen(line) == 0) {
+    return;
+  }
+
+  ss_history_buf_idx %= SS_HISTORY_BUF_LEN;
+  ss_history_buf[ss_history_buf_idx++] = line;
 }
 
 /*
@@ -180,8 +211,8 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd)
 
     if (len_0 > 0 && len_0 <= len_1) {
       if (strncmp(ss_opt_tbl[i].opt_cmd, opt_cmd, len_0) == 0) {
-	handle = ss_opt_tbl[i].opt_hdl;
-	break;
+        handle = ss_opt_tbl[i].opt_hdl;
+        break;
       }
     }
   }
@@ -244,6 +275,7 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
     line = readline((const char *)ss_prompt);
 
     if (line != NULL && strlen(line) > 0) {
+      ss_add_history(line);
       ss_exec_line(fs_idx, line);
     }
   }
@@ -273,7 +305,14 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
    * Register filesystem
    */
   ret = fs_register(fs_opt_tbl_ext4);
+  if (ret != 0) {
+    fprintf(stderr, "ERROR: failed to register Ext4 operation table!\n");
+  }
+
   ret = fs_register(fs_opt_tbl_fat32);
+  if (ret != 0) {
+    fprintf(stderr, "ERROR: failed to register FAT32 operation table!\n");
+  }
 
   if (ss_name == NULL) {
     strncpy((void *)ss_prompt, SS_PROMPT_DEFAULT, strlen(SS_PROMPT_DEFAULT));
