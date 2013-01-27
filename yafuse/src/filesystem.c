@@ -119,8 +119,8 @@ int32_t fs_open(const char *fs_name)
     if (handle != NULL) {
       ret = handle(argc, &argv);
       if (ret == 0) {
-	opt_tbl_list_idx = i;
-	break;
+        opt_tbl_list_idx = i;
+        break;
       }
     }
   }
@@ -138,31 +138,31 @@ void fs_close()
 /*
  * Match opt handle with opt command
  */
-fs_opt_handle_t fs_opt_hdl_match(int32_t fs_idx, const char *fs_cmd)
+fs_opt_handle_t fs_opt_hdl_match(int32_t fs_type, const char *fs_cmd)
 {
   int32_t i = 0;
   int32_t len_opt_cmd = 0, len_fs_cmd = 0;
   fs_opt_handle_t handle = NULL;
 
-  if (fs_idx < 0
-      || fs_idx >= fs_opt_tbl_list_len
+  if (fs_type < 0
+      || fs_type >= fs_opt_tbl_list_len
       || fs_cmd == NULL) {
-    return NULL;
+    return ((fs_opt_handle_t)NULL);
   }
 
   len_fs_cmd = strlen(fs_cmd);
 
   for (i = 0; i < FS_OPT_TBL_NUM_MAX; ++i) {
-    if (fs_opt_tbl_list[fs_idx][i].opt_cmd != NULL) {
-      len_opt_cmd = strlen((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd));
-    } else {
-      len_opt_cmd = 0;
+    if (fs_opt_tbl_list[fs_type][i].opt_cmd == NULL) {
+      break;
     }
+     
+    len_opt_cmd = strlen((char *)(fs_opt_tbl_list[fs_type][i].opt_cmd));
 
     if (len_opt_cmd > 0 && len_opt_cmd <= len_fs_cmd) {
-      if (strncmp((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd), (char *)fs_cmd, len_opt_cmd) == 0) {
-	handle = fs_opt_tbl_list[fs_idx][i].opt_hdl;
-	break;
+      if (strncmp((char *)(fs_opt_tbl_list[fs_type][i].opt_cmd), (char *)fs_cmd, len_opt_cmd) == 0) {
+        handle = fs_opt_tbl_list[fs_type][i].opt_hdl;
+        break;
       }
     }
   }
@@ -173,37 +173,34 @@ fs_opt_handle_t fs_opt_hdl_match(int32_t fs_idx, const char *fs_cmd)
 /*
  * Get number of filesystem opt
  */
-int32_t fs_opt_num(int32_t fs_idx)
+int32_t fs_opt_num(int32_t fs_type)
 {
   int32_t i = 0;
-  int32_t opt_num = 0;
 
-  if (fs_idx < 0 || fs_idx >= fs_opt_tbl_list_len) {
+  if (fs_type < 0 || fs_type >= fs_opt_tbl_list_len) {
     return 0;
   }
 
   for (i = 0; i < FS_OPT_TBL_NUM_MAX; ++i) {
-    if (fs_opt_tbl_list[fs_idx][i].opt_cmd == NULL) {
+    if (fs_opt_tbl_list[fs_type][i].opt_cmd == NULL) {
       break;
     }
-
-    ++opt_num;
   }
 
-  return opt_num;
+  return i;
 }
 
 /*
  * Enumerate filesystem opt commond
  */
-const char* fs_opt_cmd_enum(int32_t fs_idx, int32_t opt_idx)
+const char* fs_opt_cmd_enum(int32_t fs_type, int32_t opt_idx)
 {
-  if (fs_idx < 0
-      || fs_idx >= fs_opt_tbl_list_len
+  if (fs_type < 0
+      || fs_type >= fs_opt_tbl_list_len
       || opt_idx < 0
       || opt_idx >= FS_OPT_TBL_NUM_MAX) {
     return 0;
   }
 
-  return fs_opt_tbl_list[fs_idx][opt_idx].opt_cmd;
+  return fs_opt_tbl_list[fs_type][opt_idx].opt_cmd;
 }

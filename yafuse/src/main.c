@@ -63,6 +63,11 @@
 /*
  * Macro Definition
  */
+/* Option string */
+#define OPTION_STR  "hVv"
+
+/* Subsystem name */
+#define SS_NAME  "yafuse"
 
 /*
  * Type Definition
@@ -71,11 +76,6 @@
 /*
  * Global Variable Definition
  */
-/* Option string */
-#define OPTION_STR  "hVv"
-
-/* Subsystem name */
-#define SS_NAME  "yafuse"
 
 /*
  * Function Declaration

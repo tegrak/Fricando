@@ -53,16 +53,16 @@
 /*
  * Function Declaration
  */
-static int32_t openfs_fat32(int32_t argc, char **argv);
-static int32_t closefs_fat32(int32_t argc, char **argv);
-static int32_t pwddir_fat32(int32_t argc, char **argv);
-static int32_t cddir_fat32(int32_t argc, char **argv);
-static int32_t lsdir_fat32(int32_t argc, char **argv);
-static int32_t mkdir_fat32(int32_t argc, char **argv);
-static int32_t rm_fat32(int32_t argc, char **argv);
-static int32_t mkfile_fat32(int32_t argc, char **argv);
-static int32_t readfile_fat32(int32_t argc, char **argv);
-static int32_t writefile_fat32(int32_t argc, char **argv);
+static int32_t fs_do_openfs(int32_t argc, char **argv);
+static int32_t fs_do_closefs(int32_t argc, char **argv);
+static int32_t fs_do_pwd(int32_t argc, char **argv);
+static int32_t fs_do_cd(int32_t argc, char **argv);
+static int32_t fs_do_ls(int32_t argc, char **argv);
+static int32_t fs_do_mkdir(int32_t argc, char **argv);
+static int32_t fs_do_rm(int32_t argc, char **argv);
+static int32_t fs_do_mkfile(int32_t argc, char **argv);
+static int32_t fs_do_readfile(int32_t argc, char **argv);
+static int32_t fs_do_writefile(int32_t argc, char **argv);
 
 /*
  * Global Variable Definition
@@ -72,52 +72,52 @@ static int32_t writefile_fat32(int32_t argc, char **argv);
  */
 fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
   [0] = {
-    .opt_hdl = openfs_fat32,
+    .opt_hdl = fs_do_openfs,
     .opt_cmd = FS_OPT_CMD_DEFAULT_OPENFS,
   },
 
   [1] = {
-    .opt_hdl = closefs_fat32,
-    .opt_cmd = FS_OPT_CMD_DEFAULT_OPENFS,
+    .opt_hdl = fs_do_closefs,
+    .opt_cmd = FS_OPT_CMD_DEFAULT_CLOSEFS,
   },
 
   [2] = {
-    .opt_hdl = pwddir_fat32,
+    .opt_hdl = fs_do_pwd,
     .opt_cmd = "pwd",
   },
 
   [3] = {
-    .opt_hdl = cddir_fat32,
+    .opt_hdl = fs_do_cd,
     .opt_cmd = "cd",
   },
 
   [4] = {
-    .opt_hdl = lsdir_fat32,
+    .opt_hdl = fs_do_ls,
     .opt_cmd = "ls",
   },
 
   [5] = {
-    .opt_hdl = mkdir_fat32,
+    .opt_hdl = fs_do_mkdir,
     .opt_cmd = "mkdir",
   },
 
   [6] = {
-    .opt_hdl = rm_fat32,
+    .opt_hdl = fs_do_rm,
     .opt_cmd = "rm",
   },
 
   [7] = {
-    .opt_hdl = mkfile_fat32,
+    .opt_hdl = fs_do_mkfile,
     .opt_cmd = "mkfile",
   },
 
   [8] = {
-    .opt_hdl = readfile_fat32,
+    .opt_hdl = fs_do_readfile,
     .opt_cmd = "rdfile",
   },
 
   [9] = {
-    .opt_hdl = writefile_fat32,
+    .opt_hdl = fs_do_writefile,
     .opt_cmd = "wtfile",
   },
 };
@@ -125,52 +125,52 @@ fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
 /*
  * Function Definition
  */
-static int32_t openfs_fat32(int32_t argc, char **argv)
+static int32_t fs_do_openfs(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t closefs_fat32(int32_t argc, char **argv)
+static int32_t fs_do_closefs(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t pwddir_fat32(int32_t argc, char **argv)
+static int32_t fs_do_pwd(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t cddir_fat32(int32_t argc, char **argv)
+static int32_t fs_do_cd(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t lsdir_fat32(int32_t argc, char **argv)
+static int32_t fs_do_ls(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t mkdir_fat32(int32_t argc, char **argv)
+static int32_t fs_do_mkdir(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t rm_fat32(int32_t argc, char **argv)
+static int32_t fs_do_rm(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t mkfile_fat32(int32_t argc, char **argv)
+static int32_t fs_do_mkfile(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t readfile_fat32(int32_t argc, char **argv)
+static int32_t fs_do_readfile(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t writefile_fat32(int32_t argc, char **argv)
+static int32_t fs_do_writefile(int32_t argc, char **argv)
 {
   return -1;
 }

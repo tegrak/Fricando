@@ -69,9 +69,9 @@ typedef struct {
 /*
  * Function Declaration
  */
-static int32_t help_ss(int32_t argc, char **argv);
-static int32_t history_ss(int32_t argc, char **argv);
-static int32_t quit_ss(int32_t argc, char **argv);
+static int32_t ss_do_help(int32_t argc, char **argv);
+static int32_t ss_do_history(int32_t argc, char **argv);
+static int32_t ss_do_quit(int32_t argc, char **argv);
 
 static void ss_add_history(const char *line);
 static void ss_del_history();
@@ -79,7 +79,7 @@ static void ss_del_history();
 static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
-static void ss_exec_line(int32_t fs_idx, const char *line);
+static void ss_exec_line(const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
 
 /*
@@ -88,21 +88,23 @@ static void ss_listen(const char *ss_prompt, const char *fs_name);
 extern fs_opt_t fs_opt_tbl_ext4[];
 extern fs_opt_t fs_opt_tbl_fat32[];
 
+static int32_t fs_type;
+
 static ss_data_t ss_data;
 
 static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   [0] = {
-    .opt_hdl = help_ss,
+    .opt_hdl = ss_do_help,
     .opt_cmd = "help",
   },
 
   [1] = {
-    .opt_hdl = history_ss,
+    .opt_hdl = ss_do_history,
     .opt_cmd = "history",
   },
 
   [2] = {
-    .opt_hdl = quit_ss,
+    .opt_hdl = ss_do_quit,
     .opt_cmd = "quit",
   },
 };
@@ -114,12 +116,12 @@ static int32_t ss_history_buf_idx;
 /*
  * Function Definition
  */
-static int32_t help_ss(int32_t argc, char **argv)
+static int32_t ss_do_help(int32_t argc, char **argv)
 {
   int32_t opt_num = 0;
   const char *opt_cmd = NULL;
   int32_t i = 0;
-  int32_t fs_idx = -1;
+  int32_t fs_type = -1;
 
   fprintf(stdout, "command list: ");
 
@@ -132,12 +134,12 @@ static int32_t help_ss(int32_t argc, char **argv)
   }
 
   if (argc > 0 && argv != NULL) {
-    fs_idx = atoi(argv[0]);
-    if (fs_idx >= 0 && fs_idx < FS_TYPE_NUM_MAX) {
-      opt_num = fs_opt_num(fs_idx);
+    fs_type = atoi(argv[0]);
+    if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
+      opt_num = fs_opt_num(fs_type);
       for (i = 0; i < opt_num; ++i) {
-	opt_cmd = fs_opt_cmd_enum(fs_idx, i);
-	fprintf(stdout, "%s ", opt_cmd);
+        opt_cmd = fs_opt_cmd_enum(fs_type, i);
+        fprintf(stdout, "%s ", opt_cmd);
       }
     }
   }
@@ -147,7 +149,7 @@ static int32_t help_ss(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t history_ss(int32_t argc, char **argv)
+static int32_t ss_do_history(int32_t argc, char **argv)
 {
   int32_t index = 0;
   int32_t i = 0, j = 0;
@@ -164,7 +166,7 @@ static int32_t history_ss(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t quit_ss(int32_t argc, char **argv)
+static int32_t ss_do_quit(int32_t argc, char **argv)
 {
   ss_data.abort = 1;
 
@@ -277,7 +279,7 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
   fs_opt_handle_t handle = NULL;
 
   if (ss_cmd == NULL) {
-    return NULL;
+    return ((fs_opt_handle_t)NULL);
   }
 
   len_ss_cmd = strlen(ss_cmd);
@@ -303,28 +305,23 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 /*
  * Execute command line for filesystem
  */
-static void ss_exec_line(int32_t fs_idx, const char *line)
+static void ss_exec_line(const char *line)
 {
   fs_opt_handle_t handle = NULL;
   int32_t argc = 0;
   char *argv = NULL;
   int32_t ret = -1;
 
-  handle = fs_opt_hdl_match(fs_idx, line);
+  argc = 1;
+  argv = (char *)line;
+
+  handle = fs_opt_hdl_match(fs_type, line);
   if (handle != NULL) {
-    argc = 1;
-    argv = (char *)line;
     ret = handle(argc, (char **)&argv);
   } else {
     handle = ss_opt_hdl_match(line);
     if (handle != NULL) {
-      argc = 1;
-      argv = (char *)malloc(argc * 6);
-      if (argv != NULL) {
-        snprintf(argv, sizeof(argv), "%d", fs_idx);
-        ret = handle(argc, (char **)&argv);
-        free(argv);
-      }
+      ret = handle(argc, (char **)&argv);
     }
   }
 
@@ -338,14 +335,13 @@ static void ss_exec_line(int32_t fs_idx, const char *line)
  */
 static void ss_listen(const char *ss_prompt, const char *fs_name)
 {
-  int32_t fs_idx = -1;
   const char *line = NULL;
 
   /*
    * Open filesystem
    */
   if (fs_name != NULL) {
-    fs_idx = fs_open(fs_name);
+    fs_type = fs_open(fs_name);
   }
 
   /*
@@ -372,7 +368,7 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
 
     if (line != NULL && strlen(line) > 0) {
       ss_add_history(line);
-      ss_exec_line(fs_idx, line);
+      ss_exec_line(line);
     }
 
     if (line != NULL) {
