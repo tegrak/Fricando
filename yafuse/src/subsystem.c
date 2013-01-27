@@ -76,7 +76,6 @@ static int32_t quit_ss(int32_t argc, char **argv);
 static void ss_add_history(const char *line);
 static void ss_del_history();
 
-static void ss_completion_prompt(char const * const *match_list);
 static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
@@ -107,6 +106,7 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
     .opt_cmd = "quit",
   },
 };
+static int32_t ss_opt_tbl_idx;
 
 static const char* ss_history_buf[SS_HISTORY_BUF_LEN];
 static int32_t ss_history_buf_idx;
@@ -217,25 +217,10 @@ static void ss_del_history()
 }
 
 /*
- * Auto completion prompt
- */
-static void ss_completion_prompt(char const * const *match_list)
-{
-  int32_t i = 0;
-  char const * const *ptr = NULL;
-
-  ptr = match_list;
-  for (i = 0; ptr[i] != NULL; ++i) {
-    fprintf(stdout, "%s ", ptr[i]);
-  }
-}
-
-/*
  * Auto completion match entry
  */
 static char* ss_completion_entry(const char *text, int32_t state)
 {
-  static int32_t opt_tbl_idx = 0;
   static int32_t len_txt = 0, len_cmd = 0;
   char *ptr = NULL;
 
@@ -243,20 +228,20 @@ static char* ss_completion_entry(const char *text, int32_t state)
     len_txt = strlen(text);
   }
 
-  for (; opt_tbl_idx < SS_OPT_TBL_NUM_MAX; ++opt_tbl_idx) {
-    if (ss_opt_tbl[opt_tbl_idx].opt_cmd != NULL) {
-      len_cmd = strlen(ss_opt_tbl[opt_tbl_idx].opt_cmd);
+  for (; ss_opt_tbl_idx < SS_OPT_TBL_NUM_MAX; ++ss_opt_tbl_idx) {
+    if (ss_opt_tbl[ss_opt_tbl_idx].opt_cmd != NULL) {
+      len_cmd = strlen(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd);
     } else {
       len_cmd = 0;
     }
 
     if (len_cmd > 0 && len_cmd >= len_txt) {
-      if (strncmp(ss_opt_tbl[opt_tbl_idx].opt_cmd, text, len_txt) == 0) {
+      if (strncmp(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, text, len_txt) == 0) {
         ptr = (char *)malloc(len_cmd + 1);
         if (ptr != NULL) {
           memset((void *)ptr, 0, len_cmd + 1);
-          strncpy(ptr, ss_opt_tbl[opt_tbl_idx].opt_cmd, len_cmd);
-          ++opt_tbl_idx;
+          strncpy(ptr, ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, len_cmd);
+          ++ss_opt_tbl_idx;
           break;
         }
       }
@@ -273,16 +258,10 @@ static char** ss_attempted_completion(const char *text, int32_t start, int32_t e
 {
   char **match_list = NULL;
 
-  printf("jia: %s, %d, %d\n", text, start, end);
-
   if (start == 0) {
     match_list = rl_completion_matches((char *)text, &ss_completion_entry);
   } else {
     rl_bind_key('\t', rl_abort);
-  }
-
-  if (match_list != NULL) {
-    ss_completion_prompt((char const * const *)match_list);
   }
 
   return match_list;
@@ -380,9 +359,16 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
   ss_data.abort = 0;
 
   while (ss_data.abort == 0) {
-    line = readline((const char *)ss_prompt);
-
+    /*
+     * Init auto completion
+     */
+    ss_opt_tbl_idx = 0;
     rl_bind_key('\t', rl_complete);
+
+    /*
+     * Line processing
+     */
+    line = readline((const char *)ss_prompt);
 
     if (line != NULL && strlen(line) > 0) {
       ss_add_history(line);
