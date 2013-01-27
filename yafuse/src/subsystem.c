@@ -74,7 +74,10 @@ static int32_t history_ss(int32_t argc, char **argv);
 static int32_t quit_ss(int32_t argc, char **argv);
 
 static void ss_add_history(const char *line);
+static void ss_del_history();
+
 static void ss_auto_completion();
+
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
 static void ss_exec_line(int32_t fs_idx, const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
@@ -172,12 +175,42 @@ static int32_t quit_ss(int32_t argc, char **argv)
  */
 static void ss_add_history(const char *line)
 {
+  char **ptr = NULL;
+  int32_t len = 0, len_old = 0, len_new = 0;
+
   if (line == NULL || strlen(line) == 0) {
     return;
   }
 
   ss_history_buf_idx %= SS_HISTORY_BUF_LEN;
-  ss_history_buf[ss_history_buf_idx++] = line;
+  ptr = (char **)&ss_history_buf[ss_history_buf_idx++];
+
+  if (*ptr != NULL) {
+    len_old = strlen(*ptr);
+  } else {
+    len_old = 0;
+  }
+
+  len_new = strlen(line);
+
+  len = (len_old >= len_new) ? len_old : len_new;
+  *ptr = (char *)realloc((void *)*ptr, (len + 1));
+  memset((void *)*ptr, 0, (len + 1));
+  strncpy(*ptr, line, len_new);
+}
+
+/*
+ * Delete history
+ */
+static void ss_del_history()
+{
+  int32_t i = 0;
+
+  for (i = 0; i < SS_HISTORY_BUF_LEN; ++i) {
+    if (ss_history_buf[i] != NULL) {
+      free((void *)ss_history_buf[i]);
+    }
+  }
 }
 
 /*
@@ -278,6 +311,10 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
       ss_add_history(line);
       ss_exec_line(fs_idx, line);
     }
+
+    if (line != NULL) {
+      free((void *)line);
+    }
   }
 }
 
@@ -335,6 +372,11 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
  */
 void ss_delete(int32_t ss_idx)
 {
+  /*
+   * Delete history
+   */
+  ss_del_history();
+
   /*
    * Close filesystem
    */
