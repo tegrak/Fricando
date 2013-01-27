@@ -58,6 +58,7 @@
 // Add code here
 #endif
 
+#include "filesystem.h"
 #include "subsystem.h"
 
 /*
@@ -76,6 +77,8 @@
 /*
  * Global Variable Definition
  */
+extern fs_opt_t fs_opt_tbl_ext4[];
+extern fs_opt_t fs_opt_tbl_fat32[];
 
 /*
  * Function Declaration
@@ -126,6 +129,21 @@ int32_t main(int argc, char *argv[])
       print_usage();
       return 1;
     }
+  }
+
+  /*
+   * Register filesystem
+   */
+  ret = fs_register(fs_opt_tbl_ext4);
+  if (ret != 0) {
+    fprintf(stderr, "ERROR: failed to register Ext4 operation table!\n");
+    return -1;
+  }
+
+  ret = fs_register(fs_opt_tbl_fat32);
+  if (ret != 0) {
+    fprintf(stderr, "ERROR: failed to register FAT32 operation table!\n");
+    return -1;
   }
 
   /*

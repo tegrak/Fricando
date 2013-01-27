@@ -86,9 +86,6 @@ static void ss_listen(const char *ss_prompt, const char *fs_name);
 /*
  * Global Variable Definition
  */
-extern fs_opt_t fs_opt_tbl_ext4[];
-extern fs_opt_t fs_opt_tbl_fat32[];
-
 static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   [0] = {
     .opt_hdl = ss_do_help,
@@ -384,7 +381,6 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
 {
   char ss_prompt[SS_NAME_LEN_MAX + SS_PROMPT_DEFAULT_LEN + 1] = {0};
   int32_t ss_prompt_len = 0;
-  int32_t ret = 0;
 
   if (ret_val == NULL) {
     fprintf(stderr, "ERROR: invalid args!\n");
@@ -396,19 +392,6 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
    */
   fprintf(stdout, "WELCOME TO YAFUSE!\n");
   fprintf(stdout, "press 'help' for more info.\n");
-
-  /*
-   * Register filesystem
-   */
-  ret = fs_register(fs_opt_tbl_ext4);
-  if (ret != 0) {
-    fprintf(stderr, "WARNING: failed to register Ext4 operation table!\n");
-  }
-
-  ret = fs_register(fs_opt_tbl_fat32);
-  if (ret != 0) {
-    fprintf(stderr, "WARNING: failed to register FAT32 operation table!\n");
-  }
 
   if (ss_name == NULL) {
     strncpy((void *)ss_prompt, SS_PROMPT_DEFAULT, strlen(SS_PROMPT_DEFAULT));
