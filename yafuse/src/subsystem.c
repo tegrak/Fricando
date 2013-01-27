@@ -78,6 +78,7 @@ static void ss_del_history();
 
 static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
+
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
 static void ss_exec_line(const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
@@ -87,10 +88,6 @@ static void ss_listen(const char *ss_prompt, const char *fs_name);
  */
 extern fs_opt_t fs_opt_tbl_ext4[];
 extern fs_opt_t fs_opt_tbl_fat32[];
-
-static int32_t fs_type;
-
-static ss_data_t ss_data;
 
 static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   [0] = {
@@ -107,8 +104,17 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
     .opt_hdl = ss_do_quit,
     .opt_cmd = "quit",
   },
+
+  [3] = {
+    .opt_hdl = NULL,
+    .opt_cmd = NULL,
+  }
 };
 static int32_t ss_opt_tbl_idx;
+
+static int32_t fs_type;
+
+static ss_data_t ss_data;
 
 static const char* ss_history_buf[SS_HISTORY_BUF_LEN];
 static int32_t ss_history_buf_idx;
@@ -121,7 +127,6 @@ static int32_t ss_do_help(int32_t argc, char **argv)
   int32_t opt_num = 0;
   const char *opt_cmd = NULL;
   int32_t i = 0;
-  int32_t fs_type = -1;
 
   fprintf(stdout, "command list: ");
 
@@ -133,15 +138,10 @@ static int32_t ss_do_help(int32_t argc, char **argv)
     }
   }
 
-  if (argc > 0 && argv != NULL) {
-    fs_type = atoi(argv[0]);
-    if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
-      opt_num = fs_opt_num(fs_type);
-      for (i = 0; i < opt_num; ++i) {
-        opt_cmd = fs_opt_cmd_enum(fs_type, i);
-        fprintf(stdout, "%s ", opt_cmd);
-      }
-    }
+  opt_num = fs_opt_num(fs_type);
+  for (i = 0; i < opt_num; ++i) {
+    opt_cmd = fs_opt_cmd_enum(fs_type, i);
+    fprintf(stdout, "%s ", opt_cmd);
   }
 
   fprintf(stdout, "\n");
@@ -231,11 +231,11 @@ static char* ss_completion_entry(const char *text, int32_t state)
   }
 
   for (; ss_opt_tbl_idx < SS_OPT_TBL_NUM_MAX; ++ss_opt_tbl_idx) {
-    if (ss_opt_tbl[ss_opt_tbl_idx].opt_cmd != NULL) {
-      len_cmd = strlen(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd);
-    } else {
-      len_cmd = 0;
+    if (ss_opt_tbl[ss_opt_tbl_idx].opt_cmd == NULL) {
+      break;
     }
+
+    len_cmd = strlen(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd);
 
     if (len_cmd > 0 && len_cmd >= len_txt) {
       if (strncmp(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, text, len_txt) == 0) {
@@ -285,11 +285,11 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
   len_ss_cmd = strlen(ss_cmd);
 
   for (i = 0; i < SS_OPT_TBL_NUM_MAX; ++i) {
-    if (ss_opt_tbl[i].opt_cmd != NULL) {
-      len_opt_cmd = strlen(ss_opt_tbl[i].opt_cmd);
-    } else {
-      len_opt_cmd = 0;
+    if (ss_opt_tbl[i].opt_cmd == NULL) {
+      break;
     }
+
+    len_opt_cmd = strlen(ss_opt_tbl[i].opt_cmd);
 
     if (len_opt_cmd > 0 && len_opt_cmd <= len_ss_cmd) {
       if (strncmp(ss_opt_tbl[i].opt_cmd, ss_cmd, len_opt_cmd) == 0) {

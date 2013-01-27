@@ -120,6 +120,11 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
     .opt_hdl = fs_do_writefile,
     .opt_cmd = "wtfile",
   },
+
+  [10] = {
+    .opt_hdl = NULL,
+    .opt_cmd = NULL,
+  }
 };
 
 /*
