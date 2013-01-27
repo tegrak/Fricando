@@ -174,7 +174,7 @@ static int32_t ss_do_quit(int32_t argc, char **argv)
  */
 static void ss_add_history(const char *line)
 {
-  char **ptr = NULL;
+  char **cmd = NULL;
   int32_t len = 0, len_old = 0, len_new = 0;
 
   if (line == NULL || strlen(line) == 0) {
@@ -182,10 +182,10 @@ static void ss_add_history(const char *line)
   }
 
   ss_history_buf_idx %= SS_HISTORY_BUF_LEN;
-  ptr = (char **)&ss_history_buf[ss_history_buf_idx++];
+  cmd = (char **)&ss_history_buf[ss_history_buf_idx++];
 
-  if (*ptr != NULL) {
-    len_old = strlen(*ptr);
+  if (*cmd != NULL) {
+    len_old = strlen(*cmd);
   } else {
     len_old = 0;
   }
@@ -193,10 +193,10 @@ static void ss_add_history(const char *line)
   len_new = strlen(line);
 
   len = (len_old >= len_new) ? len_old : len_new;
-  *ptr = (char *)realloc((void *)*ptr, (len + 1));
-  if (*ptr != NULL) {
-    memset((void *)*ptr, 0, (len + 1));
-    strncpy(*ptr, line, len_new);
+  *cmd = (char *)realloc((void *)*cmd, (len + 1));
+  if (*cmd != NULL) {
+    memset((void *)*cmd, 0, (len + 1));
+    strncpy(*cmd, line, len_new);
   }
 }
 
@@ -219,12 +219,16 @@ static void ss_del_history()
  */
 static char* ss_completion_entry(const char *text, int32_t state)
 {
-  static int32_t ss_opt_tbl_idx;
+  static int32_t ss_opt_tbl_idx = 0, fs_opt_tbl_idx = 0;
+  static int32_t fs_opt_tbl_num = 0;
   static int32_t len_txt = 0, len_cmd = 0;
-  char *ptr = NULL;
+  static const char *cmd = NULL;
+  static char *match = NULL;
 
   if (state == 0) {
     ss_opt_tbl_idx = 0;
+    fs_opt_tbl_idx = 0;
+    fs_opt_tbl_num = fs_opt_num(fs_type);
     len_txt = strlen(text);
   }
 
@@ -237,18 +241,39 @@ static char* ss_completion_entry(const char *text, int32_t state)
 
     if (len_cmd > 0 && len_cmd >= len_txt) {
       if (strncmp(ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, text, len_txt) == 0) {
-        ptr = (char *)malloc(len_cmd + 1);
-        if (ptr != NULL) {
-          memset((void *)ptr, 0, len_cmd + 1);
-          strncpy(ptr, ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, len_cmd);
+        match = (char *)malloc(len_cmd + 1);
+        if (match != NULL) {
+          memset((void *)match, 0, len_cmd + 1);
+          strncpy(match, ss_opt_tbl[ss_opt_tbl_idx].opt_cmd, len_cmd);
           ++ss_opt_tbl_idx;
-          break;
+          return match;
         }
       }
     }
   }
 
-  return ptr;
+  for (; fs_opt_tbl_idx < fs_opt_tbl_num; ++fs_opt_tbl_idx) {
+    cmd = fs_opt_cmd_enum(fs_type, fs_opt_tbl_idx);
+    if (cmd == NULL) {
+      break;
+    }
+
+    len_cmd = strlen(cmd);
+
+    if (len_cmd > 0 && len_cmd >= len_txt) {
+      if (strncmp(cmd, text, len_txt) == 0) {
+        match = (char *)malloc(len_cmd + 1);
+        if (match != NULL) {
+          memset((void *)match, 0, len_cmd + 1);
+          strncpy(match, cmd, len_cmd);
+          ++fs_opt_tbl_idx;
+          return match;
+        }
+      }
+    }
+  }
+
+  return ((char *)NULL);
 }
 
 /*
