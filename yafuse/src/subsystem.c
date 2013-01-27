@@ -76,8 +76,9 @@ static int32_t quit_ss(int32_t argc, char **argv);
 static void ss_add_history(const char *line);
 static void ss_del_history();
 
-static void ss_auto_completion();
-
+static void ss_completion_prompt(char const * const *match_list);
+static char* ss_completion_entry(const char *text, int32_t state);
+static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
 static void ss_exec_line(int32_t fs_idx, const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
@@ -195,8 +196,10 @@ static void ss_add_history(const char *line)
 
   len = (len_old >= len_new) ? len_old : len_new;
   *ptr = (char *)realloc((void *)*ptr, (len + 1));
-  memset((void *)*ptr, 0, (len + 1));
-  strncpy(*ptr, line, len_new);
+  if (*ptr != NULL) {
+    memset((void *)*ptr, 0, (len + 1));
+    strncpy(*ptr, line, len_new);
+  }
 }
 
 /*
@@ -214,36 +217,101 @@ static void ss_del_history()
 }
 
 /*
- * Auto completion for subsystem command
+ * Auto completion prompt
  */
-static void ss_auto_completion()
+static void ss_completion_prompt(char const * const *match_list)
 {
+  int32_t i = 0;
+  char const * const *ptr = NULL;
+
+  ptr = match_list;
+  for (i = 0; ptr[i] != NULL; ++i) {
+    fprintf(stdout, "%s ", ptr[i]);
+  }
+}
+
+/*
+ * Auto completion match entry
+ */
+static char* ss_completion_entry(const char *text, int32_t state)
+{
+  static int32_t opt_tbl_idx = 0;
+  static int32_t len_txt = 0, len_cmd = 0;
+  char *ptr = NULL;
+
+  if (state == 0) {
+    len_txt = strlen(text);
+  }
+
+  for (; opt_tbl_idx < SS_OPT_TBL_NUM_MAX; ++opt_tbl_idx) {
+    if (ss_opt_tbl[opt_tbl_idx].opt_cmd != NULL) {
+      len_cmd = strlen(ss_opt_tbl[opt_tbl_idx].opt_cmd);
+    } else {
+      len_cmd = 0;
+    }
+
+    if (len_cmd > 0 && len_cmd >= len_txt) {
+      if (strncmp(ss_opt_tbl[opt_tbl_idx].opt_cmd, text, len_txt) == 0) {
+        ptr = (char *)malloc(len_cmd + 1);
+        if (ptr != NULL) {
+          memset((void *)ptr, 0, len_cmd + 1);
+          strncpy(ptr, ss_opt_tbl[opt_tbl_idx].opt_cmd, len_cmd);
+          ++opt_tbl_idx;
+          break;
+        }
+      }
+    }
+  }
+
+  return ptr;
+}
+
+/*
+ * Auto completion callback
+ */
+static char** ss_attempted_completion(const char *text, int32_t start, int32_t end)
+{
+  char **match_list = NULL;
+
+  printf("jia: %s, %d, %d\n", text, start, end);
+
+  if (start == 0) {
+    match_list = rl_completion_matches((char *)text, &ss_completion_entry);
+  } else {
+    rl_bind_key('\t', rl_abort);
+  }
+
+  if (match_list != NULL) {
+    ss_completion_prompt((char const * const *)match_list);
+  }
+
+  return match_list;
 }
 
 /*
  * Match opt handle with opt command
  */
-static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd)
+static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 {
   int32_t i = 0;
-  int32_t len_0 = 0, len_1 = 0;
+  int32_t len_ss_cmd = 0, len_opt_cmd = 0;
   fs_opt_handle_t handle = NULL;
 
-  if (opt_cmd == NULL) {
+  if (ss_cmd == NULL) {
     return NULL;
   }
 
-  len_1 = strlen(opt_cmd);
+  len_ss_cmd = strlen(ss_cmd);
 
   for (i = 0; i < SS_OPT_TBL_NUM_MAX; ++i) {
     if (ss_opt_tbl[i].opt_cmd != NULL) {
-      len_0 = strlen(ss_opt_tbl[i].opt_cmd);
+      len_opt_cmd = strlen(ss_opt_tbl[i].opt_cmd);
     } else {
-      len_0 = 0;
+      len_opt_cmd = 0;
     }
 
-    if (len_0 > 0 && len_0 <= len_1) {
-      if (strncmp(ss_opt_tbl[i].opt_cmd, opt_cmd, len_0) == 0) {
+    if (len_opt_cmd > 0 && len_opt_cmd <= len_ss_cmd) {
+      if (strncmp(ss_opt_tbl[i].opt_cmd, ss_cmd, len_opt_cmd) == 0) {
         handle = ss_opt_tbl[i].opt_hdl;
         break;
       }
@@ -273,9 +341,11 @@ static void ss_exec_line(int32_t fs_idx, const char *line)
     if (handle != NULL) {
       argc = 1;
       argv = (char *)malloc(argc * 6);
-      snprintf(argv, sizeof(argv), "%d", fs_idx);
-      ret = handle(argc, (char **)&argv);
-      free(argv);
+      if (argv != NULL) {
+        snprintf(argv, sizeof(argv), "%d", fs_idx);
+        ret = handle(argc, (char **)&argv);
+        free(argv);
+      }
     }
   }
 
@@ -299,13 +369,20 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
     fs_idx = fs_open(fs_name);
   }
 
-  ss_data.abort = 0;
+  /*
+   * Init auto completion callback
+   */
+  rl_attempted_completion_function = ss_attempted_completion;
 
   /*
    * Read line
    */
+  ss_data.abort = 0;
+
   while (ss_data.abort == 0) {
     line = readline((const char *)ss_prompt);
+
+    rl_bind_key('\t', rl_complete);
 
     if (line != NULL && strlen(line) > 0) {
       ss_add_history(line);

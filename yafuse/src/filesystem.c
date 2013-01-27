@@ -141,7 +141,7 @@ void fs_close()
 fs_opt_handle_t fs_opt_hdl_match(int32_t fs_idx, const char *fs_cmd)
 {
   int32_t i = 0;
-  int32_t len_0 = 0, len_1 = 0;
+  int32_t len_opt_cmd = 0, len_fs_cmd = 0;
   fs_opt_handle_t handle = NULL;
 
   if (fs_idx < 0
@@ -150,17 +150,17 @@ fs_opt_handle_t fs_opt_hdl_match(int32_t fs_idx, const char *fs_cmd)
     return NULL;
   }
 
-  len_1 = strlen(fs_cmd);
+  len_fs_cmd = strlen(fs_cmd);
 
   for (i = 0; i < FS_OPT_TBL_NUM_MAX; ++i) {
     if (fs_opt_tbl_list[fs_idx][i].opt_cmd != NULL) {
-      len_0 = strlen((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd));
+      len_opt_cmd = strlen((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd));
     } else {
-      len_0 = 0;
+      len_opt_cmd = 0;
     }
 
-    if (len_0 > 0 && len_0 <= len_1) {
-      if (strncmp((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd), (char *)fs_cmd, len_0) == 0) {
+    if (len_opt_cmd > 0 && len_opt_cmd <= len_fs_cmd) {
+      if (strncmp((char *)(fs_opt_tbl_list[fs_idx][i].opt_cmd), (char *)fs_cmd, len_opt_cmd) == 0) {
 	handle = fs_opt_tbl_list[fs_idx][i].opt_hdl;
 	break;
       }
