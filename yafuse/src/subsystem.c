@@ -86,6 +86,8 @@ static void ss_listen(const char *ss_prompt, const char *fs_name);
 /*
  * Global Variable Definition
  */
+static int32_t fs_type;
+
 static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   [0] = {
     .opt_hdl = ss_do_help,
@@ -107,9 +109,6 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
     .opt_cmd = NULL,
   }
 };
-static int32_t ss_opt_tbl_idx;
-
-static int32_t fs_type;
 
 static ss_data_t ss_data;
 
@@ -220,10 +219,12 @@ static void ss_del_history()
  */
 static char* ss_completion_entry(const char *text, int32_t state)
 {
+  static int32_t ss_opt_tbl_idx;
   static int32_t len_txt = 0, len_cmd = 0;
   char *ptr = NULL;
 
   if (state == 0) {
+    ss_opt_tbl_idx = 0;
     len_txt = strlen(text);
   }
 
@@ -355,7 +356,6 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
     /*
      * Init auto completion
      */
-    ss_opt_tbl_idx = 0;
     rl_bind_key('\t', rl_complete);
 
     /*
