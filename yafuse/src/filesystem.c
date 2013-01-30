@@ -114,7 +114,7 @@ int32_t fs_open(const char *fs_name)
   argv = (char *)fs_name;
 
   for (i = 0; i < fs_opt_tbl_list_len; ++i) {
-    handle = fs_opt_hdl_match(i, FS_OPT_CMD_DEFAULT_OPENFS);
+    handle = fs_opt_hdl_match(i, FS_OPT_CMD_MOUNT);
 
     if (handle != NULL) {
       ret = handle(argc, &argv);
@@ -199,7 +199,7 @@ const char* fs_opt_cmd_enum(int32_t fs_type, int32_t opt_idx)
       || fs_type >= fs_opt_tbl_list_len
       || opt_idx < 0
       || opt_idx >= FS_OPT_TBL_NUM_MAX) {
-    return 0;
+    return ((const char *)NULL);
   }
 
   return fs_opt_tbl_list[fs_type][opt_idx].opt_cmd;

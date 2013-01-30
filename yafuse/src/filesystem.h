@@ -39,8 +39,8 @@
 #define FS_TYPE_NUM_MAX  (20)
 #define FS_OPT_TBL_NUM_MAX  (20)
 
-#define FS_OPT_CMD_DEFAULT_OPENFS   "openfs"
-#define FS_OPT_CMD_DEFAULT_CLOSEFS  "closefs"
+#define FS_OPT_CMD_MOUNT   "mount"
+#define FS_OPT_CMD_UMOUNT  "umount"
 
 /*
  * Type Definition

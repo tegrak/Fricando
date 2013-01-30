@@ -53,16 +53,15 @@
 /*
  * Function Declaration
  */
-static int32_t fs_do_openfs(int32_t argc, char **argv);
-static int32_t fs_do_closefs(int32_t argc, char **argv);
+static int32_t fs_do_mount(int32_t argc, char **argv);
+static int32_t fs_do_umount(int32_t argc, char **argv);
 static int32_t fs_do_pwd(int32_t argc, char **argv);
 static int32_t fs_do_cd(int32_t argc, char **argv);
 static int32_t fs_do_ls(int32_t argc, char **argv);
 static int32_t fs_do_mkdir(int32_t argc, char **argv);
 static int32_t fs_do_rm(int32_t argc, char **argv);
-static int32_t fs_do_mkfile(int32_t argc, char **argv);
-static int32_t fs_do_readfile(int32_t argc, char **argv);
-static int32_t fs_do_writefile(int32_t argc, char **argv);
+static int32_t fs_do_read(int32_t argc, char **argv);
+static int32_t fs_do_write(int32_t argc, char **argv);
 
 /*
  * Global Variable Definition
@@ -72,13 +71,13 @@ static int32_t fs_do_writefile(int32_t argc, char **argv);
  */
 fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
   [0] = {
-    .opt_hdl = fs_do_openfs,
-    .opt_cmd = FS_OPT_CMD_DEFAULT_OPENFS,
+    .opt_hdl = fs_do_mount,
+    .opt_cmd = FS_OPT_CMD_MOUNT,
   },
 
   [1] = {
-    .opt_hdl = fs_do_closefs,
-    .opt_cmd = FS_OPT_CMD_DEFAULT_CLOSEFS,
+    .opt_hdl = fs_do_umount,
+    .opt_cmd = FS_OPT_CMD_UMOUNT,
   },
 
   [2] = {
@@ -107,21 +106,16 @@ fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
   },
 
   [7] = {
-    .opt_hdl = fs_do_mkfile,
-    .opt_cmd = "mkfile",
+    .opt_hdl = fs_do_read,
+    .opt_cmd = "read",
   },
 
   [8] = {
-    .opt_hdl = fs_do_readfile,
-    .opt_cmd = "rdfile",
+    .opt_hdl = fs_do_write,
+    .opt_cmd = "write",
   },
 
   [9] = {
-    .opt_hdl = fs_do_writefile,
-    .opt_cmd = "wtfile",
-  },
-
-  [10] = {
     .opt_hdl = NULL,
     .opt_cmd = NULL,
   }
@@ -130,12 +124,12 @@ fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
 /*
  * Function Definition
  */
-static int32_t fs_do_openfs(int32_t argc, char **argv)
+static int32_t fs_do_mount(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t fs_do_closefs(int32_t argc, char **argv)
+static int32_t fs_do_umount(int32_t argc, char **argv)
 {
   return -1;
 }
@@ -165,17 +159,12 @@ static int32_t fs_do_rm(int32_t argc, char **argv)
   return -1;
 }
 
-static int32_t fs_do_mkfile(int32_t argc, char **argv)
+static int32_t fs_do_read(int32_t argc, char **argv)
 {
   return -1;
 }
 
-static int32_t fs_do_readfile(int32_t argc, char **argv)
-{
-  return -1;
-}
-
-static int32_t fs_do_writefile(int32_t argc, char **argv)
+static int32_t fs_do_write(int32_t argc, char **argv)
 {
   return -1;
 }

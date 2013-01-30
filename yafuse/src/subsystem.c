@@ -135,9 +135,13 @@ static int32_t ss_do_help(int32_t argc, char **argv)
   }
 
   opt_num = fs_opt_num(fs_type);
-  for (i = 0; i < opt_num; ++i) {
-    opt_cmd = fs_opt_cmd_enum(fs_type, i);
-    fprintf(stdout, "%s ", opt_cmd);
+  if (opt_num > 0) {
+    for (i = 0; i < opt_num; ++i) {
+      opt_cmd = fs_opt_cmd_enum(fs_type, i);
+      fprintf(stdout, "%s ", opt_cmd);
+    }
+  } else {
+    fprintf(stdout, "%s %s", FS_OPT_CMD_MOUNT, FS_OPT_CMD_UMOUNT);
   }
 
   fprintf(stdout, "\n");
@@ -365,6 +369,8 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
    */
   if (fs_name != NULL) {
     fs_type = fs_open(fs_name);
+  } else {
+    fs_type = -1;
   }
 
   /*
