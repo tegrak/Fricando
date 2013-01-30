@@ -1,7 +1,7 @@
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
-headers = debug.h
+headers =
 
 if INSTALL_LIBRARY
 libext4include_HEADERS = $(headers)

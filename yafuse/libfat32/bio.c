@@ -1,5 +1,5 @@
 /**
- * unix_io.c - UNIX IO interface.
+ * bio.c - IO interface for FAT32.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *

@@ -1,5 +1,5 @@
 /**
- * subsystem.h - The header of subsystem.
+ * bio.h - The header of IO interface.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _SUBSYSTEM_H
-#define _SUBSYSTEM_H
+#ifndef _BIO_H
+#define _BIO_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -37,8 +37,6 @@
 /*
  * Macro Definition
  */
-/* Maximum length of subsystem name */
-#define SS_NAME_LEN_MAX  (20)
 
 /*
  * Type Definition
@@ -47,7 +45,5 @@
 /*
  * Function Declaration
  */
-int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val);
-void ss_delete(int ss_idx);
 
-#endif /* _SUBSYSTEM_H */
+#endif /* _BIO_H */
