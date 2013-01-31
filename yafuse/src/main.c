@@ -59,6 +59,8 @@
 #endif
 
 #include "filesystem.h"
+#include "fs_ext4.h"
+#include "fs_fat32.h"
 #include "subsystem.h"
 
 /*
@@ -77,8 +79,6 @@
 /*
  * Global Variable Definition
  */
-extern fs_opt_t fs_opt_tbl_ext4[];
-extern fs_opt_t fs_opt_tbl_fat32[];
 
 /*
  * Function Declaration

@@ -41,6 +41,7 @@
 #endif
 
 #include "filesystem.h"
+#include "fs_fat32.h"
 
 /*
  * Macro Definition

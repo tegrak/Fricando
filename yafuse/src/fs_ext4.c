@@ -41,6 +41,7 @@
 #endif
 
 #include "filesystem.h"
+#include "fs_ext4.h"
 
 /*
  * Macro Definition
