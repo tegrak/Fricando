@@ -316,8 +316,6 @@ static char** ss_attempted_completion(const char *text, int32_t start, int32_t e
 
   if (start == 0) {
     match_list = rl_completion_matches((char *)text, &ss_completion_entry);
-  } else {
-    rl_bind_key('\t', rl_abort);
   }
 
   return match_list;
