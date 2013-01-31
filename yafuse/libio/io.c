@@ -1,5 +1,5 @@
 /**
- * bio.c - IO interface for FAT32.
+ * io.c - IO interface for filesystem.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *

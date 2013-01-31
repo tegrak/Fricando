@@ -1,5 +1,5 @@
 /**
- * bio.h - The header of IO interface.
+ * io.h - The header of IO interface.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _BIO_H
-#define _BIO_H
+#ifndef _IO_H
+#define _IO_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -46,4 +46,4 @@
  * Function Declaration
  */
 
-#endif /* _BIO_H */
+#endif /* _IO_H */
