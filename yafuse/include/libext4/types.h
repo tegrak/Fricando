@@ -37,10 +37,34 @@
 /*
  * Macro Definition
  */
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define DIV_ROUND_UP(x, y) (((x) + (y) - 1)/(y))
+#define ALIGN(x, y) ((y) * DIV_ROUND_UP((x), (y)))
+
+#define __le64 u64
+#define __le32 u32
+#define __le16 u16
+
+#define __be64 u64
+#define __be32 u32
+#define __be16 u16
+
+#define __u64 u64
+#define __u32 u32
+#define __u16 u16
+#define __u8 u8
 
 /*
  * Type Definition
  */
+typedef unsigned long long u64;
+typedef signed long long s64;
+typedef unsigned int u32;
+typedef unsigned short int u16;
+typedef unsigned char u8;
 
 /*
  * Function Declaration

@@ -40,7 +40,8 @@
 // Add code here
 #endif
 
-#include "debug.h"
+#include "include/libext4/types.h"
+#include "include/libext4/debug.h"
 
 /*
  * Macro Definition

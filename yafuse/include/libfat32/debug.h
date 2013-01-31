@@ -37,6 +37,20 @@
 /*
  * Macro Definition
  */
+#define info(fmt, args...) \
+  do { \
+    fprintf(stdout, "fat32 info: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
+
+#define warn(fmt, args...) \
+  do { \
+    fprintf(stderr, "fat32 warning: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
+
+#define error(fmt, args...) \
+  do { \
+    fprintf(stderr, "fat32 error: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
 
 /*
  * Type Definition
