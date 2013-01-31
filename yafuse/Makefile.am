@@ -24,7 +24,7 @@ MAINTAINERCLEANFILES=\
 	$(srcdir)/m4/lt~obsolete.m4 \
 	$(srcdir)/m4/ltoptions.m4
 
-SUBDIRS = include libext4 libfat32 src
+SUBDIRS = include libext4 libfat32 libio src
 
 doc_DATA = README
 
@@ -44,4 +44,7 @@ libext4:
 
 libfat32:
 	(cd libfat32 && $(MAKE) libs) || exit 1;
+
+libio:
+	(cd libio && $(MAKE) libs) || exit 1;
 
