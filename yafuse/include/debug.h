@@ -37,9 +37,25 @@
 /*
  * Macro Definition
  */
+#ifdef DEBUG
 #define info(fmt, args...) \
   do { \
-    fprintf(stdout, "info: " fmt "\n", ## args); \
+    fprintf(stdout, "info: %s: " fmt "\n", __func__, ## args);  \
+  } while (0)
+
+#define warn(fmt, args...) \
+  do { \
+    fprintf(stderr, "warning: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
+
+#define error(fmt, args...) \
+  do { \
+    fprintf(stderr, "error: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
+#else
+#define info(fmt, args...)                      \
+  do { \
+    fprintf(stdout, "info: " fmt "\n", ## args);                  \
   } while (0)
 
 #define warn(fmt, args...) \
@@ -49,8 +65,9 @@
 
 #define error(fmt, args...) \
   do { \
-    fprintf(stderr, "error: %s: " fmt "\n", __func__, ## args); \
+    fprintf(stderr, "error: " fmt "\n", ## args); \
   } while (0)
+#endif /* DEBUG */
 
 /*
  * Type Definition
