@@ -146,19 +146,23 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 {
   const char *name = NULL;
   struct ext4_super_block *sb = NULL;
-  int32_t ret = 0;
+  int32_t ret = -1;
 
-  if (fs_info.mounted) {
-    error("umount ext4 filesystem first!");
-    return -1;
-  }
-
-  if (argc < 1 || argv == NULL || *argv == NULL) {
+  if (argc < 2 || argv == NULL) {
     error("invalid args!");
     return -1;
   }
 
-  name = (const char *)*argv;
+  name = (const char *)argv[1];
+  if (name == NULL) {
+    error("invalid args!");
+    return -1;
+  }    
+
+  if (fs_info.mounted) {
+    info("umount ext4 filesystem first!");
+    return 0;
+  }
 
   sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
   if (sb == NULL) {
@@ -168,7 +172,6 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 
   ret = ext4_fill_super(name, sb);
   if (ret != 0) {
-    error("failed to mount ext4 filesystem!");
     goto fs_do_mount_fail;
   }
 
@@ -180,6 +183,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   return 0;
 
  fs_do_mount_fail:
+  info("failed to mount ext4 filesystem!");
   if (sb != NULL) free(sb);
   return ret;
 }
@@ -189,7 +193,7 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
   if (fs_info.mounted) {
     info("umount ext4 filesystem successfully.");
   } else {
-    info("no filesystem umounted.");
+    info("no filesystem mounted.");
   }
 
   if (fs_info.sb != NULL) free(fs_info.sb);

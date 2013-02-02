@@ -102,24 +102,20 @@ void fs_unregister()
 int32_t fs_open(const char *fs_name)
 {
   int32_t argc = 0;
-  char *argv = NULL;
+  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
   fs_opt_handle_t handle = NULL;
   int32_t i = 0;
   int32_t opt_tbl_list_idx = -1;
   int32_t ret = 0;
 
-  if (fs_name == NULL) {
-    return -1;
-  }
-
-  argc = 1;
-  argv = (char *)fs_name;
+  argc = 2;
+  argv[0] = FS_OPT_CMD_MOUNT;
+  argv[1] = (char *)fs_name;
 
   for (i = 0; i < fs_opt_tbl_list_len; ++i) {
     handle = fs_opt_hdl_match(i, FS_OPT_CMD_MOUNT);
-
     if (handle != NULL) {
-      ret = handle(argc, &argv);
+      ret = handle(argc, argv);
       if (ret == 0) {
         opt_tbl_list_idx = i;
         break;
@@ -133,8 +129,24 @@ int32_t fs_open(const char *fs_name)
 /*
  * Close filesystem
  */
-void fs_close()
+void fs_close(int32_t fs_type)
 {
+  int32_t argc = 0;
+  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
+  fs_opt_handle_t handle = NULL;
+
+  if (fs_type < 0 || fs_type >= fs_opt_tbl_list_len) {
+    return;
+  }
+
+  argc = 2;
+  argv[0] = FS_OPT_CMD_UMOUNT;
+  argv[1] = (char *)NULL;
+
+  handle = fs_opt_hdl_match(fs_type, FS_OPT_CMD_UMOUNT);
+  if (handle != NULL) {
+    (void)handle(argc, argv);
+  }
 }
 
 /*

@@ -83,13 +83,14 @@ static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
+static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv);
 static void ss_exec_line(const char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
 
 /*
  * Global Variable Definition
  */
-static int32_t fs_type;
+static int32_t fs_type = -1;
 
 static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
   [0] = {
@@ -357,31 +358,87 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 }
 
 /*
+ * Parse command line
+ */
+static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv)
+{
+  char *buf = NULL, *ptr = NULL;
+  int32_t count = 0;
+
+  if (line == NULL || argc == NULL || argv == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  buf = (char *)line;
+
+  while ((ptr = strtok(buf, FS_OPT_CMD_ARG_DELIM)) != NULL) {
+    if ((++count) > FS_OPT_CMD_ARG_NUM_MAX) {
+      error("invalid args!");
+      return -1;
+    }
+    argv[count - 1] = ptr;
+    buf = NULL;
+  }
+
+  *argc = count;
+
+  return 0;
+}
+
+/*
  * Execute command line for filesystem
  */
 static void ss_exec_line(const char *line)
 {
   fs_opt_handle_t handle = NULL;
   int32_t argc = 0;
-  char *argv = NULL;
+  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
   int32_t ret = -1;
 
-  argc = 1;
-  argv = (char *)line;
-
-  handle = fs_opt_hdl_match(fs_type, line);
-  if (handle != NULL) {
-    ret = handle(argc, (char **)&argv);
-  } else {
-    handle = ss_opt_hdl_match(line);
-    if (handle != NULL) {
-      ret = handle(argc, (char **)&argv);
-    }
-  }
-
+  ret = ss_parse_line(line, &argc, argv);
   if (ret != 0) {
     fprintf(stdout, "press 'help' for more info.\n");
+    return;
   }
+
+  printf("jia: %d\n", fs_type);
+  printf("jia: %s\n", argv[0]);
+
+  handle = ss_opt_hdl_match(argv[0]);
+  if (handle != NULL) {
+    ret = handle(argc, argv);
+    if (ret != 0) {
+      goto ss_exec_line_fail;
+    }
+    return;
+  }
+
+  if (strcmp(argv[0], FS_OPT_CMD_MOUNT) == 0) {
+    fs_type = fs_open(argv[1]);
+    return;
+  }
+
+  if (fs_type < 0) {
+   info("no filesystem mounted.");
+   return;
+  }
+
+  if (strcmp(argv[0], FS_OPT_CMD_UMOUNT) == 0) {
+    fs_close(fs_type);
+    return;
+  }
+
+  handle = fs_opt_hdl_match(fs_type, (const char *)argv[0]);
+  if (handle != NULL) {
+    ret = handle(argc, argv);
+  }
+
+  return;
+
+ss_exec_line_fail:
+  fprintf(stdout, "press 'help' for more info.\n");
+  return;
 }
 
 /*
@@ -480,7 +537,7 @@ void ss_delete(int32_t ss_idx)
   /*
    * Close filesystem
    */
-  fs_close();
+  fs_close(fs_type);
 
   /*
    * Unregister filesystem
