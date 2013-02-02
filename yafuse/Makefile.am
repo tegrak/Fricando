@@ -37,7 +37,7 @@ libtool: $(LIBTOOL_DEPS)
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
 
-libs: libext4 libfat32
+libs: libext4 libfat32 libio
 
 libext4:
 	(cd libext4 && $(MAKE) libs) || exit 1;
@@ -47,4 +47,3 @@ libfat32:
 
 libio:
 	(cd libio && $(MAKE) libs) || exit 1;
-
