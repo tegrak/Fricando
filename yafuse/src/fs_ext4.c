@@ -42,6 +42,7 @@
 
 #include "filesystem.h"
 #include "fs_ext4.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition
@@ -127,7 +128,7 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
  */
 static int32_t fs_do_mount(int32_t argc, char **argv)
 {
-  fprintf(stdout, "info: mount Ext4 filesystem successfully.\n");
+  info("mount Ext4 filesystem successfully.\n");
 
   return 0;
 }

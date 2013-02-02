@@ -62,6 +62,7 @@
 #include "fs_ext4.h"
 #include "fs_fat32.h"
 #include "subsystem.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition
@@ -136,13 +137,13 @@ int32_t main(int argc, char *argv[])
    */
   ret = fs_register(fs_opt_tbl_ext4);
   if (ret != 0) {
-    fprintf(stderr, "ERROR: failed to register Ext4 operation table!\n");
+    error("failed to register Ext4 operation table!\n");
     return -1;
   }
 
   ret = fs_register(fs_opt_tbl_fat32);
   if (ret != 0) {
-    fprintf(stderr, "ERROR: failed to register FAT32 operation table!\n");
+    error("failed to register FAT32 operation table!\n");
     return -1;
   }
 
@@ -157,7 +158,7 @@ int32_t main(int argc, char *argv[])
 
   ss_idx = ss_create(SS_NAME, fs_name, &ret);
   if (ret != 0) {
-    fprintf(stderr, "ERROR: failed to create subsystem!\n");
+    error("failed to create subsystem!\n");
     return ret;
   }
 

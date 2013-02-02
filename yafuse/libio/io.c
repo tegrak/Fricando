@@ -40,7 +40,7 @@
 // Add code here
 #endif
 
-#include "include/libio/debug.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition

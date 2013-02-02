@@ -41,7 +41,7 @@
 #endif
 
 #include "include/libext4/types.h"
-#include "include/libext4/debug.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition

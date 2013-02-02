@@ -42,6 +42,7 @@
 
 #include "filesystem.h"
 #include "fs_fat32.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition

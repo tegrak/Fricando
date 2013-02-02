@@ -1,5 +1,5 @@
 /**
- * debug.h - The header of debugging for IO interface.
+ * debug.h - The header of debugging for filesystem.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -37,6 +37,20 @@
 /*
  * Macro Definition
  */
+#define info(fmt, args...) \
+  do { \
+    fprintf(stdout, "info: " fmt "\n", ## args); \
+  } while (0)
+
+#define warn(fmt, args...) \
+  do { \
+    fprintf(stderr, "warning: " fmt "\n", ## args); \
+  } while (0)
+
+#define error(fmt, args...) \
+  do { \
+    fprintf(stderr, "error: %s: " fmt "\n", __func__, ## args); \
+  } while (0)
 
 /*
  * Type Definition

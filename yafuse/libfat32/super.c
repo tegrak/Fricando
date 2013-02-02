@@ -40,8 +40,7 @@
 // Add code here
 #endif
 
-#include "include/libfat32/types.h"
-#include "include/libfat32/debug.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition

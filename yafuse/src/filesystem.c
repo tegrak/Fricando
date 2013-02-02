@@ -44,6 +44,7 @@
 #endif
 
 #include "filesystem.h"
+#include "include/debug.h"
 
 /*
  * Macro Definition
@@ -72,13 +73,13 @@ static int32_t fs_opt_tbl_list_len = 0;
 int32_t fs_register(fs_opt_t *fs_opt_tbl)
 {
   if (fs_opt_tbl == NULL) {
-    fprintf(stderr, "ERROR: invalid args!\n");
+    error("invalid args!\n");
     return -1;
   }
 
   ++fs_opt_tbl_list_len;
   if (fs_opt_tbl_list_len > FS_TYPE_NUM_MAX) {
-    fprintf(stderr, "ERROR: filesystem type overflow!\n");
+    error("filesystem type overflow!\n");
     return -1;
   }
 
