@@ -440,7 +440,7 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
   int32_t ss_prompt_len = 0;
 
   if (ret_val == NULL) {
-    error("invalid args!\n");
+    error("invalid args!");
     return -1;
   }
 
