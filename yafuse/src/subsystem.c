@@ -402,9 +402,6 @@ static void ss_exec_line(const char *line)
     return;
   }
 
-  printf("jia: %d\n", fs_type);
-  printf("jia: %s\n", argv[0]);
-
   handle = ss_opt_hdl_match(argv[0]);
   if (handle != NULL) {
     ret = handle(argc, argv);
@@ -420,7 +417,6 @@ static void ss_exec_line(const char *line)
   }
 
   if (fs_type < 0) {
-   info("no filesystem mounted.");
    return;
   }
 

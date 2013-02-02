@@ -192,8 +192,6 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
 {
   if (fs_info.mounted) {
     info("umount ext4 filesystem successfully.");
-  } else {
-    info("no filesystem mounted.");
   }
 
   if (fs_info.sb != NULL) free(fs_info.sb);
