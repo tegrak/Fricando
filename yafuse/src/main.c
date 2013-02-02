@@ -137,13 +137,13 @@ int32_t main(int argc, char *argv[])
    */
   ret = fs_register(fs_opt_tbl_ext4);
   if (ret != 0) {
-    error("failed to register Ext4 operation table!");
+    error("failed to register ext4 operation table!");
     return -1;
   }
 
   ret = fs_register(fs_opt_tbl_fat32);
   if (ret != 0) {
-    error("failed to register FAT32 operation table!");
+    error("failed to register fat32 operation table!");
     return -1;
   }
 
