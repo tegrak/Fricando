@@ -41,6 +41,7 @@
 #endif
 
 #include "include/debug.h"
+#include "include/libfat32/libfat32.h"
 
 /*
  * Macro Definition

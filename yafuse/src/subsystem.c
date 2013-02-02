@@ -46,9 +46,10 @@
 // Add code here
 #endif
 
+#include "include/debug.h"
+
 #include "subsystem.h"
 #include "filesystem.h"
-#include "include/debug.h"
 
 /*
  * Macro Definition

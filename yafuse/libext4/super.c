@@ -40,8 +40,13 @@
 // Add code here
 #endif
 
-#include "include/libext4/types.h"
 #include "include/debug.h"
+#include "include/libext4/types.h"
+#include "include/libext4/ext4.h"
+#include "include/libext4/ext4_extents.h"
+#include "include/libext4/ext4_jbd2.h"
+#include "include/libext4/jbd2.h"
+#include "include/libext4/libext4.h"
 
 /*
  * Macro Definition
@@ -62,3 +67,12 @@
 /*
  * Function Definition
  */
+int32_t ext4_fill_super(const char *fs_name, struct ext4_super_block *sb)
+{
+  if (fs_name == NULL || sb == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  return 0;
+}

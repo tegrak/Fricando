@@ -35,14 +35,24 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
 #endif
 
+#include "include/debug.h"
+#include "include/libext4/types.h"
+#include "include/libext4/ext4.h"
+#include "include/libext4/ext4_extents.h"
+#include "include/libext4/ext4_jbd2.h"
+#include "include/libext4/jbd2.h"
+#include "include/libext4/libext4.h"
+
 #include "filesystem.h"
 #include "fs_ext4.h"
-#include "include/debug.h"
 
 /*
  * Macro Definition
@@ -51,6 +61,10 @@
 /*
  * Type Definition
  */
+typedef struct {
+  int32_t mounted;
+  struct ext4_super_block *sb;
+} fs_info_ext4_t;
 
 /*
  * Function Declaration
@@ -123,19 +137,62 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
   }
 };
 
+static fs_info_ext4_t fs_info;
+
 /*
  * Function Definition
  */
 static int32_t fs_do_mount(int32_t argc, char **argv)
 {
+  const char *name = NULL;
+  struct ext4_super_block *sb = NULL;
+  int32_t ret = 0;
+
+  if (fs_info.mounted) {
+    error("umount ext4 filesystem first!");
+    return -1;
+  }
+
+  if (argc < 1 || argv == NULL || *argv == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  name = (const char *)*argv;
+
+  sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
+  if (sb == NULL) {
+    error("failed to malloc!");
+    return -1;
+  }
+
+  ret = ext4_fill_super(name, sb);
+  if (ret != 0) {
+    error("failed to mount ext4 filesystem!");
+    goto fs_do_mount_fail;
+  }
+
+  fs_info.mounted = 1;
+  fs_info.sb = sb;
+
   info("mount ext4 filesystem successfully.");
 
   return 0;
+
+ fs_do_mount_fail:
+  if (sb != NULL) free(sb);
+  return ret;
 }
 
 static int32_t fs_do_umount(int32_t argc, char **argv)
 {
-  return -1;
+  if (fs_info.sb != NULL) free(fs_info.sb);
+
+  memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
+
+  info("umount ext4 filesystem successfully.");
+
+  return 0;
 }
 
 static int32_t fs_do_pwd(int32_t argc, char **argv)

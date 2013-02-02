@@ -58,11 +58,12 @@
 // Add code here
 #endif
 
+#include "include/debug.h"
+
 #include "filesystem.h"
 #include "fs_ext4.h"
 #include "fs_fat32.h"
 #include "subsystem.h"
-#include "include/debug.h"
 
 /*
  * Macro Definition
