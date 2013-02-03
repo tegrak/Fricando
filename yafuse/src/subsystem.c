@@ -422,6 +422,7 @@ static void ss_exec_line(const char *line)
 
   if (strcmp(argv[0], FS_OPT_CMD_UMOUNT) == 0) {
     fs_umount(fs_type);
+    fs_type = -1;
     return;
   }
 
@@ -534,6 +535,7 @@ void ss_delete(int32_t ss_idx)
    * Umount filesystem
    */
   fs_umount(fs_type);
+  fs_type = -1;
 
   /*
    * Unregister filesystem
