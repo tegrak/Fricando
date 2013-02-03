@@ -85,11 +85,24 @@
 /*
  * Function Declaration
  */
+static void print_banner();
 static void print_usage();
 
 /*
  * Function Definition
  */
+/*
+ * Print banner
+ */
+static void print_banner()
+{
+  fprintf(stdout, "  __      _                     _           \n");
+  fprintf(stdout, " / _|_ __(_) ___ __ _ _ __   __| | ___      \n");
+  fprintf(stdout, "| |_| '__| |/ __/ _` | '_ \\ / _` |/ _ \\   \n");
+  fprintf(stdout, "|  _| |  | | (_| (_| | | | | (_| | (_) |    \n");
+  fprintf(stdout, "|_| |_|  |_|\\___\\__,_|_| |_|\\__,_|\\___/ \n");
+}
+
 /*
  * Print usage
  */
@@ -128,6 +141,7 @@ int32_t main(int argc, char *argv[])
       verbose = 1;
       break;
     default:
+      print_banner();
       print_usage();
       return 1;
     }

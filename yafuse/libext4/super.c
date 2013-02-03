@@ -70,10 +70,6 @@
  */
 int32_t ext4_fill_super(const char *fs_name, struct ext4_super_block *sb)
 {
-  if (fs_name == NULL || sb == NULL) {
-    error("invalid args!");
-    return -1;
-  }
 
   return 0;
 }
