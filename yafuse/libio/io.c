@@ -41,6 +41,9 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -55,7 +58,9 @@
 /*
  * Macro Definition
  */
+#ifndef O_BINARY
 #define O_BINARY  (0)
+#endif
 
 /*
  * Type Definition
@@ -80,7 +85,22 @@ static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len);
  */
 static int32_t io_fopen(const char *fs_name)
 {
-  return open(fs_name, O_WRONLY | O_BINARY);
+  const char *name = NULL;
+  int32_t ret = 0;
+
+  name = fs_name;
+
+  ret = access(name, F_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = access(name, R_OK | W_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  return open(name, O_RDWR | O_BINARY);
 }
 
 static void io_fclose(int32_t fd)
@@ -109,18 +129,16 @@ static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len)
 int32_t io_open(const char *fs_name)
 {
   if (fs_name == NULL) {
-    error("invalid args!");
     return -1;
   }
 
   if (io_fd >= 0) {
-    info("close io first.");
+    error("close io first.");
     return -1;
   }
 
   io_fd = io_fopen(fs_name);
   if (io_fd < 0) {
-    error("failed to open io!");
     return -1;
   }
 
@@ -148,14 +166,17 @@ int32_t io_seek(int32_t offset)
 {
   int32_t ret = 0;
 
-  if (io_fd < 0 || offset < 0) {
+  if (offset < 0) {
+    return -1;
+  }    
+
+  if (io_fd < 0) {
     error("invalid args!");
     return -1;
   }    
 
   ret = io_fseek(io_fd, offset);
   if (ret < 0) {
-    error("failed to seek io!");
     return -1;
   }
 
@@ -169,17 +190,19 @@ int32_t io_read(uint8_t *data, int32_t len)
 {
   int32_t ret = 0;
 
-  if (io_fd < 0 || data == NULL || len <= 0) {
+  if (data == NULL || len <= 0) {
+    return -1;
+  }    
+
+  if (io_fd < 0) {
     error("invalid args!");
     return -1;
   }    
 
   ret = io_fread(io_fd, data, len);
   if (ret < 0) {
-    error("failed to read io!");
     return -1;
   } else if (ret < len) {
-    error("failed to read io completely!");
     return -1;
   }
 
@@ -193,17 +216,19 @@ int32_t io_write(uint8_t *data, int32_t len)
 {
   int32_t ret = 0;
 
-  if (io_fd < 0 || data == NULL || len <= 0) {
+  if (data == NULL || len <= 0) {
+    return -1;
+  }
+
+  if (io_fd < 0) {
     error("invalid args!");
     return -1;
   }
 
   ret = io_fwrite(io_fd, data, len);
   if (ret < 0) {
-    error("failed to write io!");
     return -1;
   } else if (ret < len) {
-    error("failed to write io completely!");
     return -1;
   }
 
