@@ -1,5 +1,5 @@
 /**
- * super.c - Superblock of Ext4.
+ * stat.c - Show status of FAT32.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -35,9 +35,6 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
 
 #ifdef DEBUG
 // Add code here
@@ -45,21 +42,12 @@
 
 #include "include/debug.h"
 #include "include/types.h"
-#include "include/libext4/ext4.h"
-#include "include/libext4/ext4_extents.h"
-#include "include/libext4/ext4_jbd2.h"
-#include "include/libext4/jbd2.h"
-#include "include/libext4/libext4.h"
+#include "include/libfat32/libfat32.h"
 #include "include/libio/io.h"
 
 /*
  * Macro Definition
  */
-#define EXT4_BLOCK_SZ  (4096)
-
-#define EXT4_GROUP_0_PAD_SZ  (1024)
-
-#define EXT4_SUPER_MAGIC  (0xEF53)
 
 /*
  * Type Definition
@@ -76,27 +64,3 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_sb(struct ext4_super_block *sb)
-{
-  int32_t offset = 0, len = 0;
-  int32_t ret = 0;
-
-  offset = EXT4_GROUP_0_PAD_SZ;
-  ret = io_fseek(offset);
-  if (ret != 0) {
-    return ret;
-  }
-
-  len = sizeof(struct ext4_super_block);
-  ret = io_fread((uint8_t *)sb, len);
-  if (ret != 0) {
-    memset((void *)sb, 0, len);
-    return ret;
-  }
-
-  if (sb->s_magic != EXT4_SUPER_MAGIC) {
-    return -1;
-  }
-
-  return 0;
-}

@@ -12,7 +12,7 @@ libfat32_la_CFLAGS  = $(AM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/inclu
 
 libfat32_la_LDFLAGS = -version-info $(LIBFAT32_VERSION) -no-undefined
 
-libfat32_la_SOURCES = super.c
+libfat32_la_SOURCES = stat.c
 
 if WINDOWS
 libfat32_la_SOURCES +=

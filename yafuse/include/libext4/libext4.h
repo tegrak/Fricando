@@ -45,24 +45,8 @@
 /*
  * Function Declaration
  */
-inline int32_t ext4_seek(int32_t blocks)
-{
-  //int32_t io_seek(int32_t offset);
-  return -1;
-}
+int32_t ext4_fill_sb(struct ext4_super_block *sb);
 
-inline int32_t ext4_read(uint8_t *data, int32_t blocks)
-{
-  //int32_t io_read(uint8_t *data, int32_t len);
-  return -1;
-}
-
-inline int32_t ext4_write(uint8_t *data, int32_t blocks)
-{
-  //int32_t io_write(uint8_t *data, int32_t len);
-  return -1;
-}
-
-int32_t ext4_fill_super(struct ext4_super_block *sb);
+void ext4_stat_sb(struct ext4_super_block *sb);
 
 #endif /* _LIBEXT4_H */

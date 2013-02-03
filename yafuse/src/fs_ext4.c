@@ -72,6 +72,8 @@ typedef struct {
  */
 static int32_t fs_do_mount(int32_t argc, char **argv);
 static int32_t fs_do_umount(int32_t argc, char **argv);
+static int32_t fs_do_stats(int32_t argc, char **argv);
+static int32_t fs_do_stat(int32_t argc, char **argv);
 static int32_t fs_do_pwd(int32_t argc, char **argv);
 static int32_t fs_do_cd(int32_t argc, char **argv);
 static int32_t fs_do_ls(int32_t argc, char **argv);
@@ -98,41 +100,51 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
   },
 
   [2] = {
+    .opt_hdl = fs_do_stats,
+    .opt_cmd = "stats",
+  },
+
+  [3] = {
+    .opt_hdl = fs_do_stat,
+    .opt_cmd = "stat",
+  },
+
+  [4] = {
     .opt_hdl = fs_do_pwd,
     .opt_cmd = "pwd",
   },
 
-  [3] = {
+  [5] = {
     .opt_hdl = fs_do_cd,
     .opt_cmd = "cd",
   },
 
-  [4] = {
+  [6] = {
     .opt_hdl = fs_do_ls,
     .opt_cmd = "ls",
   },
 
-  [5] = {
+  [7] = {
     .opt_hdl = fs_do_mkdir,
     .opt_cmd = "mkdir",
   },
 
-  [6] = {
+  [8] = {
     .opt_hdl = fs_do_rm,
     .opt_cmd = "rm",
   },
 
-  [7] = {
+  [9] = {
     .opt_hdl = fs_do_read,
     .opt_cmd = "read",
   },
 
-  [8] = {
+  [10] = {
     .opt_hdl = fs_do_write,
     .opt_cmd = "write",
   },
 
-  [9] = {
+  [11] = {
     .opt_hdl = NULL,
     .opt_cmd = NULL,
   }
@@ -177,7 +189,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
     return -1;
   }
 
-  ret = ext4_fill_super(sb);
+  ret = ext4_fill_sb(sb);
   if (ret != 0) {
     goto fs_do_mount_fail;
   }
@@ -213,6 +225,23 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
   memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
 
   return 0;
+}
+
+static int32_t fs_do_stats(int32_t argc, char **argv)
+{
+  if (fs_info.sb == NULL) {
+    error("failed to stat ext4 superblock!");
+    return -1;
+  }
+
+  ext4_stat_sb(fs_info.sb);
+
+  return 0;
+}
+
+static int32_t fs_do_stat(int32_t argc, char **argv)
+{
+  return -1;
 }
 
 static int32_t fs_do_pwd(int32_t argc, char **argv)

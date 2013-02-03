@@ -76,9 +76,6 @@ static int32_t io_fd = -1;
  */
 static int32_t io_fopen(const char *fs_name);
 static void io_fclose(int32_t fd);
-static int32_t io_fseek(int32_t fd, int32_t offset);
-static int32_t io_fread(int32_t fd, uint8_t *data, int32_t len);
-static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len);
 
 /*
  * Function Definition
@@ -106,21 +103,6 @@ static int32_t io_fopen(const char *fs_name)
 static void io_fclose(int32_t fd)
 {
   close(fd);
-}
-
-static int32_t io_fseek(int32_t fd, int32_t offset)
-{
-  return lseek(fd, offset, SEEK_SET);
-}
-
-static int32_t io_fread(int32_t fd, uint8_t *data, int32_t len)
-{
-  return read(fd, (void *)data, len);
-}
-
-static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len)
-{
-  return write(fd, (void *)data, len);
 }
 
 /*
@@ -160,9 +142,9 @@ void io_close()
 }
 
 /*
- * Seek IO
+ * Seek IO of file
  */
-int32_t io_seek(int32_t offset)
+int32_t io_fseek(int32_t offset)
 {
   int32_t ret = 0;
 
@@ -175,7 +157,7 @@ int32_t io_seek(int32_t offset)
     return -1;
   }    
 
-  ret = io_fseek(io_fd, offset);
+  ret = lseek(io_fd, offset, SEEK_SET);
   if (ret < 0) {
     return -1;
   }
@@ -184,9 +166,9 @@ int32_t io_seek(int32_t offset)
 }
 
 /*
- * Read IO
+ * Read IO of file
  */
-int32_t io_read(uint8_t *data, int32_t len)
+int32_t io_fread(uint8_t *data, int32_t len)
 {
   int32_t ret = 0;
 
@@ -199,7 +181,7 @@ int32_t io_read(uint8_t *data, int32_t len)
     return -1;
   }    
 
-  ret = io_fread(io_fd, data, len);
+  ret = read(io_fd, (void *)data, len);
   if (ret < 0) {
     return -1;
   } else if (ret < len) {
@@ -210,9 +192,9 @@ int32_t io_read(uint8_t *data, int32_t len)
 }
 
 /*
- * Write IO
+ * Write IO of file
  */
-int32_t io_write(uint8_t *data, int32_t len)
+int32_t io_fwrite(uint8_t *data, int32_t len)
 {
   int32_t ret = 0;
 
@@ -225,7 +207,7 @@ int32_t io_write(uint8_t *data, int32_t len)
     return -1;
   }
 
-  ret = io_fwrite(io_fd, data, len);
+  ret = write(io_fd, (void *)data, len);
   if (ret < 0) {
     return -1;
   } else if (ret < len) {
@@ -233,4 +215,28 @@ int32_t io_write(uint8_t *data, int32_t len)
   }
 
   return 0;
+}
+
+/*
+ * Seek IO of block
+ */
+int32_t io_bseek(int32_t count, int32_t bs)
+{
+  return -1;
+}
+
+/*
+ * Read IO of block
+ */
+int32_t io_bread(uint8_t *data, int32_t count, int32_t bs)
+{
+  return -1;
+}
+
+/*
+ * Write IO of block
+ */
+int32_t io_bwrite(uint8_t *data, int32_t count, int32_t bs)
+{
+  return -1;
 }

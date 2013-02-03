@@ -1,5 +1,5 @@
 /**
- * super.c - Superblock of FAT32.
+ * stat.c - Show status of Ext4.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -35,6 +35,9 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
@@ -42,7 +45,11 @@
 
 #include "include/debug.h"
 #include "include/types.h"
-#include "include/libfat32/libfat32.h"
+#include "include/libext4/ext4.h"
+#include "include/libext4/ext4_extents.h"
+#include "include/libext4/ext4_jbd2.h"
+#include "include/libext4/jbd2.h"
+#include "include/libext4/libext4.h"
 #include "include/libio/io.h"
 
 /*
@@ -64,3 +71,6 @@
 /*
  * Function Definition
  */
+void ext4_stat_sb(struct ext4_super_block *sb)
+{
+}
