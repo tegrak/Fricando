@@ -113,7 +113,7 @@ fi
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h stdio.h stdarg.h string.h \
    	             strings.h errno.h time.h unistd.h utime.h wchar.h getopt.h features.h \
-	             endian.h byteswap.h windows.h syslog.h pwd.h fcntl.h math.h readline/readline.h])
+	             endian.h byteswap.h windows.h syslog.h pwd.h fcntl.h math.h time.h readline/readline.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

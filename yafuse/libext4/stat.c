@@ -41,6 +41,9 @@
 #ifdef HAVE_MATH_H
 #include <math.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
@@ -78,6 +81,7 @@ void ext4_show_stats(struct ext4_super_block *sb)
 {
   int32_t i = 0;
   const char *str = NULL;
+  time_t tm = 0;
 
   fprintf(stdout, "Total inode count              : %u\n", sb->s_inodes_count);
   fprintf(stdout, "Total block count              : %llu\n", ((__le64)sb->s_blocks_count_hi << 32) + (__le64)sb->s_blocks_count_lo);
@@ -93,7 +97,8 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
   fprintf(stdout, "Mount time                     : ");
   if (sb->s_mtime != 0) {
-    fprintf(stdout, "%u", sb->s_mtime);
+    tm = (time_t)sb->s_mtime;
+    fprintf(stdout, "%s", ctime(&tm));
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
   }
@@ -101,7 +106,8 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
   fprintf(stdout, "Write time                     : ");
   if (sb->s_wtime != 0) {
-    fprintf(stdout, "%u", sb->s_wtime);
+    tm = (time_t)sb->s_wtime;
+    fprintf(stdout, "%s", ctime(&tm));
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
   }
@@ -461,7 +467,8 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
     fprintf(stdout, "Filesystem-created time              : ");
     if (sb->s_mkfs_time != 0) {
-      fprintf(stdout, "%u", sb->s_mkfs_time);
+      tm = (time_t)sb->s_mkfs_time;
+      fprintf(stdout, "%s", ctime(&tm));
     } else {
       fprintf(stdout, EXT4_DUMMY_STR);
     }
