@@ -161,7 +161,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   }    
 
   if (fs_info.mounted) {
-    info("umount ext4 filesystem first!");
+    info("umount ext4 filesystem first.");
     return 0;
   }
 
@@ -177,7 +177,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
     return -1;
   }
 
-  ret = ext4_fill_super(name, sb);
+  ret = ext4_fill_super(sb);
   if (ret != 0) {
     goto fs_do_mount_fail;
   }
@@ -191,7 +191,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 
  fs_do_mount_fail:
 
-  info("failed to mount ext4 filesystem!");
+  info("failed to mount ext4 filesystem.");
 
   if (sb != NULL) free(sb);
 

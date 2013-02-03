@@ -35,6 +35,9 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
@@ -52,6 +55,11 @@
 /*
  * Macro Definition
  */
+#define EXT4_BLOCK_SZ  (4096)
+
+#define EXT4_GROUP_0_PAD_SZ  (1024)
+
+#define EXT4_SUPER_MAGIC  (0xEF53)
 
 /*
  * Type Definition
@@ -68,8 +76,23 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_super(const char *fs_name, struct ext4_super_block *sb)
+int32_t ext4_fill_super(struct ext4_super_block *sb)
 {
+  int32_t offset = 0, len = 0;
+  int32_t ret = 0;
+
+  offset = EXT4_GROUP_0_PAD_SZ;
+  ret = io_seek(offset);
+  if (ret != 0) {
+    return ret;
+  }
+
+  len = sizeof(struct ext4_super_block);
+  ret = io_read((uint8_t *)sb, len);
+  if (ret != 0) {
+    memset((void *)sb, 0, len);
+    return ret;
+  }
 
   return 0;
 }
