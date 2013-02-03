@@ -124,7 +124,6 @@ static void print_usage()
 int32_t main(int argc, char *argv[])
 {
   int32_t c = 0;
-  int32_t verbose = 0;
   const char *fs_name = NULL;
   int32_t ss_idx = 0;
   int32_t ret = 0;
@@ -138,7 +137,7 @@ int32_t main(int argc, char *argv[])
       fprintf(stdout, "yafuse 1.0\n");
       exit(0);
     case 'v':
-      verbose = 1;
+      // Add code here
       break;
     default:
       print_banner();

@@ -234,7 +234,7 @@ static int32_t fs_do_stats(int32_t argc, char **argv)
     return -1;
   }
 
-  ext4_stat_sb(fs_info.sb);
+  ext4_show_stats(fs_info.sb);
 
   return 0;
 }

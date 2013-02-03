@@ -47,6 +47,6 @@
  */
 int32_t ext4_fill_sb(struct ext4_super_block *sb);
 
-void ext4_stat_sb(struct ext4_super_block *sb);
+void ext4_show_stats(struct ext4_super_block *sb);
 
 #endif /* _LIBEXT4_H */
