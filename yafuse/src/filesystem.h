@@ -60,8 +60,8 @@ typedef struct {
  */
 int32_t fs_register(fs_opt_t *fs_opt_tbl);
 void fs_unregister();
-int32_t fs_open(const char *fs_name);
-void fs_close(int32_t fs_type);
+int32_t fs_mount(const char *fs_name);
+void fs_umount(int32_t fs_type);
 fs_opt_handle_t fs_opt_hdl_match(int32_t fs_type, const char *fs_cmd);
 int32_t fs_opt_num(int32_t fs_type);
 const char* fs_opt_cmd_enum(int32_t fs_type, int32_t opt_idx);

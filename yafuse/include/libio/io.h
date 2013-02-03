@@ -47,10 +47,10 @@
 /*
  * Function Declaration
  */
-int32_t io_fopen(const char *fs_name);
-void io_fclose(int32_t fd);
-int32_t io_fseek(int32_t fd, int32_t offset);
-int32_t io_fread(int32_t fd, uint8_t *data, int32_t len);
-int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len);
+int32_t io_open(const char *fs_name);
+void io_close();
+int32_t io_seek(int32_t offset);
+int32_t io_read(uint8_t *data, int32_t len);
+int32_t io_write(uint8_t *data, int32_t len);
 
 #endif /* _IO_H */

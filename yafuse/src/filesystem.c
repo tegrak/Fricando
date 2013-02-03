@@ -97,9 +97,9 @@ void fs_unregister()
 }
 
 /*
- * Open filesystem
+ * Mount filesystem
  */
-int32_t fs_open(const char *fs_name)
+int32_t fs_mount(const char *fs_name)
 {
   int32_t argc = 0;
   char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
@@ -127,9 +127,9 @@ int32_t fs_open(const char *fs_name)
 }
 
 /*
- * Close filesystem
+ * Umount filesystem
  */
-void fs_close(int32_t fs_type)
+void fs_umount(int32_t fs_type)
 {
   int32_t argc = 0;
   char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};

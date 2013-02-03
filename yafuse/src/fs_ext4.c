@@ -50,6 +50,7 @@
 #include "include/libext4/ext4_jbd2.h"
 #include "include/libext4/jbd2.h"
 #include "include/libext4/libext4.h"
+#include "include/libio/io.h"
 
 #include "filesystem.h"
 #include "fs_ext4.h"
@@ -164,6 +165,12 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
     return 0;
   }
 
+  ret = io_open(name);
+  if (ret != 0) {
+    error("failed to open io!");
+    return -1;
+  }
+
   sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
   if (sb == NULL) {
     error("failed to malloc!");
@@ -183,8 +190,13 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   return 0;
 
  fs_do_mount_fail:
+
   info("failed to mount ext4 filesystem!");
+
   if (sb != NULL) free(sb);
+
+  io_close();
+
   return ret;
 }
 
@@ -195,6 +207,8 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
   }
 
   if (fs_info.sb != NULL) free(fs_info.sb);
+
+  io_close();
 
   memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
 

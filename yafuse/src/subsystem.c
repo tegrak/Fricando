@@ -412,7 +412,7 @@ static void ss_exec_line(const char *line)
   }
 
   if (strcmp(argv[0], FS_OPT_CMD_MOUNT) == 0) {
-    fs_type = fs_open(argv[1]);
+    fs_type = fs_mount(argv[1]);
     return;
   }
 
@@ -421,7 +421,7 @@ static void ss_exec_line(const char *line)
   }
 
   if (strcmp(argv[0], FS_OPT_CMD_UMOUNT) == 0) {
-    fs_close(fs_type);
+    fs_umount(fs_type);
     return;
   }
 
@@ -445,10 +445,10 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
   const char *line = NULL;
 
   /*
-   * Open filesystem
+   * Mount filesystem
    */
   if (fs_name != NULL) {
-    fs_type = fs_open(fs_name);
+    fs_type = fs_mount(fs_name);
   } else {
     fs_type = -1;
   }
@@ -531,9 +531,9 @@ void ss_delete(int32_t ss_idx)
   ss_del_history();
 
   /*
-   * Close filesystem
+   * Umount filesystem
    */
-  fs_close(fs_type);
+  fs_umount(fs_type);
 
   /*
    * Unregister filesystem

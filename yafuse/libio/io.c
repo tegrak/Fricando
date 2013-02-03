@@ -64,95 +64,146 @@
 /*
  * Global Variable Definition
  */
+static int32_t io_fd = -1;
 
 /*
  * Function Declaration
  */
+static int32_t io_fopen(const char *fs_name);
+static void io_fclose(int32_t fd);
+static int32_t io_fseek(int32_t fd, int32_t offset);
+static int32_t io_fread(int32_t fd, uint8_t *data, int32_t len);
+static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len);
 
 /*
  * Function Definition
  */
-int32_t io_fopen(const char *fs_name)
+static int32_t io_fopen(const char *fs_name)
 {
-  int32_t fd = 0;
+  return open(fs_name, O_WRONLY | O_BINARY);
+}
 
+static void io_fclose(int32_t fd)
+{
+  close(fd);
+}
+
+static int32_t io_fseek(int32_t fd, int32_t offset)
+{
+  return lseek(fd, offset, SEEK_SET);
+}
+
+static int32_t io_fread(int32_t fd, uint8_t *data, int32_t len)
+{
+  return read(fd, (void *)data, len);
+}
+
+static int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len)
+{
+  return write(fd, (void *)data, len);
+}
+
+/*
+ * Open IO
+ */
+int32_t io_open(const char *fs_name)
+{
   if (fs_name == NULL) {
     error("invalid args!");
     return -1;
   }
 
-  fd = open(fs_name, O_WRONLY | O_BINARY);
-  if (fd < 0) {
-    error("failed to open file!");
-  }
-
-  return fd;  
-}
-
-void io_fclose(int32_t fd)
-{
-  if (fd < 0) {
-    error("invalid args!");
-    return;
-  }
-
-  close(fd);
-}
-
-int32_t io_fseek(int32_t fd, int32_t offset)
-{
-  int32_t ret = 0;
-
-  if (fd < 0 || offset < 0) {
-    error("invalid args!");
+  if (io_fd >= 0) {
+    info("close io first.");
     return -1;
-  }    
+  }
 
-  ret = lseek(fd, offset, SEEK_SET);
-  if (ret < 0) {
-    error("failed to seek file!");
+  io_fd = io_fopen(fs_name);
+  if (io_fd < 0) {
+    error("failed to open io!");
     return -1;
   }
 
   return 0;
 }
 
-int32_t io_fread(int32_t fd, uint8_t *data, int32_t len)
+/*
+ * Close IO
+ */
+void io_close()
+{
+  if (io_fd < 0) {
+    return;
+  }
+
+  io_fclose(io_fd);
+
+  io_fd = -1;
+}
+
+/*
+ * Seek IO
+ */
+int32_t io_seek(int32_t offset)
 {
   int32_t ret = 0;
 
-  if (fd < 0 || data == NULL || len <= 0) {
+  if (io_fd < 0 || offset < 0) {
     error("invalid args!");
     return -1;
   }    
 
-  ret = read(fd, (void *)data, len);
+  ret = io_fseek(io_fd, offset);
   if (ret < 0) {
-    error("failed to read file!");
-    return -1;
-  } else if (ret < len) {
-    error("failed to read file completely!");
+    error("failed to seek io!");
     return -1;
   }
 
-  return 0;  
+  return 0;
 }
 
-int32_t io_fwrite(int32_t fd, uint8_t *data, int32_t len)
+/*
+ * Read IO
+ */
+int32_t io_read(uint8_t *data, int32_t len)
 {
   int32_t ret = 0;
 
-  if (fd < 0 || data == NULL || len <= 0) {
+  if (io_fd < 0 || data == NULL || len <= 0) {
     error("invalid args!");
     return -1;
   }    
 
-  ret = write(fd, (void *)data, len);
+  ret = io_fread(io_fd, data, len);
   if (ret < 0) {
-    error("failed to write file!");
+    error("failed to read io!");
     return -1;
   } else if (ret < len) {
-    error("failed to write file completely!");
+    error("failed to read io completely!");
+    return -1;
+  }
+
+  return 0;
+}
+
+/*
+ * Write IO
+ */
+int32_t io_write(uint8_t *data, int32_t len)
+{
+  int32_t ret = 0;
+
+  if (io_fd < 0 || data == NULL || len <= 0) {
+    error("invalid args!");
+    return -1;
+  }
+
+  ret = io_fwrite(io_fd, data, len);
+  if (ret < 0) {
+    error("failed to write io!");
+    return -1;
+  } else if (ret < len) {
+    error("failed to write io completely!");
     return -1;
   }
 
