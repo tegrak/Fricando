@@ -55,8 +55,6 @@
 /*
  * Macro Definition
  */
-#define EXT4_BLOCK_SZ  (4096)
-
 #define EXT4_GROUP_0_PAD_SZ  (1024)
 
 #define EXT4_SUPER_MAGIC  (0xEF53)

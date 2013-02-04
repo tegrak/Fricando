@@ -77,7 +77,7 @@
 /*
  * Function Definition
  */
-void ext4_show_stats(struct ext4_super_block *sb)
+void ext4_show_stats(const struct ext4_super_block *sb)
 {
   int32_t i = 0;
   const char *str = NULL;
@@ -101,8 +101,8 @@ void ext4_show_stats(struct ext4_super_block *sb)
     fprintf(stdout, "%s", ctime(&tm));
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
+    fprintf(stdout, "\n");
   }
-  fprintf(stdout, "\n");
 
   fprintf(stdout, "Write time                     : ");
   if (sb->s_wtime != 0) {
@@ -110,21 +110,21 @@ void ext4_show_stats(struct ext4_super_block *sb)
     fprintf(stdout, "%s", ctime(&tm));
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
+    fprintf(stdout, "\n");
   }
-  fprintf(stdout, "\n");
 
   fprintf(stdout, "Mount count                    : %u\n", sb->s_mnt_count);
   fprintf(stdout, "Maximum mount count            : %u\n", sb->s_max_mnt_count);
   fprintf(stdout, "Magic signature                : 0x%X\n", sb->s_magic);
 
   switch (sb->s_state) {
-  case 1:
+  case EXT4_VALID_FS:
     str = "cleanly umounted";
     break;
-  case 2:
+  case EXT4_ERROR_FS:
     str = "errors detected";
     break;
-  case 4:
+  case EXT4_ORPHAN_FS:
     str = "orphans being recovered";
     break;
   default:
@@ -134,13 +134,13 @@ void ext4_show_stats(struct ext4_super_block *sb)
   fprintf(stdout, "File system state              : %s\n", str);
 
   switch (sb->s_errors) {
-  case 1:
+  case EXT4_ERRORS_CONTINUE:
     str = "continue";
     break;
-  case 2:
+  case EXT4_ERRORS_RO:
     str = "remount read-only";
     break;
-  case 3:
+  case EXT4_ERRORS_PANIC:
     str = "panic";
     break;
   default:
@@ -154,19 +154,19 @@ void ext4_show_stats(struct ext4_super_block *sb)
   fprintf(stdout, "Check interval                 : %u\n", sb->s_checkinterval);
 
   switch (sb->s_creator_os) {
-  case 0:
+  case EXT4_OS_LINUX:
     str = "Linux";
     break;
-  case 1:
+  case EXT4_OS_HURD:
     str = "Hurd";
     break;
-  case 2:
+  case EXT4_OS_MASIX:
     str = "Masix";
     break;
-  case 3:
+  case EXT4_OS_FREEBSD:
     str = "FreeBSD";
     break;
-  case 4:
+  case EXT4_OS_LITES:
     str = "Lites";
     break;
   default:
@@ -176,10 +176,10 @@ void ext4_show_stats(struct ext4_super_block *sb)
   fprintf(stdout, "OS type                        : %s\n", str);
 
   switch (sb->s_rev_level) {
-  case 0:
+  case EXT4_GOOD_OLD_REV:
     str = "original format";
     break;
-  case 1:
+  case EXT4_DYNAMIC_REV:
     str = "v2 format w/ dynamic inode sizes";
     break;
   default:
@@ -191,7 +191,7 @@ void ext4_show_stats(struct ext4_super_block *sb)
   fprintf(stdout, "Reserved blocks uid            : %u\n", sb->s_def_resuid);
   fprintf(stdout, "Reserved blocks gid            : %u\n", sb->s_def_resgid);
 
-  if (sb->s_rev_level == 1) {
+  if (sb->s_rev_level == EXT4_DYNAMIC_REV) {
     fprintf(stdout, "\n");
     fprintf(stdout, "First non-reserved inode    : %u\n", sb->s_first_ino);
     fprintf(stdout, "Inode size                  : %u\n", sb->s_inode_size);
@@ -199,27 +199,27 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
     str = NULL;
     fprintf(stdout, "Compatible feature          : ");
-    if (sb->s_feature_compat & 0x01) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_DIR_PREALLOC) {
       str = "directory preallocation";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_compat & 0x02) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_IMAGIC_INODES) {
       str = "imagic inodes";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_compat & 0x04) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_HAS_JOURNAL) {
       str = "has a journal";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_compat & 0x08) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_EXT_ATTR) {
       str = "support extended attributes";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_compat & 0x10) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_RESIZE_INODE) {
       str = "has reserved GDT blocks for filesystem expansion";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_compat & 0x20) {
+    if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_DIR_INDEX) {
       str = "has directory indices";
       fprintf(stdout, "%s, ", str);
     }
@@ -238,47 +238,47 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
     str = NULL;
     fprintf(stdout, "Incompatible feature        : ");
-    if (sb->s_feature_incompat & 0x0001) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_COMPRESSION) {
       str = "compression";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0002) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_FILETYPE) {
       str = "directory entries record the file type";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0004) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_RECOVER) {
       str = "need recovery";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0008) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_JOURNAL_DEV) {
       str = "has a separate journal device";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0010) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_META_BG) {
       str = "meta block groups";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0040) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_EXTENTS) {
       str = "use extents for file";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0080) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT) {
       str = "support size of 2^64 blocks";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0100) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_MMP) {
       str = "multiple mount protection";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0200) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_FLEX_BG) {
       str = "flexible block groups";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x0400) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_EA_INODE) {
       str = "support inode with large extended attributes";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_incompat & 0x1000) {
+    if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_DIRDATA) {
       str = "data in directory entry";
       fprintf(stdout, "%s, ", str);
     }
@@ -289,31 +289,31 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
     str = NULL;
     fprintf(stdout, "Readonly-compatible feature : ");
-    if (sb->s_feature_ro_compat & 0x01) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER) {
       str = "sparse superblocks";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x02) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_LARGE_FILE) {
       str = "support file greater than 2GiB";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x04) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_BTREE_DIR) {
       str = "has btree directory";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x08) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_HUGE_FILE) {
       str = "support huge file";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x10) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_GDT_CSUM) {
       str = "group descriptors have checksums";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x20) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_DIR_NLINK) {
       str = "not support old ext3 32,000 subdirectory limit";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_feature_ro_compat & 0x40) {
+    if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE) {
       str = "support large inodes";
       fprintf(stdout, "%s, ", str);
     }
@@ -326,7 +326,7 @@ void ext4_show_stats(struct ext4_super_block *sb)
     }
     fprintf(stdout, "\n");
 
-    fprintf(stdout, "UUID                        : 0x");
+    fprintf(stdout, "UUID                        : ");
     for (i = 0; i < 16; ++i) {
       fprintf(stdout, "%x", sb->s_uuid[i]);
     }
@@ -355,16 +355,16 @@ void ext4_show_stats(struct ext4_super_block *sb)
     fprintf(stdout, "Bitmap algorithm usage      : %u\n", sb->s_algorithm_usage_bitmap);
   }
 
-  if (sb->s_feature_compat & 0x01) {
+  if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_DIR_PREALLOC) {
     fprintf(stdout, "\n");
     fprintf(stdout, "Blocks preallocated for files : %u\n", sb->s_prealloc_blocks);
     fprintf(stdout, "Blocks preallocated for dirs  : %u\n", sb->s_prealloc_dir_blocks);
     fprintf(stdout, "Reserved GDT blocks           : %u\n", sb->s_reserved_gdt_blocks);
   }
 
-  if (sb->s_feature_compat & 0x04) {
+  if (sb->s_feature_compat & EXT4_FEATURE_COMPAT_HAS_JOURNAL) {
     fprintf(stdout, "\n");
-    fprintf(stdout, "Journal UUID                         : 0x");
+    fprintf(stdout, "Journal UUID                         : ");
     for (i = 0; i < 16; ++i) {
       fprintf(stdout, "%x", sb->s_journal_uuid[i]);
     }
@@ -374,29 +374,29 @@ void ext4_show_stats(struct ext4_super_block *sb)
     fprintf(stdout, "Journal device                       : %u\n", sb->s_journal_dev);
     fprintf(stdout, "Orphaned inodes to delete            : %u\n", sb->s_last_orphan);
 
-    fprintf(stdout, "HTREE hash seed                      : 0x");
+    fprintf(stdout, "HTREE hash seed                      : ");
     for (i = 0; i < (4 * 4); ++i) {
       fprintf(stdout, "%x", *((__u8 *)(sb->s_hash_seed) + i));
     }
     fprintf(stdout, "\n");
 
     switch (sb->s_def_hash_version) {
-    case 0:
+    case DX_HASH_LEGACY:
       str = "legacy";
       break;
-    case 1:
+    case DX_HASH_HALF_MD4:
       str = "half MD4";
       break;
-    case 2:
+    case DX_HASH_TEA:
       str = "tea";
       break;
-    case 3:
+    case DX_HASH_LEGACY_UNSIGNED:
       str = "unsigned legacy";
       break;
-    case 4:
+    case DX_HASH_HALF_MD4_UNSIGNED:
       str = "unsigned half MD4";
       break;
-    case 5:
+    case DX_HASH_TEA_UNSIGNED:
       str = "unsigned tea";
       break;
     default:
@@ -410,51 +410,51 @@ void ext4_show_stats(struct ext4_super_block *sb)
 
     str = NULL;
     fprintf(stdout, "Default mount options                : ");
-    if (sb->s_default_mount_opts & 0x0001) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_DEBUG) {
       str = "print debugging info upon (re)mount";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0002) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_BSDGROUPS) {
       str = "New files take the gid of the containing directory";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0004) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_XATTR_USER) {
       str = "support userspace-provided extended attributes";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0008) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_ACL) {
       str = "support POSIX access control lists (ACLs)";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0010) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_UID16) {
       str = "not support 32-bit UIDs";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0020) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_JMODE_DATA) {
       str = "all data and metadata are commited to the journal";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0040) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_JMODE_ORDERED) {
       str = "all data are flushed to the disk before metadata are committed to the journal";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0060) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_JMODE_WBACK) {
       str = "data ordering is not preserved which may be written after the metadata has been written";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0100) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_NOBARRIER) {
       str = "disable write flushes";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0200) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_BLOCK_VALIDITY) {
       str = "track which blocks in a filesystem are metadata";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0400) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_DISCARD) {
       str = "enable DISCARD support";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_default_mount_opts & 0x0800) {
+    if (sb->s_default_mount_opts & EXT4_DEFM_NODELALLOC) {
       str = "disable delayed allocation";
       fprintf(stdout, "%s, ", str);
     }
@@ -474,29 +474,29 @@ void ext4_show_stats(struct ext4_super_block *sb)
     }
     fprintf(stdout, "\n");
 
-    fprintf(stdout, "Journal backup                       : 0x");
+    fprintf(stdout, "Journal backup                       : ");
     for (i = 0; i < (17 * 4); ++i) {
       fprintf(stdout, "%x", *((__u8 *)(sb->s_jnl_blocks) + i));
     }
     fprintf(stdout, "\n");
   }
 
-  if (sb->s_feature_incompat & 0x0080) {
+  if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT) {
     fprintf(stdout, "\n");
     fprintf(stdout, "Required extra isize             : %u\n", sb->s_min_extra_isize);
     fprintf(stdout, "Desired extra isize              : %u\n", sb->s_want_extra_isize);
 
     str = NULL;
     fprintf(stdout, "Misc flags                       : ");
-    if (sb->s_flags & 0x01) {
+    if (sb->s_flags & EXT2_FLAGS_SIGNED_HASH) {
       str = "signed directory hash in use";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_flags & 0x02) {
+    if (sb->s_flags & EXT2_FLAGS_UNSIGNED_HASH) {
       str = "unsigned directory hash in use";
       fprintf(stdout, "%s, ", str);
     }
-    if (sb->s_flags & 0x04) {
+    if (sb->s_flags & EXT2_FLAGS_TEST_FILESYS) {
       str = "to test development code";
       fprintf(stdout, "%s, ", str);
     }
