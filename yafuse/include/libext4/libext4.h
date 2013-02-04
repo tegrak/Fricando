@@ -45,8 +45,8 @@
 /*
  * Function Declaration
  */
-int32_t ext4_fill_sb(struct ext4_super_block *sb);
+int32_t ext4_fill_sb(struct ext4_super_block *sb, struct ext4_group_desc *bg_desc);
 
-void ext4_show_stats(const struct ext4_super_block *sb);
+void ext4_show_stats(const struct ext4_super_block *sb, const struct ext4_group_desc *bg_desc);
 
 #endif /* _LIBEXT4_H */

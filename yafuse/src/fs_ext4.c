@@ -65,6 +65,7 @@
 typedef struct {
   int32_t mounted;
   struct ext4_super_block *sb;
+  struct ext4_group_desc *bg_desc;
 } fs_info_ext4_t;
 
 /*
@@ -159,6 +160,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 {
   const char *name = NULL;
   struct ext4_super_block *sb = NULL;
+  struct ext4_group_desc *bg_desc = NULL;
   int32_t ret = -1;
 
   if (argc < 2 || argv == NULL) {
@@ -185,17 +187,26 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 
   sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
   if (sb == NULL) {
-    error("failed to malloc!");
-    return -1;
+    error("failed to malloc sb!");
+    ret = -1;
+    goto fs_do_mount_fail;
   }
 
-  ret = ext4_fill_sb(sb);
+  bg_desc = (struct ext4_group_desc *)malloc(sizeof(struct ext4_group_desc));
+  if (bg_desc == NULL) {
+    error("failed to malloc bg desc!");
+    ret = -1;
+    goto fs_do_mount_fail;
+  }
+
+  ret = ext4_fill_sb(sb, bg_desc);
   if (ret != 0) {
     goto fs_do_mount_fail;
   }
 
   fs_info.mounted = 1;
   fs_info.sb = sb;
+  fs_info.bg_desc = bg_desc;
 
   info("mount ext4 filesystem successfully.");
 
@@ -205,6 +216,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 
   info("failed to mount ext4 filesystem.");
 
+  if (bg_desc != NULL) free(bg_desc);
   if (sb != NULL) free(sb);
 
   io_close();
@@ -218,6 +230,7 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
     info("umount ext4 filesystem successfully.");
   }
 
+  if (fs_info.bg_desc != NULL) free(fs_info.bg_desc);
   if (fs_info.sb != NULL) free(fs_info.sb);
 
   io_close();
@@ -229,12 +242,12 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
 
 static int32_t fs_do_stats(int32_t argc, char **argv)
 {
-  if (fs_info.sb == NULL) {
-    error("failed to stat ext4 superblock!");
+  if (fs_info.sb == NULL || fs_info.bg_desc == NULL) {
+    error("failed to stats ext4 filesystem!");
     return -1;
   }
 
-  ext4_show_stats((const struct ext4_super_block *)fs_info.sb);
+  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, (const struct ext4_group_desc *)fs_info.bg_desc);
 
   return 0;
 }

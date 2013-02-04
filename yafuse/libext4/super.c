@@ -74,7 +74,7 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_sb(struct ext4_super_block *sb)
+int32_t ext4_fill_sb(struct ext4_super_block *sb, struct ext4_group_desc *bg_desc)
 {
   int32_t offset = 0, len = 0;
   int32_t ret = 0;

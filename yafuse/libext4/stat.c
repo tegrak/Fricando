@@ -77,7 +77,7 @@
 /*
  * Function Definition
  */
-void ext4_show_stats(const struct ext4_super_block *sb)
+void ext4_show_stats(const struct ext4_super_block *sb, const struct ext4_group_desc *bg_desc)
 {
   int32_t i = 0;
   const char *str = NULL;
