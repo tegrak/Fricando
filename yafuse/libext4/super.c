@@ -70,13 +70,44 @@
 /*
  * Function Declaration
  */
+static int32_t ext4_is_power_of(int32_t a, int32_t b);
+static int32_t ext4_bg_has_sb(const struct ext4_super_block *sb, int32_t bg_idx);
 
 /*
  * Function Definition
  */
-int32_t ext4_fill_sb(struct ext4_super_block *sb, struct ext4_group_desc *bg_desc)
+static int32_t ext4_is_power_of(int32_t a, int32_t b)
 {
-  int32_t offset = 0, len = 0;
+  while (a > b) {
+    if (a % b) {
+      return 0;
+    }
+    a /= b;
+  }
+
+  return (a == b) ? 1 : 0;
+}
+
+static int32_t ext4_bg_has_sb(const struct ext4_super_block *sb, int32_t bg_idx)
+{
+  if (!(sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_SPARSE_SUPER)) {
+    return 1;
+  }
+
+  if (bg_idx == 0 || bg_idx == 1) {
+    return 1;
+  }
+
+  if (ext4_is_power_of(bg_idx, 3) || ext4_is_power_of(bg_idx, 5) || ext4_is_power_of(bg_idx, 7)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+int32_t ext4_fill_sb(struct ext4_super_block *sb)
+{
+  int32_t offset = 0, sb_sz = 0;
   int32_t ret = 0;
 
   offset = EXT4_GROUP_0_PAD_SZ;
@@ -85,15 +116,82 @@ int32_t ext4_fill_sb(struct ext4_super_block *sb, struct ext4_group_desc *bg_des
     return ret;
   }
 
-  len = sizeof(struct ext4_super_block);
-  ret = io_fread((uint8_t *)sb, len);
+  /*
+   * Fill in Ext4 superblock
+   * default size of superblock is 1024 bytes
+   */
+  sb_sz = sizeof(struct ext4_super_block);
+  ret = io_fread((uint8_t *)sb, sb_sz);
   if (ret != 0) {
-    memset((void *)sb, 0, len);
+    memset((void *)sb, 0, sb_sz);
     return ret;
   }
 
   if (sb->s_magic != EXT4_SUPER_MAGIC) {
     return -1;
+  }
+
+  return 0;
+}
+
+int32_t ext4_fill_blk_sz(const struct ext4_super_block *sb, int32_t *blk_sz)
+{
+  *blk_sz = (int32_t)pow((double)2, (double)(10 + sb->s_log_block_size));
+
+  return 0;
+}
+
+int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_groups)
+{
+  __le64 blocks_cnt = 0;
+  int32_t groups = 0;
+
+  blocks_cnt = ((__le64)sb->s_blocks_count_hi << 32) + (__le64)sb->s_blocks_count_lo;
+
+  groups = DIV_ROUND_UP(blocks_cnt - sb->s_first_data_block, sb->s_blocks_per_group);
+
+  *bg_groups = groups;
+
+  return 0;
+}
+
+int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc *bg_desc)
+{
+  int32_t blk_sz = 0;
+  int32_t start_blk = 0;
+  int32_t sb_blk = 0;
+  int32_t i = 0, j = 0;
+  int32_t ret = 0;
+
+  ret = ext4_fill_blk_sz(sb, &blk_sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  for (i = 0; i < bg_groups; ++i) {
+    start_blk = sb->s_first_data_block + (i * sb->s_blocks_per_group);
+
+    /*
+     * If group has superblock, then block group descriptor exits.
+     * offset = 1 block (superblock) or 0 block (no superblock)
+     */
+    if (ext4_bg_has_sb(sb, i)) {
+      sb_blk = 1;
+
+      ret = io_fseek((start_blk + sb_blk) * blk_sz);
+      if (ret != 0) {
+        return -1;
+      }
+
+      for (j = 0; j < bg_groups; ++j) {
+        ret = io_fread((uint8_t *)&bg_desc[j], sb->s_desc_size);
+        if (ret != 0) {
+          return -1;
+        }
+      }
+
+      break;
+    }
   }
 
   return 0;

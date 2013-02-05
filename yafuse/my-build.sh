@@ -6,5 +6,4 @@ export LIBS="$LIBS -lreadline -lncurses -lm"
 
 ./configure
 make && make install
-./out/bin/yafuse -v ext4.img
 

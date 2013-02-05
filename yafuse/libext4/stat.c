@@ -73,11 +73,13 @@
 /*
  * Function Declaration
  */
+static void ext4_show_sb_stat(const struct ext4_super_block *sb);
+static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc);
 
 /*
  * Function Definition
  */
-void ext4_show_stats(const struct ext4_super_block *sb, const struct ext4_group_desc *bg_desc)
+static void ext4_show_sb_stat(const struct ext4_super_block *sb)
 {
   int32_t i = 0;
   const char *str = NULL;
@@ -343,12 +345,10 @@ void ext4_show_stats(const struct ext4_super_block *sb, const struct ext4_group_
     fprintf(stdout, "\n");
 
     fprintf(stdout, "Last mounted on             : ");
-    if (sb->s_last_mounted[0] == '\n') {
+    if (sb->s_last_mounted[0] == '\0') {
       fprintf(stdout, EXT4_DUMMY_STR);
     } else {
-      for (i = 0; i < 64; ++i) {
-        fprintf(stdout, "%c", sb->s_last_mounted[i]);
-      }
+      fprintf(stdout, "%s", sb->s_last_mounted);
     }
     fprintf(stdout, "\n");
 
@@ -526,4 +526,51 @@ void ext4_show_stats(const struct ext4_super_block *sb, const struct ext4_group_
     fprintf(stdout, "Reserved padding                 : %u\n", sb->s_reserved_pad);
     fprintf(stdout, "KiB writtten                     : %llu\n", sb->s_kbytes_written);
   }
+}
+
+static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc)
+{
+  int32_t i = 0;
+
+  if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
+      && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
+    for (i = 0; i < bg_groups; ++i) {
+      fprintf(stdout, "Group %2d: ", i);
+      fprintf(stdout, "block bitmap at %llu, ", ((__le64)bg_desc[i].bg_block_bitmap_hi << 32) + (__le64)bg_desc[i].bg_block_bitmap_lo);
+      fprintf(stdout, "inode bitmap at %llu, ", ((__le64)bg_desc[i].bg_inode_bitmap_hi << 32) + (__le64)bg_desc[i].bg_inode_bitmap_lo);
+      fprintf(stdout, "inode table at %llu, ", ((__le64)bg_desc[i].bg_inode_table_hi << 32) + (__le64)bg_desc[i].bg_inode_table_lo);
+
+      fprintf(stdout, "\n          ");
+
+      fprintf(stdout, "%llu free blocks, ", ((__le64)bg_desc[i].bg_free_blocks_count_hi << 32) + (__le64)bg_desc[i].bg_free_blocks_count_lo);
+      fprintf(stdout, "%llu free inodes, ", ((__le64)bg_desc[i].bg_free_inodes_count_hi << 32) + (__le64)bg_desc[i].bg_free_inodes_count_lo);
+      fprintf(stdout, "%llu used directories", ((__le64)bg_desc[i].bg_used_dirs_count_hi << 32) + (__le64)bg_desc[i].bg_used_dirs_count_lo);
+
+      fprintf(stdout, "\n");
+    }
+  } else {
+    for (i = 0; i < bg_groups; ++i) {
+      fprintf(stdout, "Group %2d: ", i);
+      fprintf(stdout, "block bitmap at %llu, ", (__le64)bg_desc[i].bg_block_bitmap_lo);
+      fprintf(stdout, "inode bitmap at %llu, ", (__le64)bg_desc[i].bg_inode_bitmap_lo);
+      fprintf(stdout, "inode table at %llu, ", (__le64)bg_desc[i].bg_inode_table_lo);
+
+      fprintf(stdout, "\n          ");
+
+      fprintf(stdout, "%llu free blocks, ", (__le64)bg_desc[i].bg_free_blocks_count_lo);
+      fprintf(stdout, "%llu free inodes, ", (__le64)bg_desc[i].bg_free_inodes_count_lo);
+      fprintf(stdout, "%llu used directories", (__le64)bg_desc[i].bg_used_dirs_count_lo);
+
+      fprintf(stdout, "\n");
+    }
+  }
+}
+
+void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc)
+{
+  ext4_show_sb_stat(sb);
+
+  fprintf(stdout, "\n");
+
+  ext4_show_bg_desc_stat(sb, bg_groups, bg_desc);
 }

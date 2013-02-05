@@ -65,6 +65,7 @@
 typedef struct {
   int32_t mounted;
   struct ext4_super_block *sb;
+  int32_t bg_groups;
   struct ext4_group_desc *bg_desc;
 } fs_info_ext4_t;
 
@@ -160,6 +161,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
 {
   const char *name = NULL;
   struct ext4_super_block *sb = NULL;
+  int32_t bg_groups = 0;
   struct ext4_group_desc *bg_desc = NULL;
   int32_t ret = -1;
 
@@ -179,33 +181,61 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
     return 0;
   }
 
+  /*
+   * Open Ext4 image
+   */
   ret = io_open(name);
   if (ret != 0) {
     error("failed to open io!");
     return -1;
   }
 
+  /*
+   * Fill in Ext4 superblock
+   */
   sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
   if (sb == NULL) {
     error("failed to malloc sb!");
     ret = -1;
     goto fs_do_mount_fail;
   }
+  memset((void *)sb, 0, sizeof(struct ext4_super_block));
 
-  bg_desc = (struct ext4_group_desc *)malloc(sizeof(struct ext4_group_desc));
+  ret = ext4_fill_sb(sb);
+  if (ret != 0) {
+    goto fs_do_mount_fail;
+  }
+
+  /*
+   * Fill in Ext4 block group number
+   */
+  ret = ext4_fill_bg_groups((const struct ext4_super_block *)sb, &bg_groups);
+  if (ret != 0) {
+    goto fs_do_mount_fail;
+  }  
+
+  /*
+   * Fill in Ext4 block group descriptor
+   */
+  bg_desc = (struct ext4_group_desc *)malloc(sb->s_desc_size * bg_groups);
   if (bg_desc == NULL) {
     error("failed to malloc bg desc!");
     ret = -1;
     goto fs_do_mount_fail;
   }
+  memset((void *)bg_desc, 0, sb->s_desc_size * bg_groups);
 
-  ret = ext4_fill_sb(sb, bg_desc);
+  ret = ext4_fill_bg_desc((const struct ext4_super_block *)sb, bg_groups, bg_desc);
   if (ret != 0) {
     goto fs_do_mount_fail;
   }
 
+  /*
+   * Init Ext4 filesytem info
+   */
   fs_info.mounted = 1;
   fs_info.sb = sb;
+  fs_info.bg_groups = bg_groups;
   fs_info.bg_desc = bg_desc;
 
   info("mount ext4 filesystem successfully.");
@@ -220,6 +250,8 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   if (sb != NULL) free(sb);
 
   io_close();
+
+  memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
 
   return ret;
 }
@@ -242,12 +274,14 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
 
 static int32_t fs_do_stats(int32_t argc, char **argv)
 {
-  if (fs_info.sb == NULL || fs_info.bg_desc == NULL) {
+  if (fs_info.sb == NULL
+      || fs_info.bg_groups <= 0
+      || fs_info.bg_desc == NULL) {
     error("failed to stats ext4 filesystem!");
     return -1;
   }
 
-  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, (const struct ext4_group_desc *)fs_info.bg_desc);
+  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, fs_info.bg_groups, (const struct ext4_group_desc *)fs_info.bg_desc);
 
   return 0;
 }
