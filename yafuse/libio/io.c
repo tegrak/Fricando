@@ -144,7 +144,7 @@ void io_close()
 /*
  * Seek IO of file
  */
-int32_t io_fseek(int32_t offset)
+int32_t io_fseek(off_t offset)
 {
   int32_t ret = 0;
 
@@ -168,7 +168,7 @@ int32_t io_fseek(int32_t offset)
 /*
  * Read IO of file
  */
-int32_t io_fread(uint8_t *data, int32_t len)
+int32_t io_fread(uint8_t *data, size_t len)
 {
   int32_t ret = 0;
 
@@ -194,7 +194,7 @@ int32_t io_fread(uint8_t *data, int32_t len)
 /*
  * Write IO of file
  */
-int32_t io_fwrite(uint8_t *data, int32_t len)
+int32_t io_fwrite(uint8_t *data, size_t len)
 {
   int32_t ret = 0;
 
@@ -220,7 +220,7 @@ int32_t io_fwrite(uint8_t *data, int32_t len)
 /*
  * Seek IO of block
  */
-int32_t io_bseek(int32_t count, int32_t bs)
+int32_t io_bseek(size_t count, size_t bs)
 {
   return -1;
 }
@@ -228,7 +228,7 @@ int32_t io_bseek(int32_t count, int32_t bs)
 /*
  * Read IO of block
  */
-int32_t io_bread(uint8_t *data, int32_t count, int32_t bs)
+int32_t io_bread(uint8_t *data, size_t count, size_t bs)
 {
   return -1;
 }
@@ -236,7 +236,7 @@ int32_t io_bread(uint8_t *data, int32_t count, int32_t bs)
 /*
  * Write IO of block
  */
-int32_t io_bwrite(uint8_t *data, int32_t count, int32_t bs)
+int32_t io_bwrite(uint8_t *data, size_t count, size_t bs)
 {
   return -1;
 }

@@ -38,6 +38,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_MATH_H
+#include <math.h>
+#endif
 
 #ifdef DEBUG
 // Add code here
@@ -113,7 +116,7 @@ int32_t ext4_fill_sb(struct ext4_super_block *sb)
   offset = EXT4_GROUP_0_PAD_SZ;
   ret = io_fseek(offset);
   if (ret != 0) {
-    return ret;
+    return -1;
   }
 
   /*
@@ -124,7 +127,7 @@ int32_t ext4_fill_sb(struct ext4_super_block *sb)
   ret = io_fread((uint8_t *)sb, sb_sz);
   if (ret != 0) {
     memset((void *)sb, 0, sb_sz);
-    return ret;
+    return -1;
   }
 
   if (sb->s_magic != EXT4_SUPER_MAGIC) {
@@ -155,7 +158,7 @@ int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_group
   return 0;
 }
 
-int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc *bg_desc)
+int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc_min *bg_desc)
 {
   int32_t blk_sz = 0;
   int32_t start_blk = 0;
@@ -186,6 +189,7 @@ int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, 
       for (j = 0; j < bg_groups; ++j) {
         ret = io_fread((uint8_t *)&bg_desc[j], sb->s_desc_size);
         if (ret != 0) {
+          memset((void *)&bg_desc[j], 0, sb->s_desc_size);
           return -1;
         }
       }

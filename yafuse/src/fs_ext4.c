@@ -66,7 +66,7 @@ typedef struct {
   int32_t mounted;
   struct ext4_super_block *sb;
   int32_t bg_groups;
-  struct ext4_group_desc *bg_desc;
+  struct ext4_group_desc_min *bg_desc;
 } fs_info_ext4_t;
 
 /*
@@ -162,7 +162,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   const char *name = NULL;
   struct ext4_super_block *sb = NULL;
   int32_t bg_groups = 0;
-  struct ext4_group_desc *bg_desc = NULL;
+  struct ext4_group_desc_min *bg_desc = NULL;
   int32_t ret = -1;
 
   if (argc < 2 || argv == NULL) {
@@ -174,7 +174,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   if (name == NULL) {
     error("invalid args!");
     return -1;
-  }    
+  }
 
   if (fs_info.mounted) {
     info("umount ext4 filesystem first.");
@@ -212,12 +212,12 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   ret = ext4_fill_bg_groups((const struct ext4_super_block *)sb, &bg_groups);
   if (ret != 0) {
     goto fs_do_mount_fail;
-  }  
+  }
 
   /*
    * Fill in Ext4 block group descriptor
    */
-  bg_desc = (struct ext4_group_desc *)malloc(sb->s_desc_size * bg_groups);
+  bg_desc = (struct ext4_group_desc_min *)malloc(sb->s_desc_size * bg_groups);
   if (bg_desc == NULL) {
     error("failed to malloc bg desc!");
     ret = -1;
@@ -281,7 +281,7 @@ static int32_t fs_do_stats(int32_t argc, char **argv)
     return -1;
   }
 
-  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, fs_info.bg_groups, (const struct ext4_group_desc *)fs_info.bg_desc);
+  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, fs_info.bg_groups, (const struct ext4_group_desc_min *)fs_info.bg_desc);
 
   return 0;
 }
@@ -303,7 +303,22 @@ static int32_t fs_do_cd(int32_t argc, char **argv)
 
 static int32_t fs_do_ls(int32_t argc, char **argv)
 {
-  return -1;
+  const char *name = NULL;
+
+  if (argc > 2 || argv == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  if (argc == 2) {
+    name = (const char *)argv[1];
+    if (name == NULL) {
+      error("invalid args!");
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 static int32_t fs_do_mkdir(int32_t argc, char **argv)

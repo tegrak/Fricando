@@ -50,12 +50,12 @@
 int32_t io_open(const char *fs_name);
 void io_close();
 
-int32_t io_fseek(int32_t offset);
-int32_t io_fread(uint8_t *data, int32_t len);
-int32_t io_fwrite(uint8_t *data, int32_t len);
+int32_t io_fseek(off_t offset);
+int32_t io_fread(uint8_t *data, size_t len);
+int32_t io_fwrite(uint8_t *data, size_t len);
 
-int32_t io_bseek(int32_t count, int32_t bs);
-int32_t io_bread(uint8_t *data, int32_t count, int32_t bs);
-int32_t io_bwrite(uint8_t *data, int32_t count, int32_t bs);
+int32_t io_bseek(size_t count, size_t bs);
+int32_t io_bread(uint8_t *data, size_t count, size_t bs);
+int32_t io_bwrite(uint8_t *data, size_t count, size_t bs);
 
 #endif /* _IO_H */

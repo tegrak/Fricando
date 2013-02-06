@@ -13,6 +13,7 @@ libext4_la_CFLAGS  = $(AM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/includ
 libext4_la_LDFLAGS = -version-info $(LIBEXT4_VERSION) -no-undefined
 
 libext4_la_SOURCES = super.c \
+                     inode.c \
                      stat.c
 
 if WINDOWS

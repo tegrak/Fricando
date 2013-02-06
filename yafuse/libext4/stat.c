@@ -74,7 +74,7 @@
  * Function Declaration
  */
 static void ext4_show_sb_stat(const struct ext4_super_block *sb);
-static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc);
+static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc);
 
 /*
  * Function Definition
@@ -86,9 +86,9 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
   time_t tm = 0;
 
   fprintf(stdout, "Total inode count              : %u\n", sb->s_inodes_count);
-  fprintf(stdout, "Total block count              : %llu\n", ((__le64)sb->s_blocks_count_hi << 32) + (__le64)sb->s_blocks_count_lo);
-  fprintf(stdout, "Reserved block count           : %llu\n", ((__le64)sb->s_r_blocks_count_hi << 32) + (__le64)sb->s_r_blocks_count_lo);
-  fprintf(stdout, "Free block count               : %llu\n", ((__le64)sb->s_free_blocks_count_hi << 32) + (__le64)sb->s_free_blocks_count_lo);
+  fprintf(stdout, "Total block count              : %llu\n", ((__le64)sb->s_blocks_count_hi << 32) | (__le64)sb->s_blocks_count_lo);
+  fprintf(stdout, "Reserved block count           : %llu\n", ((__le64)sb->s_r_blocks_count_hi << 32) | (__le64)sb->s_r_blocks_count_lo);
+  fprintf(stdout, "Free block count               : %llu\n", ((__le64)sb->s_free_blocks_count_hi << 32) | (__le64)sb->s_free_blocks_count_lo);
   fprintf(stdout, "Free inode count               : %u\n", sb->s_free_inodes_count);
   fprintf(stdout, "First data block               : %u\n", sb->s_first_data_block);
   fprintf(stdout, "Block size                     : %u\n", (uint32_t)pow((double)2, (double)(10 + sb->s_log_block_size)));
@@ -528,49 +528,257 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
   }
 }
 
-static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc)
+static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc)
 {
   int32_t i = 0;
 
   if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
       && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
+    /*
+     * Disused here due to 'struct ext4_group_desc_min' used here,
+     * instead of 'struct ext4_group_desc'
+     */
+#if 0
     for (i = 0; i < bg_groups; ++i) {
       fprintf(stdout, "Group %2d: ", i);
-      fprintf(stdout, "block bitmap at %llu, ", ((__le64)bg_desc[i].bg_block_bitmap_hi << 32) + (__le64)bg_desc[i].bg_block_bitmap_lo);
-      fprintf(stdout, "inode bitmap at %llu, ", ((__le64)bg_desc[i].bg_inode_bitmap_hi << 32) + (__le64)bg_desc[i].bg_inode_bitmap_lo);
-      fprintf(stdout, "inode table at %llu, ", ((__le64)bg_desc[i].bg_inode_table_hi << 32) + (__le64)bg_desc[i].bg_inode_table_lo);
+      fprintf(stdout, "block bitmap at %llu, ", ((__le64)bg_desc[i].bg_block_bitmap_hi << 32) | (__le64)bg_desc[i].bg_block_bitmap_lo);
+      fprintf(stdout, "inode bitmap at %llu, ", ((__le64)bg_desc[i].bg_inode_bitmap_hi << 32) | (__le64)bg_desc[i].bg_inode_bitmap_lo);
+      fprintf(stdout, "inode table at %llu, ", ((__le64)bg_desc[i].bg_inode_table_hi << 32) | (__le64)bg_desc[i].bg_inode_table_lo);
 
       fprintf(stdout, "\n          ");
 
-      fprintf(stdout, "%llu free blocks, ", ((__le64)bg_desc[i].bg_free_blocks_count_hi << 32) + (__le64)bg_desc[i].bg_free_blocks_count_lo);
-      fprintf(stdout, "%llu free inodes, ", ((__le64)bg_desc[i].bg_free_inodes_count_hi << 32) + (__le64)bg_desc[i].bg_free_inodes_count_lo);
-      fprintf(stdout, "%llu used directories", ((__le64)bg_desc[i].bg_used_dirs_count_hi << 32) + (__le64)bg_desc[i].bg_used_dirs_count_lo);
+      fprintf(stdout, "%llu free blocks, ", ((__le64)bg_desc[i].bg_free_blocks_count_hi << 32) | (__le64)bg_desc[i].bg_free_blocks_count_lo);
+      fprintf(stdout, "%llu free inodes, ", ((__le64)bg_desc[i].bg_free_inodes_count_hi << 32) | (__le64)bg_desc[i].bg_free_inodes_count_lo);
+      fprintf(stdout, "%llu used directories", ((__le64)bg_desc[i].bg_used_dirs_count_hi << 32) | (__le64)bg_desc[i].bg_used_dirs_count_lo);
 
       fprintf(stdout, "\n");
     }
+#endif
   } else {
     for (i = 0; i < bg_groups; ++i) {
       fprintf(stdout, "Group %2d: ", i);
-      fprintf(stdout, "block bitmap at %llu, ", (__le64)bg_desc[i].bg_block_bitmap_lo);
-      fprintf(stdout, "inode bitmap at %llu, ", (__le64)bg_desc[i].bg_inode_bitmap_lo);
-      fprintf(stdout, "inode table at %llu, ", (__le64)bg_desc[i].bg_inode_table_lo);
+      fprintf(stdout, "block bitmap at %u, ", (__le32)bg_desc[i].bg_block_bitmap_lo);
+      fprintf(stdout, "inode bitmap at %u, ", (__le32)bg_desc[i].bg_inode_bitmap_lo);
+      fprintf(stdout, "inode table at %u, ", (__le32)bg_desc[i].bg_inode_table_lo);
 
       fprintf(stdout, "\n          ");
 
-      fprintf(stdout, "%llu free blocks, ", (__le64)bg_desc[i].bg_free_blocks_count_lo);
-      fprintf(stdout, "%llu free inodes, ", (__le64)bg_desc[i].bg_free_inodes_count_lo);
-      fprintf(stdout, "%llu used directories", (__le64)bg_desc[i].bg_used_dirs_count_lo);
+      fprintf(stdout, "%u free blocks, ", (__le16)bg_desc[i].bg_free_blocks_count_lo);
+      fprintf(stdout, "%u free inodes, ", (__le16)bg_desc[i].bg_free_inodes_count_lo);
+      fprintf(stdout, "%u used directories", (__le16)bg_desc[i].bg_used_dirs_count_lo);
 
       fprintf(stdout, "\n");
     }
   }
 }
 
-void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc *bg_desc)
+void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc)
 {
   ext4_show_sb_stat(sb);
 
   fprintf(stdout, "\n");
 
   ext4_show_bg_desc_stat(sb, bg_groups, bg_desc);
+}
+
+void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num, const struct ext4_inode *inode)
+{
+  const char *str = NULL;
+  time_t tm = 0;
+
+  fprintf(stdout, "Inode %u: ", inode_num);
+
+  str = NULL;
+  fprintf(stdout, "type: ");
+  if (inode->i_mode & EXT4_INODE_MODE_S_IFIFO) {
+    str = "FIFO";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFCHR) {
+    str = "character device";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFDIR) {
+    str = "directory";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFBLK) {
+    str = "block device";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFREG) {
+    str = "regular file";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFLNK) {
+    str = "symbolic link";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFSOCK) {
+    str = "socket";
+  } else if (inode->i_mode & EXT4_INODE_MODE_S_IFCHR) {
+    str = EXT4_DUMMY_STR;
+  }
+  fprintf(stdout, "%s  ", str);
+
+  fprintf(stdout, "mode: %04o  ", inode->i_mode & 0777);
+
+  str = NULL;
+  fprintf(stdout, "flags: ");
+  if (inode->i_flags & EXT4_SECRM_FL) {
+    str = "file requires secure deletion";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_UNRM_FL) {
+    str = "file should be preserved and undeleted";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_COMPR_FL) {
+    str = "file is compressed";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_SYNC_FL) {
+    str = "all writes to the file must be synchronous";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_IMMUTABLE_FL) {
+    str = "file is immutable";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_APPEND_FL) {
+    str = "file can only be appended";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_NODUMP_FL) {
+    str = "dump utility should not dump this file";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_NOATIME_FL) {
+    str = "do not update access time";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_DIRTY_FL) {
+    str = "dirty compressed file";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_COMPRBLK_FL) {
+    str = "file has one or more compressed clusters";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_NOCOMPR_FL) {
+    str = "do not compress file";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_ECOMPR_FL) {
+    str = "compression error";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_INDEX_FL) {
+    str = "directory has hashed indexes";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_IMAGIC_FL) {
+    str = "AFS magic directory";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_JOURNAL_DATA_FL) {
+    str = "file data must always be written through the journal";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_NOTAIL_FL) {
+    str = "file tail should not be merged";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_DIRSYNC_FL) {
+    str = "all directory entry data should be written synchronously";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_TOPDIR_FL) {
+    str = "top of directory hierarchy";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_HUGE_FILE_FL) {
+    str = "huge file";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_EXTENTS_FL) {
+    str = "inode uses extents";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_EA_INODE_FL) {
+    str = "inode used for a large extended attribute";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_EOFBLOCKS_FL) {
+    str = "file has blocks allocated past EOF";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_RESERVED_FL) {
+    str = "reserved for ext4 library";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_FL_USER_VISIBLE) {
+    str = "user-visible flags";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (inode->i_flags & EXT4_FL_USER_MODIFIABLE) {
+    str = "user-modifiable flags";
+    fprintf(stdout, "%s, ", str);
+  }
+  if (str == NULL) {
+    fprintf(stdout, EXT4_DUMMY_STR);
+  }
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "generation: %u", inode->i_generation);
+
+  if (sb->s_inode_size > EXT4_GOOD_OLD_INODE_SIZE && inode->i_extra_isize >= 24) {
+    fprintf(stdout, "version: 0x%08x:%08x", inode->i_version_hi, inode->osd1.linux1.l_i_version);
+  } else {
+    fprintf(stdout, "version: 0x%08x", inode->osd1.linux1.l_i_version);
+  }
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "user: %u", inode->i_uid);
+  fprintf(stdout, "group: %u", inode->i_gid);
+  fprintf(stdout, "size: %llu", ((__le64)inode->i_size_high << 32) | (__le64)inode->i_size_lo);
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "file ACL: %llu", ((__le64)inode->osd2.linux2.l_i_file_acl_high << 32) | (__le64)inode->i_file_acl_lo);
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "link count: %u", inode->i_links_count);
+  fprintf(stdout, "block count: %llu", ((__le64)inode->osd2.linux2.l_i_blocks_high << 32) | (__le64)inode->i_blocks_lo);
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "ctime: ");
+  if (inode->i_ctime != 0) {
+    tm = (time_t)inode->i_ctime;
+    fprintf(stdout, "%s", ctime(&tm));
+  } else {
+    fprintf(stdout, EXT4_DUMMY_STR);
+  }
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "atime: ");
+  if (inode->i_atime != 0) {
+    tm = (time_t)inode->i_atime;
+    fprintf(stdout, "%s", ctime(&tm));
+  } else {
+    fprintf(stdout, EXT4_DUMMY_STR);
+  }
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "mtime: ");
+  if (inode->i_mtime != 0) {
+    tm = (time_t)inode->i_mtime;
+    fprintf(stdout, "%s", ctime(&tm));
+  } else {
+    fprintf(stdout, EXT4_DUMMY_STR);
+  }
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "size of extra inode: %u", inode->i_extra_isize);
+
+  fprintf(stdout, "\n         ");
+
+  fprintf(stdout, "extents: %s", EXT4_DUMMY_STR);
+
+  fprintf(stdout, "\n");
 }
