@@ -43,7 +43,7 @@ AC_ARG_ENABLE(
 	[warnings],
 	[AS_HELP_STRING([--enable-warnings],[enable compiling warnings])],
 	,
-	[enable_warnings="yes"]
+	[enable_warnings="no"]
 )
 
 AC_ARG_ENABLE(
