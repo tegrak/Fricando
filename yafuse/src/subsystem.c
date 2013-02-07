@@ -76,15 +76,15 @@ static int32_t ss_do_history(int32_t argc, char **argv);
 static int32_t ss_do_quit(int32_t argc, char **argv);
 
 static void ss_add_history(const char *line);
-static void ss_del_history();
+static void ss_del_history(void);
 
 static inline char* ss_completion_entry_helper(const char *cmd, int32_t len_cmd, const char *text, int32_t len_txt);
 static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
-static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv);
-static void ss_exec_line(const char *line);
+static int32_t ss_parse_line(char *line, int32_t *argc, char **argv);
+static void ss_exec_line(char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
 
 /*
@@ -116,7 +116,7 @@ static fs_opt_t ss_opt_tbl[SS_OPT_TBL_NUM_MAX] = {
 
 static ss_data_t ss_data;
 
-static const char* ss_history_buf[SS_HISTORY_BUF_LEN];
+static char* ss_history_buf[SS_HISTORY_BUF_LEN];
 static int32_t ss_history_buf_idx;
 
 /*
@@ -127,6 +127,9 @@ static int32_t ss_do_help(int32_t argc, char **argv)
   int32_t opt_num = 0;
   const char *opt_cmd = NULL;
   int32_t i = 0;
+
+  argc = argc;
+  argv =argv;
 
   fprintf(stdout, "command list: ");
 
@@ -155,15 +158,18 @@ static int32_t ss_do_help(int32_t argc, char **argv)
 
 static int32_t ss_do_history(int32_t argc, char **argv)
 {
-  int32_t index = 0;
+  int32_t idx = 0;
   int32_t i = 0, j = 0;
 
-  index = ss_history_buf_idx % SS_HISTORY_BUF_LEN;
+  argc = argc;
+  argv = argv;
 
-  for (i = 0, j = 0; i < SS_HISTORY_BUF_LEN; ++i, ++index) {
-    index %= SS_HISTORY_BUF_LEN;
-    if (ss_history_buf[index] != NULL) {
-      fprintf(stdout, "%d  %s\n", j++, ss_history_buf[index]);
+  idx = ss_history_buf_idx % SS_HISTORY_BUF_LEN;
+
+  for (i = 0, j = 0; i < SS_HISTORY_BUF_LEN; ++i, ++idx) {
+    idx %= SS_HISTORY_BUF_LEN;
+    if (ss_history_buf[idx] != NULL) {
+      fprintf(stdout, "%d  %s\n", j++, ss_history_buf[idx]);
     }
   }
 
@@ -172,6 +178,9 @@ static int32_t ss_do_history(int32_t argc, char **argv)
 
 static int32_t ss_do_quit(int32_t argc, char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   ss_data.abort = 1;
 
   return 0;
@@ -211,7 +220,7 @@ static void ss_add_history(const char *line)
 /*
  * Delete history
  */
-static void ss_del_history()
+static void ss_del_history(void)
 {
   int32_t i = 0;
 
@@ -246,7 +255,7 @@ static char* ss_completion_entry(const char *text, int32_t state)
   static int32_t ss_opt_tbl_idx = 0, fs_opt_tbl_idx = 0;
   static int32_t fs_opt_tbl_num = 0;
   static int32_t mnt_opt_num = 0;
-  static int32_t len_txt = 0, len_cmd = 0;
+  static size_t len_txt = 0, len_cmd = 0;
   static const char *cmd = NULL;
   static char *match = NULL;
 
@@ -317,8 +326,10 @@ static char** ss_attempted_completion(const char *text, int32_t start, int32_t e
 {
   char **match_list = NULL;
 
+  end = end;
+
   if (start == 0) {
-    match_list = rl_completion_matches((char *)text, &ss_completion_entry);
+    match_list = rl_completion_matches(text, &ss_completion_entry);
   }
 
   return match_list;
@@ -360,7 +371,7 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 /*
  * Parse command line
  */
-static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv)
+static int32_t ss_parse_line(char *line, int32_t *argc, char **argv)
 {
   char *buf = NULL, *ptr = NULL;
   int32_t count = 0;
@@ -370,7 +381,7 @@ static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv)
     return -1;
   }
 
-  buf = (char *)line;
+  buf = line;
 
   while ((ptr = strtok(buf, FS_OPT_CMD_ARG_DELIM)) != NULL) {
     if ((++count) > FS_OPT_CMD_ARG_NUM_MAX) {
@@ -389,7 +400,7 @@ static int32_t ss_parse_line(const char *line, int32_t *argc, char **argv)
 /*
  * Execute command line for filesystem
  */
-static void ss_exec_line(const char *line)
+static void ss_exec_line(char *line)
 {
   fs_opt_handle_t handle = NULL;
   int32_t argc = 0;
@@ -443,7 +454,7 @@ ss_exec_line_fail:
  */
 static void ss_listen(const char *ss_prompt, const char *fs_name)
 {
-  const char *line = NULL;
+  char *line = NULL;
 
   /*
    * Mount filesystem
@@ -526,6 +537,8 @@ int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
  */
 void ss_delete(int32_t ss_idx)
 {
+  ss_idx = ss_idx;
+
   /*
    * Delete history
    */

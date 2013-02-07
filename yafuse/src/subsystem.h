@@ -48,6 +48,6 @@
  * Function Declaration
  */
 int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val);
-void ss_delete(int ss_idx);
+void ss_delete(int32_t ss_idx);
 
 #endif /* _SUBSYSTEM_H */
