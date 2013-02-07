@@ -102,7 +102,7 @@ void fs_unregister(void)
 int32_t fs_mount(const char *fs_name)
 {
   int32_t argc = 0;
-  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
+  const char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
   fs_opt_handle_t handle = NULL;
   int32_t i = 0;
   int32_t opt_tbl_list_idx = -1;
@@ -110,7 +110,7 @@ int32_t fs_mount(const char *fs_name)
 
   argc = 2;
   argv[0] = FS_OPT_CMD_MOUNT;
-  argv[1] = (char *)fs_name;
+  argv[1] = fs_name;
 
   for (i = 0; i < fs_opt_tbl_list_len; ++i) {
     handle = fs_opt_hdl_match(i, FS_OPT_CMD_MOUNT);
@@ -132,7 +132,7 @@ int32_t fs_mount(const char *fs_name)
 void fs_umount(int32_t fs_type)
 {
   int32_t argc = 0;
-  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
+  const char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
   fs_opt_handle_t handle = NULL;
 
   if (fs_type < 0 || fs_type >= fs_opt_tbl_list_len) {
@@ -141,7 +141,7 @@ void fs_umount(int32_t fs_type)
 
   argc = 2;
   argv[0] = FS_OPT_CMD_UMOUNT;
-  argv[1] = (char *)NULL;
+  argv[1] = (const char *)NULL;
 
   handle = fs_opt_hdl_match(fs_type, FS_OPT_CMD_UMOUNT);
   if (handle != NULL) {
@@ -155,7 +155,7 @@ void fs_umount(int32_t fs_type)
 fs_opt_handle_t fs_opt_hdl_match(int32_t fs_type, const char *fs_cmd)
 {
   int32_t i = 0;
-  int32_t len_opt_cmd = 0, len_fs_cmd = 0;
+  size_t len_opt_cmd = 0, len_fs_cmd = 0;
   fs_opt_handle_t handle = NULL;
 
   if (fs_type < 0
@@ -171,10 +171,10 @@ fs_opt_handle_t fs_opt_hdl_match(int32_t fs_type, const char *fs_cmd)
       break;
     }
      
-    len_opt_cmd = strlen((char *)(fs_opt_tbl_list[fs_type][i].opt_cmd));
+    len_opt_cmd = strlen((const char *)(fs_opt_tbl_list[fs_type][i].opt_cmd));
 
     if (len_opt_cmd > 0 && len_opt_cmd <= len_fs_cmd) {
-      if (strncmp((char *)(fs_opt_tbl_list[fs_type][i].opt_cmd), (char *)fs_cmd, len_opt_cmd) == 0) {
+      if (strncmp((const char *)(fs_opt_tbl_list[fs_type][i].opt_cmd), (const char *)fs_cmd, len_opt_cmd) == 0) {
         handle = fs_opt_tbl_list[fs_type][i].opt_hdl;
         break;
       }

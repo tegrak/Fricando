@@ -72,17 +72,17 @@ typedef struct {
 /*
  * Function Declaration
  */
-static int32_t fs_do_mount(int32_t argc, char **argv);
-static int32_t fs_do_umount(int32_t argc, char **argv);
-static int32_t fs_do_stats(int32_t argc, char **argv);
-static int32_t fs_do_stat(int32_t argc, char **argv);
-static int32_t fs_do_pwd(int32_t argc, char **argv);
-static int32_t fs_do_cd(int32_t argc, char **argv);
-static int32_t fs_do_ls(int32_t argc, char **argv);
-static int32_t fs_do_mkdir(int32_t argc, char **argv);
-static int32_t fs_do_rm(int32_t argc, char **argv);
-static int32_t fs_do_read(int32_t argc, char **argv);
-static int32_t fs_do_write(int32_t argc, char **argv);
+static int32_t fs_do_mount(int32_t argc, const char **argv);
+static int32_t fs_do_umount(int32_t argc, const char **argv);
+static int32_t fs_do_stats(int32_t argc, const char **argv);
+static int32_t fs_do_stat(int32_t argc, const char **argv);
+static int32_t fs_do_pwd(int32_t argc, const char **argv);
+static int32_t fs_do_cd(int32_t argc, const char **argv);
+static int32_t fs_do_ls(int32_t argc, const char **argv);
+static int32_t fs_do_mkdir(int32_t argc, const char **argv);
+static int32_t fs_do_rm(int32_t argc, const char **argv);
+static int32_t fs_do_read(int32_t argc, const char **argv);
+static int32_t fs_do_write(int32_t argc, const char **argv);
 
 /*
  * Global Variable Definition
@@ -157,7 +157,7 @@ static fs_info_ext4_t fs_info;
 /*
  * Function Definition
  */
-static int32_t fs_do_mount(int32_t argc, char **argv)
+static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
   const char *name = NULL;
   struct ext4_super_block *sb = NULL;
@@ -170,7 +170,7 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
     return -1;
   }
 
-  name = (const char *)argv[1];
+  name = argv[1];
   if (name == NULL) {
     error("invalid args!");
     return -1;
@@ -256,8 +256,11 @@ static int32_t fs_do_mount(int32_t argc, char **argv)
   return ret;
 }
 
-static int32_t fs_do_umount(int32_t argc, char **argv)
+static int32_t fs_do_umount(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   if (fs_info.mounted) {
     info("umount ext4 filesystem successfully.");
   }
@@ -272,8 +275,11 @@ static int32_t fs_do_umount(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t fs_do_stats(int32_t argc, char **argv)
+static int32_t fs_do_stats(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   if (fs_info.sb == NULL
       || fs_info.bg_groups <= 0
       || fs_info.bg_desc == NULL) {
@@ -286,22 +292,31 @@ static int32_t fs_do_stats(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t fs_do_stat(int32_t argc, char **argv)
+static int32_t fs_do_stat(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_pwd(int32_t argc, char **argv)
+static int32_t fs_do_pwd(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_cd(int32_t argc, char **argv)
+static int32_t fs_do_cd(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_ls(int32_t argc, char **argv)
+static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
   const char *name = NULL;
 
@@ -311,7 +326,7 @@ static int32_t fs_do_ls(int32_t argc, char **argv)
   }
 
   if (argc == 2) {
-    name = (const char *)argv[1];
+    name = argv[1];
     if (name == NULL) {
       error("invalid args!");
       return -1;
@@ -321,22 +336,34 @@ static int32_t fs_do_ls(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t fs_do_mkdir(int32_t argc, char **argv)
+static int32_t fs_do_mkdir(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_rm(int32_t argc, char **argv)
+static int32_t fs_do_rm(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_read(int32_t argc, char **argv)
+static int32_t fs_do_read(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_write(int32_t argc, char **argv)
+static int32_t fs_do_write(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }

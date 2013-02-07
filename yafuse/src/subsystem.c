@@ -71,9 +71,9 @@ typedef struct {
 /*
  * Function Declaration
  */
-static int32_t ss_do_help(int32_t argc, char **argv);
-static int32_t ss_do_history(int32_t argc, char **argv);
-static int32_t ss_do_quit(int32_t argc, char **argv);
+static int32_t ss_do_help(int32_t argc, const char **argv);
+static int32_t ss_do_history(int32_t argc, const char **argv);
+static int32_t ss_do_quit(int32_t argc, const char **argv);
 
 static void ss_add_history(const char *line);
 static void ss_del_history(void);
@@ -83,7 +83,7 @@ static char* ss_completion_entry(const char *text, int32_t state);
 static char** ss_attempted_completion(const char *text, int32_t start, int32_t end);
 
 static fs_opt_handle_t ss_opt_hdl_match(const char *opt_cmd);
-static int32_t ss_parse_line(char *line, int32_t *argc, char **argv);
+static int32_t ss_parse_line(char *line, int32_t *argc, const char **argv);
 static void ss_exec_line(char *line);
 static void ss_listen(const char *ss_prompt, const char *fs_name);
 
@@ -122,7 +122,7 @@ static int32_t ss_history_buf_idx;
 /*
  * Function Definition
  */
-static int32_t ss_do_help(int32_t argc, char **argv)
+static int32_t ss_do_help(int32_t argc, const char **argv)
 {
   int32_t opt_num = 0;
   const char *opt_cmd = NULL;
@@ -156,7 +156,7 @@ static int32_t ss_do_help(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t ss_do_history(int32_t argc, char **argv)
+static int32_t ss_do_history(int32_t argc, const char **argv)
 {
   int32_t idx = 0;
   int32_t i = 0, j = 0;
@@ -176,7 +176,7 @@ static int32_t ss_do_history(int32_t argc, char **argv)
   return 0;
 }
 
-static int32_t ss_do_quit(int32_t argc, char **argv)
+static int32_t ss_do_quit(int32_t argc, const char **argv)
 {
   argc = argc;
   argv = argv;
@@ -371,7 +371,7 @@ static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 /*
  * Parse command line
  */
-static int32_t ss_parse_line(char *line, int32_t *argc, char **argv)
+static int32_t ss_parse_line(char *line, int32_t *argc, const char **argv)
 {
   char *buf = NULL, *ptr = NULL;
   int32_t count = 0;
@@ -404,7 +404,7 @@ static void ss_exec_line(char *line)
 {
   fs_opt_handle_t handle = NULL;
   int32_t argc = 0;
-  char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
+  const char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
   int32_t ret = -1;
 
   ret = ss_parse_line(line, &argc, argv);

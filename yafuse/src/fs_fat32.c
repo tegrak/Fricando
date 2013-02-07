@@ -59,17 +59,17 @@
 /*
  * Function Declaration
  */
-static int32_t fs_do_mount(int32_t argc, char **argv);
-static int32_t fs_do_umount(int32_t argc, char **argv);
-static int32_t fs_do_stats(int32_t argc, char **argv);
-static int32_t fs_do_stat(int32_t argc, char **argv);
-static int32_t fs_do_pwd(int32_t argc, char **argv);
-static int32_t fs_do_cd(int32_t argc, char **argv);
-static int32_t fs_do_ls(int32_t argc, char **argv);
-static int32_t fs_do_mkdir(int32_t argc, char **argv);
-static int32_t fs_do_rm(int32_t argc, char **argv);
-static int32_t fs_do_read(int32_t argc, char **argv);
-static int32_t fs_do_write(int32_t argc, char **argv);
+static int32_t fs_do_mount(int32_t argc, const char **argv);
+static int32_t fs_do_umount(int32_t argc, const char **argv);
+static int32_t fs_do_stats(int32_t argc, const char **argv);
+static int32_t fs_do_stat(int32_t argc, const char **argv);
+static int32_t fs_do_pwd(int32_t argc, const char **argv);
+static int32_t fs_do_cd(int32_t argc, const char **argv);
+static int32_t fs_do_ls(int32_t argc, const char **argv);
+static int32_t fs_do_mkdir(int32_t argc, const char **argv);
+static int32_t fs_do_rm(int32_t argc, const char **argv);
+static int32_t fs_do_read(int32_t argc, const char **argv);
+static int32_t fs_do_write(int32_t argc, const char **argv);
 
 /*
  * Global Variable Definition
@@ -142,57 +142,90 @@ fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
 /*
  * Function Definition
  */
-static int32_t fs_do_mount(int32_t argc, char **argv)
+static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_umount(int32_t argc, char **argv)
+static int32_t fs_do_umount(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_stats(int32_t argc, char **argv)
+static int32_t fs_do_stats(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_stat(int32_t argc, char **argv)
+static int32_t fs_do_stat(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_pwd(int32_t argc, char **argv)
+static int32_t fs_do_pwd(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_cd(int32_t argc, char **argv)
+static int32_t fs_do_cd(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_ls(int32_t argc, char **argv)
+static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_mkdir(int32_t argc, char **argv)
+static int32_t fs_do_mkdir(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_rm(int32_t argc, char **argv)
+static int32_t fs_do_rm(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_read(int32_t argc, char **argv)
+static int32_t fs_do_read(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }
 
-static int32_t fs_do_write(int32_t argc, char **argv)
+static int32_t fs_do_write(int32_t argc, const char **argv)
 {
+  argc = argc;
+  argv = argv;
+
   return -1;
 }

@@ -48,7 +48,7 @@
 /*
  * Type Definition
  */
-typedef int32_t (*fs_opt_handle_t)(int32_t argc, char **argv);
+typedef int32_t (*fs_opt_handle_t)(int32_t argc, const char **argv);
 
 typedef struct {
   fs_opt_handle_t opt_hdl;
