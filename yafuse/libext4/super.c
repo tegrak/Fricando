@@ -149,7 +149,7 @@ int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_group
   __le64 blocks_cnt = 0;
   int32_t groups = 0;
 
-  blocks_cnt = ((__le64)sb->s_blocks_count_hi << 32) + (__le64)sb->s_blocks_count_lo;
+  blocks_cnt = ((__le64)sb->s_blocks_count_hi << 32) | (__le64)sb->s_blocks_count_lo;
 
   groups = DIV_ROUND_UP(blocks_cnt - sb->s_first_data_block, sb->s_blocks_per_group);
 

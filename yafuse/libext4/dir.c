@@ -1,5 +1,5 @@
 /**
- * inode.c - inode of Ext4.
+ * dir.c - directory of Ext4.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -71,11 +71,10 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, uint32_t inode_num, struct ext4_inode *inode)
+int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t dentry_num, struct ext4_dir_entry_2 *dentry)
 {
   int32_t blk_sz = 0;
-  int32_t bg_idx = 0;
-  __le64 inode_tbl = 0, offset = 0;
+  __le64 offset = 0;
   int32_t ret = 0;
 
   ret = ext4_fill_blk_sz(sb, &blk_sz);
@@ -83,33 +82,25 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
     return -1;
   }
 
-  bg_idx = (inode_num - 1) / sb->s_inodes_per_group;
-
-  if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
-      && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
-    /*
-     * Disused here due to 'struct ext4_group_desc_min' used here,
-     * instead of 'struct ext4_group_desc'
-     */
-#if 0
-    inode_tbl = (((__le64)bg_desc[bg_idx].bg_inode_table_hi << 32) | (__le64)bg_desc[bg_idx].bg_inode_table_lo) * blk_sz;
-    offset = inode_tbl + (__le64)(inode_num * sb->s_inode_size);
-#endif
-  } else {
-    inode_tbl = bg_desc[bg_idx].bg_inode_table_lo * blk_sz;
-    offset = inode_tbl + (inode_num * sb->s_inode_size);
-  }
+  offset = (((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo) * blk_sz + (dentry_num * sizeof(struct ext4_dir_entry_2));
 
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
   }
 
-  ret = io_fread((uint8_t *)inode, sb->s_inode_size);
+  ret = io_fread((uint8_t *)dentry, sizeof(struct ext4_dir_entry_2));
   if (ret != 0) {
-    memset((void *)inode, 0, sb->s_inode_size);
+    memset((void *)dentry, 0, sizeof(struct ext4_dir_entry_2));
     return -1;
   }
 
   return 0;
+}
+
+int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t root_num, struct dx_root *root)
+{
+  // Add code here
+
+  return -1;
 }

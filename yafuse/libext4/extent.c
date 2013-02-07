@@ -1,5 +1,5 @@
 /**
- * inode.c - inode of Ext4.
+ * extent.c - extent of Ext4.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -71,45 +71,37 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, uint32_t inode_num, struct ext4_inode *inode)
+int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr)
 {
-  int32_t blk_sz = 0;
-  int32_t bg_idx = 0;
-  __le64 inode_tbl = 0, offset = 0;
-  int32_t ret = 0;
+  memcpy((void *)ext_hdr, (void *)inode->i_block, sizeof(struct ext4_extent_header));
 
-  ret = ext4_fill_blk_sz(sb, &blk_sz);
-  if (ret != 0) {
-    return -1;
-  }
+  return 0;
+}
 
-  bg_idx = (inode_num - 1) / sb->s_inodes_per_group;
+int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
+{
+  uint8_t *ptr = NULL;
+  int32_t offset = 0;
 
-  if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
-      && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
-    /*
-     * Disused here due to 'struct ext4_group_desc_min' used here,
-     * instead of 'struct ext4_group_desc'
-     */
-#if 0
-    inode_tbl = (((__le64)bg_desc[bg_idx].bg_inode_table_hi << 32) | (__le64)bg_desc[bg_idx].bg_inode_table_lo) * blk_sz;
-    offset = inode_tbl + (__le64)(inode_num * sb->s_inode_size);
-#endif
-  } else {
-    inode_tbl = bg_desc[bg_idx].bg_inode_table_lo * blk_sz;
-    offset = inode_tbl + (inode_num * sb->s_inode_size);
-  }
+  ptr = (uint8_t *)inode->i_block;
 
-  ret = io_fseek(offset);
-  if (ret != 0) {
-    return -1;
-  }
+  offset = sizeof(struct ext4_extent_header) + (ext_idx_num * sizeof(struct ext4_extent_idx));
 
-  ret = io_fread((uint8_t *)inode, sb->s_inode_size);
-  if (ret != 0) {
-    memset((void *)inode, 0, sb->s_inode_size);
-    return -1;
-  }
+  memcpy((void *)ext_idx, (void *)(ptr + offset), sizeof(struct ext4_extent_idx));
+
+  return 0;
+}
+
+int32_t ext4_fill_extent(const struct ext4_inode *inode, uint32_t ext_num, struct ext4_extent *ext)
+{
+  uint8_t *ptr = NULL;
+  int32_t offset = 0;
+
+  ptr = (uint8_t *)inode->i_block;
+
+  offset = sizeof(struct ext4_extent_header) + (ext_num * sizeof(struct ext4_extent));
+
+  memcpy((void *)ext, (void *)(ptr + offset), sizeof(struct ext4_extent));
 
   return 0;
 }

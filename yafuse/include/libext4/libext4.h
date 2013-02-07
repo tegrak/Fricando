@@ -67,6 +67,9 @@
 /*
  * Type Definition
  */
+/*
+ * Ext4 block group descriptor if ext4_super_block's 's_desc_size <= 32'
+ */
 struct ext4_group_desc_min
 {
  __le32 bg_block_bitmap_lo;
@@ -80,6 +83,46 @@ struct ext4_group_desc_min
 };
 
 /*
+ * Ext4 hash tree directory entry
+ */
+struct fake_dirent
+{
+  __le32 inode;
+  __le16 rec_len;
+  u8 name_len;
+  u8 file_type;
+};
+
+struct dx_entry
+{
+  __le32 hash;
+  __le32 block;
+};
+
+struct dx_root
+{
+  struct fake_dirent dot;
+  char dot_name[4];
+  struct fake_dirent dotdot;
+  char dotdot_name[4];
+  struct dx_root_info
+  {
+    __le32 reserved_zero;
+    u8 hash_version;
+    u8 info_length;  /* 0x8 */
+    u8 indirect_levels;
+    u8 unused_flags;
+  } info;
+  struct dx_entry entries[0];
+};
+
+struct dx_node
+{
+  struct fake_dirent fake;
+  struct dx_entry entries[0];
+};
+
+/*
  * Function Declaration
  */
 int32_t ext4_fill_sb(struct ext4_super_block *sb);
@@ -87,8 +130,18 @@ int32_t ext4_fill_blk_sz(const struct ext4_super_block *sb, int32_t *blk_sz);
 int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_groups);
 int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc_min *bg_desc);
 int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, uint32_t inode_num, struct ext4_inode *inode);
- 
+int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr);
+int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_num, struct ext4_extent_idx *ext_idx);
+int32_t ext4_fill_extent(const struct ext4_inode *inode, uint32_t ext_num, struct ext4_extent *ext);
+int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t dentry_num, struct ext4_dir_entry_2 *dentry);
+int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t root_num, struct dx_root *root);
+
 void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc);
 void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num, const struct ext4_inode *inode);
+void ext4_show_extent_header(const struct ext4_extent_header *ext_hdr);
+void ext4_show_extent_idx(const struct ext4_extent_idx *ext_idx);
+void ext4_show_extent(const struct ext4_extent *ext);
+void ext4_show_dentry_linear(const struct ext4_dir_entry_2 *dentry);
+void ext4_show_dentry_htree(const struct dx_root *root);
 
 #endif /* _LIBEXT4_H */

@@ -782,3 +782,109 @@ void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num,
 
   fprintf(stdout, "\n");
 }
+
+void ext4_show_extent_header(const struct ext4_extent_header *ext_hdr)
+{
+  fprintf(stdout, "Extent tree header: ");
+
+  fprintf(stdout, "magic: %u, ", ext_hdr->eh_magic);
+  fprintf(stdout, "valid entries: %u,", ext_hdr->eh_entries);
+
+  fprintf(stdout, "\n                   ");
+
+  fprintf(stdout, "max entries: %u, ", ext_hdr->eh_max);
+  fprintf(stdout, "depth: %u, ", ext_hdr->eh_depth);
+
+  fprintf(stdout, "\n                   ");
+
+  fprintf(stdout, "generation: %u", ext_hdr->eh_generation);
+
+  fprintf(stdout, "\n");
+}
+
+void ext4_show_extent_idx(const struct ext4_extent_idx *ext_idx)
+{
+  fprintf(stdout, "Extent tree internal node: ");
+
+  fprintf(stdout, "file blocks covered: %u, ", ext_idx->ei_block);
+  fprintf(stdout, "block pointed to: %llu", ((__le64)ext_idx->ei_leaf_hi << 32) | (__le64)ext_idx->ei_leaf_lo);
+
+  fprintf(stdout, "\n");
+}
+
+void ext4_show_extent(const struct ext4_extent *ext)
+{
+  fprintf(stdout, "Extent tree leaf node: ");
+
+  fprintf(stdout, "first file block: %u, ", ext->ee_block);
+  fprintf(stdout, "blocks: %u, ", ext->ee_len);
+
+  fprintf(stdout, "\n                      ");
+
+  fprintf(stdout, "block pointed to: %u, ", ((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo);
+
+  fprintf(stdout, "\n");
+}
+
+void ext4_show_dentry_linear(const struct ext4_dir_entry_2 *dentry)
+{
+  const char *str = NULL;
+
+  fprintf(stdout, "Linear directory entry: ");
+
+  fprintf(stdout, "inode: %u, ", dentry->inode);
+  fprintf(stdout, "entry length: %u, ", dentry->rec_len);
+
+  fprintf(stdout, "\n                       ");
+
+  fprintf(stdout, "name length: %u", dentry->name_len);
+
+  str = NULL;
+  fprintf(stdout, "type: ");
+  if (dentry->file_type & EXT4_FT_UNKNOWN) {
+    str = "unknown";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_REG_FILE) {
+    str = "regular file";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_DIR) {
+    str = "directory";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_CHRDEV) {
+    str = "character device file";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_BLKDEV) {
+    str = "block device file";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_FIFO) {
+    str = "FIFO";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_SOCK) {
+    str = "socket";
+    fprintf(stdout, "%s", str);
+  }
+  if (dentry->file_type & EXT4_FT_SYMLINK) {
+    str = "symbolic link";
+    fprintf(stdout, "%s", str);
+  }
+  if (str == NULL) {
+    fprintf(stdout, EXT4_DUMMY_STR);
+  }
+
+  fprintf(stdout, "\n                       ");
+
+  fprintf(stdout, "name: %s", dentry->name);
+
+  fprintf(stdout, "\n");
+}
+
+void ext4_show_dentry_htree(const struct dx_root *root)
+{
+  // Add code here
+}

@@ -14,6 +14,9 @@ libext4_la_LDFLAGS = -version-info $(LIBEXT4_VERSION) -no-undefined
 
 libext4_la_SOURCES = super.c \
                      inode.c \
+                     extent.c \
+                     dir.c \
+                     file.c \
                      stat.c
 
 if WINDOWS

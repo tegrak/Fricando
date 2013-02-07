@@ -34,9 +34,6 @@ dist-hook:
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
 
-libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
-
 libs: libext4 libfat32 libio
 
 libext4:
