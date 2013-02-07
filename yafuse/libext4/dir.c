@@ -102,5 +102,10 @@ int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct e
 {
   // Add code here
 
+  sb = sb;
+  ext = ext;
+  root_num = root_num;
+  root = root;
+
   return -1;
 }

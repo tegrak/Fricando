@@ -48,7 +48,7 @@
  * Function Declaration
  */
 int32_t io_open(const char *fs_name);
-void io_close();
+void io_close(void);
 
 int32_t io_fseek(off_t offset);
 int32_t io_fread(uint8_t *data, size_t len);

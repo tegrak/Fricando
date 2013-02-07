@@ -139,7 +139,7 @@ int32_t ext4_fill_sb(struct ext4_super_block *sb)
 
 int32_t ext4_fill_blk_sz(const struct ext4_super_block *sb, int32_t *blk_sz)
 {
-  *blk_sz = (int32_t)pow((double)2, (double)(10 + sb->s_log_block_size));
+  *blk_sz = pow((double)2, (double)(10 + sb->s_log_block_size));
 
   return 0;
 }

@@ -92,7 +92,7 @@ int32_t fs_register(fs_opt_t *fs_opt_tbl)
 /*
  * Unregister filesystem
  */
-void fs_unregister()
+void fs_unregister(void)
 {
 }
 

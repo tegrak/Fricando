@@ -73,35 +73,35 @@
  */
 int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr)
 {
-  memcpy((void *)ext_hdr, (void *)inode->i_block, sizeof(struct ext4_extent_header));
+  memcpy((void *)ext_hdr, (const void *)inode->i_block, sizeof(struct ext4_extent_header));
 
   return 0;
 }
 
 int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
 {
-  uint8_t *ptr = NULL;
+  const uint8_t *ptr = NULL;
   int32_t offset = 0;
 
-  ptr = (uint8_t *)inode->i_block;
+  ptr = (const uint8_t *)inode->i_block;
 
   offset = sizeof(struct ext4_extent_header) + (ext_idx_num * sizeof(struct ext4_extent_idx));
 
-  memcpy((void *)ext_idx, (void *)(ptr + offset), sizeof(struct ext4_extent_idx));
+  memcpy((void *)ext_idx, (const void *)(ptr + offset), sizeof(struct ext4_extent_idx));
 
   return 0;
 }
 
 int32_t ext4_fill_extent(const struct ext4_inode *inode, uint32_t ext_num, struct ext4_extent *ext)
 {
-  uint8_t *ptr = NULL;
+  const uint8_t *ptr = NULL;
   int32_t offset = 0;
 
-  ptr = (uint8_t *)inode->i_block;
+  ptr = (const uint8_t *)inode->i_block;
 
   offset = sizeof(struct ext4_extent_header) + (ext_num * sizeof(struct ext4_extent));
 
-  memcpy((void *)ext, (void *)(ptr + offset), sizeof(struct ext4_extent));
+  memcpy((void *)ext, (const void *)(ptr + offset), sizeof(struct ext4_extent));
 
   return 0;
 }

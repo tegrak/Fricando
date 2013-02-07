@@ -82,6 +82,7 @@ static void ext4_show_bg_desc_stat(const struct ext4_super_block *sb, int32_t bg
 static void ext4_show_sb_stat(const struct ext4_super_block *sb)
 {
   int32_t i = 0;
+  uint32_t val = 0;
   const char *str = NULL;
   time_t tm = 0;
 
@@ -91,8 +92,13 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
   fprintf(stdout, "Free block count               : %llu\n", ((__le64)sb->s_free_blocks_count_hi << 32) | (__le64)sb->s_free_blocks_count_lo);
   fprintf(stdout, "Free inode count               : %u\n", sb->s_free_inodes_count);
   fprintf(stdout, "First data block               : %u\n", sb->s_first_data_block);
-  fprintf(stdout, "Block size                     : %u\n", (uint32_t)pow((double)2, (double)(10 + sb->s_log_block_size)));
-  fprintf(stdout, "Fragment size (obsolete)       : %u\n", (uint32_t)pow((double)2, (double)(10 + sb->s_obso_log_frag_size)));
+
+  val = pow((double)2, (double)(10 + sb->s_log_block_size));
+  fprintf(stdout, "Block size                     : %u\n", val);
+
+  val = pow((double)2, (double)(10 + sb->s_obso_log_frag_size));
+  fprintf(stdout, "Fragment size (obsolete)       : %u\n", val);
+
   fprintf(stdout, "Blocks per group               : %u\n", sb->s_blocks_per_group);
   fprintf(stdout, "Fragments per group (obsolete) : %u\n", sb->s_obso_frags_per_group);
   fprintf(stdout, "Inodes per group               : %u\n", sb->s_inodes_per_group);
@@ -376,7 +382,7 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
 
     fprintf(stdout, "HTREE hash seed                      : ");
     for (i = 0; i < (4 * 4); ++i) {
-      fprintf(stdout, "%x", *((__u8 *)(sb->s_hash_seed) + i));
+      fprintf(stdout, "%x", *((const __u8 *)(sb->s_hash_seed) + i));
     }
     fprintf(stdout, "\n");
 
@@ -476,7 +482,7 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
 
     fprintf(stdout, "Journal backup                       : ");
     for (i = 0; i < (17 * 4); ++i) {
-      fprintf(stdout, "%x", *((__u8 *)(sb->s_jnl_blocks) + i));
+      fprintf(stdout, "%x", *((const __u8 *)(sb->s_jnl_blocks) + i));
     }
     fprintf(stdout, "\n");
   }
@@ -521,7 +527,9 @@ static void ext4_show_sb_stat(const struct ext4_super_block *sb)
     fprintf(stdout, "MMP checking wait time (seconds) : %u\n", sb->s_mmp_interval);
     fprintf(stdout, "MMP blocks                       : %llu\n", sb->s_mmp_block);
     fprintf(stdout, "RAID stripe width                : %u\n", sb->s_raid_stripe_width);
-    fprintf(stdout, "Flexible block size              : %u\n", (uint32_t)pow((double)2, (double)sb->s_log_groups_per_flex));
+
+    val = pow((double)2, (double)sb->s_log_groups_per_flex);
+    fprintf(stdout, "Flexible block size              : %u\n", val);
     fprintf(stdout, "Reserved char padding 2          : %u\n", sb->s_reserved_char_pad2);
     fprintf(stdout, "Reserved padding                 : %u\n", sb->s_reserved_pad);
     fprintf(stdout, "KiB writtten                     : %llu\n", sb->s_kbytes_written);
@@ -821,7 +829,7 @@ void ext4_show_extent(const struct ext4_extent *ext)
 
   fprintf(stdout, "\n                      ");
 
-  fprintf(stdout, "block pointed to: %u, ", ((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo);
+  fprintf(stdout, "block pointed to: %llu, ", ((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo);
 
   fprintf(stdout, "\n");
 }
@@ -887,4 +895,5 @@ void ext4_show_dentry_linear(const struct ext4_dir_entry_2 *dentry)
 void ext4_show_dentry_htree(const struct dx_root *root)
 {
   // Add code here
+  root = root;
 }

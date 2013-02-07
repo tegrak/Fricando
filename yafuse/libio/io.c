@@ -130,7 +130,7 @@ int32_t io_open(const char *fs_name)
 /*
  * Close IO
  */
-void io_close()
+void io_close(void)
 {
   if (io_fd < 0) {
     return;
@@ -170,7 +170,7 @@ int32_t io_fseek(off_t offset)
  */
 int32_t io_fread(uint8_t *data, size_t len)
 {
-  int32_t ret = 0;
+  ssize_t ret = 0;
 
   if (data == NULL || len <= 0) {
     return -1;
@@ -184,8 +184,6 @@ int32_t io_fread(uint8_t *data, size_t len)
   ret = read(io_fd, (void *)data, len);
   if (ret < 0) {
     return -1;
-  } else if (ret < len) {
-    return -1;
   }
 
   return 0;
@@ -196,7 +194,7 @@ int32_t io_fread(uint8_t *data, size_t len)
  */
 int32_t io_fwrite(uint8_t *data, size_t len)
 {
-  int32_t ret = 0;
+  ssize_t ret = 0;
 
   if (data == NULL || len <= 0) {
     return -1;
@@ -207,10 +205,8 @@ int32_t io_fwrite(uint8_t *data, size_t len)
     return -1;
   }
 
-  ret = write(io_fd, (void *)data, len);
+  ret = write(io_fd, (const void *)data, len);
   if (ret < 0) {
-    return -1;
-  } else if (ret < len) {
     return -1;
   }
 
@@ -222,6 +218,10 @@ int32_t io_fwrite(uint8_t *data, size_t len)
  */
 int32_t io_bseek(size_t count, size_t bs)
 {
+  // Add code here
+  count = count;
+  bs = bs;
+
   return -1;
 }
 
@@ -230,6 +230,11 @@ int32_t io_bseek(size_t count, size_t bs)
  */
 int32_t io_bread(uint8_t *data, size_t count, size_t bs)
 {
+  // Add code here
+  data = data;
+  count = count;
+  bs = bs;
+
   return -1;
 }
 
@@ -238,5 +243,10 @@ int32_t io_bread(uint8_t *data, size_t count, size_t bs)
  */
 int32_t io_bwrite(uint8_t *data, size_t count, size_t bs)
 {
+  // Add code here
+  data = data;
+  count = count;
+  bs = bs;
+
   return -1;
 }

@@ -85,8 +85,8 @@
 /*
  * Function Declaration
  */
-static void print_banner();
-static void print_usage();
+static void print_banner(void);
+static void print_usage(void);
 
 /*
  * Function Definition
@@ -94,7 +94,7 @@ static void print_usage();
 /*
  * Print banner
  */
-static void print_banner()
+static void print_banner(void)
 {
   fprintf(stdout, "  __      _                     _           \n");
   fprintf(stdout, " / _|_ __(_) ___ __ _ _ __   __| | ___      \n");
@@ -106,7 +106,7 @@ static void print_banner()
 /*
  * Print usage
  */
-static void print_usage()
+static void print_usage(void)
 {
   fprintf(stdout, "\n");
   fprintf(stdout, "Usage:  yafuse [option] <device|image_file>\n");

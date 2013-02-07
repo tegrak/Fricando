@@ -59,7 +59,7 @@ typedef struct {
  * Function Declaration
  */
 int32_t fs_register(fs_opt_t *fs_opt_tbl);
-void fs_unregister();
+void fs_unregister(void);
 int32_t fs_mount(const char *fs_name);
 void fs_umount(int32_t fs_type);
 fs_opt_handle_t fs_opt_hdl_match(int32_t fs_type, const char *fs_cmd);
