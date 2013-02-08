@@ -45,6 +45,8 @@
 #define FS_OPT_CMD_MOUNT   "mount"
 #define FS_OPT_CMD_UMOUNT  "umount"
 
+#define FS_ROOT_DIR  "/"
+
 /*
  * Type Definition
  */

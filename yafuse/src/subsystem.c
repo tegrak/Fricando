@@ -192,7 +192,7 @@ static int32_t ss_do_quit(int32_t argc, const char **argv)
 static void ss_add_history(const char *line)
 {
   char **cmd = NULL;
-  int32_t len = 0, len_old = 0, len_new = 0;
+  size_t len = 0, len_old = 0, len_new = 0;
 
   if (line == NULL || strlen(line) == 0) {
     return;
@@ -341,7 +341,7 @@ static char** ss_attempted_completion(const char *text, int32_t start, int32_t e
 static fs_opt_handle_t ss_opt_hdl_match(const char *ss_cmd)
 {
   int32_t i = 0;
-  int32_t len_ss_cmd = 0, len_opt_cmd = 0;
+  size_t len_ss_cmd = 0, len_opt_cmd = 0;
   fs_opt_handle_t handle = NULL;
 
   if (ss_cmd == NULL) {
@@ -503,7 +503,7 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
 int32_t ss_create(const char *ss_name, const char *fs_name, int32_t *ret_val)
 {
   char ss_prompt[SS_NAME_LEN_MAX + SS_PROMPT_DEFAULT_LEN + 1] = {0};
-  int32_t ss_prompt_len = 0;
+  size_t ss_prompt_len = 0;
 
   if (ret_val == NULL) {
     error("invalid args!");

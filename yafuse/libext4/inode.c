@@ -76,6 +76,7 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
   int32_t blk_sz = 0;
   int32_t bg_idx = 0;
   __le64 inode_tbl = 0, offset = 0;
+  size_t inode_sz = 0;
   int32_t ret = 0;
 
   ret = ext4_fill_blk_sz(sb, &blk_sz);
@@ -83,7 +84,11 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
     return -1;
   }
 
-  bg_idx = (inode_num - 1) / sb->s_inodes_per_group;
+  inode_num -= 1;
+
+  bg_idx = inode_num / sb->s_inodes_per_group;
+
+  inode_sz = sizeof(struct ext4_inode);
 
   if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
       && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
@@ -105,11 +110,30 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
     return -1;
   }
 
-  ret = io_fread((uint8_t *)inode, sb->s_inode_size);
+  ret = io_fread((uint8_t *)inode, inode_sz);
   if (ret != 0) {
-    memset((void *)inode, 0, sb->s_inode_size);
+    memset((void *)inode, 0, inode_sz);
     return -1;
   }
 
   return 0;
+}
+
+int32_t ext4_fill_inodes(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *inodes)
+{
+  *inodes = sb->s_inodes_per_group - bg_desc->bg_free_inodes_count_lo;
+
+  return 0;
+}
+
+int32_t ext4_name2ino(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, const char *name, uint32_t *inode_num)
+{
+  // Add code here
+
+  sb = sb;
+  bg_desc = bg_desc;
+  name = name;
+  inode_num = inode_num;
+
+  return -1;
 }

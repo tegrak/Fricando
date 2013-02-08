@@ -58,20 +58,30 @@
 /*
  * Macro Definition
  */
+#define FS_EXT4_STAT_INO_DELIM_L  '<'
+#define FS_EXT4_STAT_INO_DELIM_R  '>'
 
 /*
  * Type Definition
  */
 typedef struct {
+  uint32_t ino;
+  const char *name;
+} fs_ext4_cwd_t;
+
+typedef struct {
   int32_t mounted;
+  fs_ext4_cwd_t cwd;
   struct ext4_super_block *sb;
   int32_t bg_groups;
   struct ext4_group_desc_min *bg_desc;
-} fs_info_ext4_t;
+} fs_ext4_info_t;
 
 /*
  * Function Declaration
  */
+static int32_t fs_parse_ino(const char *name, uint32_t *ino);
+
 static int32_t fs_do_mount(int32_t argc, const char **argv);
 static int32_t fs_do_umount(int32_t argc, const char **argv);
 static int32_t fs_do_stats(int32_t argc, const char **argv);
@@ -152,11 +162,63 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
   }
 };
 
-static fs_info_ext4_t fs_info;
+static fs_ext4_info_t ext4_info;
 
 /*
  * Function Definition
  */
+static int32_t fs_parse_ino(const char *name, uint32_t *ino)
+{
+  char *buf = NULL;
+  size_t len_name = 0, len_buf = 0;
+  int32_t val = 0;
+  int32_t ret = 0;
+
+  if (name == NULL || ino == NULL) {
+    return -1;
+  }
+
+  /*
+   * len_name <= len(FS_EXT4_STAT_INO_DELIM_L) + len(FS_EXT4_STAT_INO_DELIM_R)
+   */
+  len_name = strlen(name);
+  if (len_name <= 2) {
+    return -1;
+  }
+
+  if (name[0] != FS_EXT4_STAT_INO_DELIM_L && name[len_name - 1] != FS_EXT4_STAT_INO_DELIM_R) {
+    return -1;
+  }
+
+  /*
+   * len_buf = len_name - (len(FS_EXT4_STAT_INO_DELIM_L) + len(FS_EXT4_STAT_INO_DELIM_R)) + 1;
+   */
+  len_buf = len_name - (1 + 1) + 1;
+
+  buf = (char *)malloc(len_buf);
+  if (buf == NULL) {
+    return -1;
+  }
+  memset((void *)buf, 0, len_buf);
+  strncpy((void *)buf, (const void *)&name[1], len_buf - 1);
+
+  val = atoi((const char *)buf);
+  if (val < EXT4_ROOT_INO) {
+    ret = -1;
+    goto fs_parse_ino_done;
+  }
+
+  *ino = (uint32_t)val;
+
+  ret = 0;
+
+ fs_parse_ino_done:
+
+  if (buf != NULL) free(buf);
+
+  return ret;
+}
+
 static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
   const char *name = NULL;
@@ -176,7 +238,7 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
     return -1;
   }
 
-  if (fs_info.mounted) {
+  if (ext4_info.mounted) {
     info("umount ext4 filesystem first.");
     return 0;
   }
@@ -217,6 +279,13 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   /*
    * Fill in Ext4 block group descriptor
    */
+  if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
+      && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
+    error("not support size of 2^64 blocks!");
+    ret = -1;
+    goto fs_do_mount_fail;
+  }
+
   bg_desc = (struct ext4_group_desc_min *)malloc(sb->s_desc_size * bg_groups);
   if (bg_desc == NULL) {
     error("failed to malloc bg desc!");
@@ -233,10 +302,12 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   /*
    * Init Ext4 filesytem info
    */
-  fs_info.mounted = 1;
-  fs_info.sb = sb;
-  fs_info.bg_groups = bg_groups;
-  fs_info.bg_desc = bg_desc;
+  ext4_info.mounted = 1;
+  ext4_info.cwd.ino = EXT4_ROOT_INO;
+  ext4_info.cwd.name = FS_ROOT_DIR;
+  ext4_info.sb = sb;
+  ext4_info.bg_groups = bg_groups;
+  ext4_info.bg_desc = bg_desc;
 
   info("mount ext4 filesystem successfully.");
 
@@ -251,7 +322,7 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
 
   io_close();
 
-  memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
+  memset((void *)&ext4_info, 0, sizeof(fs_ext4_info_t));
 
   return ret;
 }
@@ -261,16 +332,16 @@ static int32_t fs_do_umount(int32_t argc, const char **argv)
   argc = argc;
   argv = argv;
 
-  if (fs_info.mounted) {
+  if (ext4_info.mounted) {
     info("umount ext4 filesystem successfully.");
   }
 
-  if (fs_info.bg_desc != NULL) free(fs_info.bg_desc);
-  if (fs_info.sb != NULL) free(fs_info.sb);
+  if (ext4_info.bg_desc != NULL) free(ext4_info.bg_desc);
+  if (ext4_info.sb != NULL) free(ext4_info.sb);
 
   io_close();
 
-  memset((void *)&fs_info, 0, sizeof(fs_info_ext4_t));
+  memset((void *)&ext4_info, 0, sizeof(fs_ext4_info_t));
 
   return 0;
 }
@@ -280,24 +351,68 @@ static int32_t fs_do_stats(int32_t argc, const char **argv)
   argc = argc;
   argv = argv;
 
-  if (fs_info.sb == NULL
-      || fs_info.bg_groups <= 0
-      || fs_info.bg_desc == NULL) {
+  if (ext4_info.sb == NULL
+      || ext4_info.bg_groups <= 0
+      || ext4_info.bg_desc == NULL) {
     error("failed to stats ext4 filesystem!");
     return -1;
   }
 
-  ext4_show_stats((const struct ext4_super_block *)fs_info.sb, fs_info.bg_groups, (const struct ext4_group_desc_min *)fs_info.bg_desc);
+  ext4_show_stats((const struct ext4_super_block *)ext4_info.sb,
+                  ext4_info.bg_groups,
+                  (const struct ext4_group_desc_min *)ext4_info.bg_desc);
 
   return 0;
 }
 
 static int32_t fs_do_stat(int32_t argc, const char **argv)
 {
+  uint32_t inode_num = 0;
+  struct ext4_inode inode;
+  int32_t ret = 0;
+
   argc = argc;
   argv = argv;
 
-  return -1;
+  if (argc != 2 || argv == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  /*
+   * Parse args
+   * e.g., 'stat name' or 'stat <ino>'
+   */
+  ret = fs_parse_ino(argv[1], &inode_num);
+  if (ret != 0) {
+    ret = ext4_name2ino((const struct ext4_super_block *)ext4_info.sb,
+                        (const struct ext4_group_desc_min *)ext4_info.bg_desc,
+                        argv[1],
+                        &inode_num);
+    if (ret != 0) {
+      error("invalid args!");
+      return -1;
+    }
+  }
+
+  /*
+   * Fill in Ext4 inode
+   */
+  memset((void *)&inode, 0, sizeof(struct ext4_inode));
+
+  ext4_fill_inode((const struct ext4_super_block *)ext4_info.sb,
+                  (const struct ext4_group_desc_min *)ext4_info.bg_desc,
+                  inode_num,
+                  &inode);
+
+  /*
+   * Show Ext4 inode stat
+   */
+  ext4_show_inode_stat((const struct ext4_super_block *)ext4_info.sb,
+                       inode_num,
+                       (const struct ext4_inode *)&inode);
+
+  return 0;
 }
 
 static int32_t fs_do_pwd(int32_t argc, const char **argv)
@@ -305,7 +420,9 @@ static int32_t fs_do_pwd(int32_t argc, const char **argv)
   argc = argc;
   argv = argv;
 
-  return -1;
+  fprintf(stdout, "%s\n", ext4_info.cwd.name);
+
+  return 0;
 }
 
 static int32_t fs_do_cd(int32_t argc, const char **argv)
@@ -318,7 +435,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 
 static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
-  const char *name = NULL;
+  const char *name __attribute__((unused)) = NULL;
 
   if (argc > 2 || argv == NULL) {
     error("invalid args!");
@@ -327,10 +444,6 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
 
   if (argc == 2) {
     name = argv[1];
-    if (name == NULL) {
-      error("invalid args!");
-      return -1;
-    }
   }
 
   return 0;

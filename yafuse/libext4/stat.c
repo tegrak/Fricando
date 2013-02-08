@@ -594,7 +594,7 @@ void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num,
   const char *str = NULL;
   time_t tm = 0;
 
-  fprintf(stdout, "Inode %u: ", inode_num);
+  fprintf(stdout, "Inode %5u: ", inode_num);
 
   str = NULL;
   fprintf(stdout, "type: ");
@@ -618,6 +618,8 @@ void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num,
   fprintf(stdout, "%s  ", str);
 
   fprintf(stdout, "mode: %04o  ", inode->i_mode & 0777);
+
+  fprintf(stdout, "\n             ");
 
   str = NULL;
   fprintf(stdout, "flags: ");
@@ -725,9 +727,9 @@ void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num,
     fprintf(stdout, EXT4_DUMMY_STR);
   }
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
-  fprintf(stdout, "generation: %u", inode->i_generation);
+  fprintf(stdout, "generation: %u  ", inode->i_generation);
 
   if (sb->s_inode_size > EXT4_GOOD_OLD_INODE_SIZE && inode->i_extra_isize >= 24) {
     fprintf(stdout, "version: 0x%08x:%08x", inode->i_version_hi, inode->osd1.linux1.l_i_version);
@@ -735,56 +737,56 @@ void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num,
     fprintf(stdout, "version: 0x%08x", inode->osd1.linux1.l_i_version);
   }
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
-  fprintf(stdout, "user: %u", inode->i_uid);
-  fprintf(stdout, "group: %u", inode->i_gid);
+  fprintf(stdout, "user: %u  ", inode->i_uid);
+  fprintf(stdout, "group: %u  ", inode->i_gid);
   fprintf(stdout, "size: %llu", ((__le64)inode->i_size_high << 32) | (__le64)inode->i_size_lo);
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
   fprintf(stdout, "file ACL: %llu", ((__le64)inode->osd2.linux2.l_i_file_acl_high << 32) | (__le64)inode->i_file_acl_lo);
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
-  fprintf(stdout, "link count: %u", inode->i_links_count);
+  fprintf(stdout, "link count: %u  ", inode->i_links_count);
   fprintf(stdout, "block count: %llu", ((__le64)inode->osd2.linux2.l_i_blocks_high << 32) | (__le64)inode->i_blocks_lo);
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
   fprintf(stdout, "ctime: ");
   if (inode->i_ctime != 0) {
     tm = (time_t)inode->i_ctime;
     fprintf(stdout, "%s", ctime(&tm));
+    fprintf(stdout, "             ");
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
+    fprintf(stdout, "\n             ");
   }
-
-  fprintf(stdout, "\n         ");
 
   fprintf(stdout, "atime: ");
   if (inode->i_atime != 0) {
     tm = (time_t)inode->i_atime;
     fprintf(stdout, "%s", ctime(&tm));
+    fprintf(stdout, "             ");
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
+    fprintf(stdout, "\n             ");
   }
-
-  fprintf(stdout, "\n         ");
 
   fprintf(stdout, "mtime: ");
   if (inode->i_mtime != 0) {
     tm = (time_t)inode->i_mtime;
     fprintf(stdout, "%s", ctime(&tm));
+    fprintf(stdout, "             ");
   } else {
     fprintf(stdout, EXT4_DUMMY_STR);
+    fprintf(stdout, "\n             ");
   }
-
-  fprintf(stdout, "\n         ");
 
   fprintf(stdout, "size of extra inode: %u", inode->i_extra_isize);
 
-  fprintf(stdout, "\n         ");
+  fprintf(stdout, "\n             ");
 
   fprintf(stdout, "extents: %s", EXT4_DUMMY_STR);
 

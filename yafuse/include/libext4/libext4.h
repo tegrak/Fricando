@@ -130,6 +130,8 @@ int32_t ext4_fill_blk_sz(const struct ext4_super_block *sb, int32_t *blk_sz);
 int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_groups);
 int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc_min *bg_desc);
 int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, uint32_t inode_num, struct ext4_inode *inode);
+int32_t ext4_fill_inodes(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *inodes);
+int32_t ext4_name2ino(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, const char *name, uint32_t *inode_num);
 int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr);
 int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_num, struct ext4_extent_idx *ext_idx);
 int32_t ext4_fill_extent(const struct ext4_inode *inode, uint32_t ext_num, struct ext4_extent *ext);
