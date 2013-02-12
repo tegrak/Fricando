@@ -589,12 +589,12 @@ void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const
   ext4_show_bg_desc_stat(sb, bg_groups, bg_desc);
 }
 
-void ext4_show_inode_stat(const struct ext4_super_block *sb, uint32_t inode_num, const struct ext4_inode *inode)
+void ext4_show_inode_stat(const struct ext4_super_block *sb, int32_t inode_num, const struct ext4_inode *inode)
 {
   const char *str = NULL;
   time_t tm = 0;
 
-  fprintf(stdout, "Inode %5u: ", inode_num);
+  fprintf(stdout, "Inode %5d: ", inode_num);
 
   str = NULL;
   fprintf(stdout, "type: ");

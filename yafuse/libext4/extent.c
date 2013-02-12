@@ -78,7 +78,7 @@ int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_exte
   return 0;
 }
 
-int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
+int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, int32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
 {
   const uint8_t *ptr = NULL;
   int32_t offset = 0;
@@ -92,7 +92,7 @@ int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, uint32_t ext_idx_nu
   return 0;
 }
 
-int32_t ext4_fill_extent(const struct ext4_inode *inode, uint32_t ext_num, struct ext4_extent *ext)
+int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t ext_num, struct ext4_extent *ext)
 {
   const uint8_t *ptr = NULL;
   int32_t offset = 0;

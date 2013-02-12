@@ -71,10 +71,12 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t dentry_num, struct ext4_dir_entry_2 *dentry)
+int32_t ext4_fill_dentries(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t *dentries)
 {
   int32_t blk_sz = 0;
   __le64 offset = 0;
+  int32_t i = 0;
+  struct ext4_dir_entry_2 dentry;
   int32_t ret = 0;
 
   ret = ext4_fill_blk_sz(sb, &blk_sz);
@@ -82,23 +84,89 @@ int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct 
     return -1;
   }
 
-  offset = (((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo) * blk_sz + (dentry_num * sizeof(struct ext4_dir_entry_2));
+  offset = (((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo) * blk_sz;
 
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
   }
 
-  ret = io_fread((uint8_t *)dentry, sizeof(struct ext4_dir_entry_2));
+  ret = io_fread((uint8_t *)&dentry.inode, sizeof(__le32));
   if (ret != 0) {
-    memset((void *)dentry, 0, sizeof(struct ext4_dir_entry_2));
+    return -1;
+  }
+
+  ret = io_fread((uint8_t *)&dentry.rec_len, sizeof(__le16));
+  if (ret != 0) {
+    return -1;
+  }
+
+  while (dentry.inode != EXT4_UNUSED_INO) {
+    ++i;
+
+    offset += (__le64)(dentry.rec_len <= sizeof(struct ext4_dir_entry_2) ? dentry.rec_len : sizeof(struct ext4_dir_entry_2));
+
+    ret = io_fseek(offset);
+    if (ret != 0) {
+      return -1;
+    }
+
+    ret = io_fread((uint8_t *)&dentry.inode, sizeof(__le32));
+    if (ret != 0) {
+      return -1;
+    }
+
+    ret = io_fread((uint8_t *)&dentry.rec_len, sizeof(__le16));
+    if (ret != 0) {
+      return -1;
+    }
+  }
+
+  *dentries = i;
+
+  return 0;
+}
+
+int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t dentry_offset_rel, struct ext4_dir_entry_2 *dentry)
+{
+  int32_t blk_sz = 0;
+  __le64 offset = 0;
+  uint32_t rec_len = 0;
+  int32_t ret = 0;
+
+  ret = ext4_fill_blk_sz(sb, &blk_sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  offset = (((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo) * blk_sz + (__le64)dentry_offset_rel;
+
+  ret = io_fseek(offset);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = io_fread((uint8_t *)&dentry->inode, sizeof(__le32));
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = io_fread((uint8_t *)&dentry->rec_len, sizeof(__le16));
+  if (ret != 0) {
+    return -1;
+  }
+
+  rec_len = dentry->rec_len <= sizeof(struct ext4_dir_entry_2) ? dentry->rec_len : sizeof(struct ext4_dir_entry_2);
+
+  ret = io_fread((uint8_t *)dentry + sizeof(__le32) + sizeof(__le16), rec_len - sizeof(__le32) - sizeof(__le16));
+  if (ret != 0) {
     return -1;
   }
 
   return 0;
 }
 
-int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t root_num, struct dx_root *root)
+int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t root_num, struct dx_root *root)
 {
   // Add code here
 
