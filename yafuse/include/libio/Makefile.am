@@ -1,4 +1,3 @@
-
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 headers = io.h

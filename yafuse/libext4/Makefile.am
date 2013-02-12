@@ -1,4 +1,3 @@
-
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 if INSTALL_LIBRARY
@@ -8,9 +7,14 @@ else
 noinst_LTLIBRARIES = libext4.la
 endif
 
-libext4_la_CFLAGS  = $(AM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/libext4 -I$(top_srcdir)/include/libio
+libext4_la_CFLAGS  = $(AM_CFLAGS) \
+                     -I$(top_srcdir)/include \
+                     -I$(top_srcdir)/include/libio \
+                     -I$(top_srcdir)/include/libext4
 
-libext4_la_LDFLAGS = -version-info $(LIBEXT4_VERSION) -no-undefined
+libext4_la_LDFLAGS = -version-info \
+                     $(LIBEXT4_VERSION) \
+                     -no-undefined
 
 libext4_la_SOURCES = super.c \
                      inode.c \

@@ -1,4 +1,3 @@
-
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 headers = libext4.h \
