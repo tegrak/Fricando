@@ -528,8 +528,9 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
   }
 
   for (i = 0; i < dentries; ++i) {
-    ext4_show_dentry_linear(&dentry[i]);
+    fprintf(stdout, "<%u>%s  ", dentry[i].inode, dentry[i].name);
   }
+  fprintf(stdout, "\n");
 
  fs_do_ls_done:
 
