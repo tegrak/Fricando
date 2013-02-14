@@ -441,14 +441,10 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
   const char *name __attribute__((unused)) = NULL;
   struct ext4_inode inode;
-  struct ext4_extent_header ext_hdr;
-#if 1 // test only
-  struct ext4_extent_idx ext_idx __attribute__((unused));
-#endif
-  struct ext4_extent ext;
+  int32_t extents = 0;
+  struct ext4_extent *extent = NULL;
   int32_t dentries = 0;
-  struct ext4_dir_entry_2 dentry;
-  uint32_t dentry_offset_rel = 0;
+  struct ext4_dir_entry_2 *dentry = NULL;
   int32_t i = 0;
   int32_t ret = 0;
 
@@ -461,7 +457,6 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
     name = argv[1];
   }
 
-#if 1 //test only
   /*
    * Fill in Ext4 inode
    */
@@ -477,77 +472,71 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
   }
 
   /*
-   * Show Ext4 inode stat
+   * Fill in Ext4 entents
    */
-  ext4_show_inode_stat((const struct ext4_super_block *)ext4_info.sb,
-                       ext4_info.cwd.ino,
-                       (const struct ext4_inode *)&inode);
+  ret = ext4_fill_extents((const struct ext4_inode *)&inode, &extents);
+  if (ret != 0) {
+    error("failed to ls ext4 filesystem!");
+    return -1;
+  }
 
   /*
-   * Fill in Ext4 extent
+   * Fill in Ext4 entent list
+   * Attention: 'extents = 1' required
    */
-  memset((void *)&ext_hdr, 0, sizeof(struct ext4_extent_header));
+  extent = (struct ext4_extent *)malloc(sizeof(struct ext4_extent) * extents);
+  if (extent == NULL) {
+    error("failed to ls ext4 filesystem!");
+    return -1;    
+  }
+  memset((void *)extent, 0, sizeof(struct ext4_extent) * extents);
 
-  ret = ext4_fill_extent_header((const struct ext4_inode *)&inode, &ext_hdr);
+  ret = ext4_fill_extent((const struct ext4_inode *)&inode, extents, extent);
   if (ret != 0) {
     error("failed to ls ext4 filesystem!");
-    return -1;
+    goto fs_do_ls_done;
   }
-
-  ext4_show_extent_header((const struct ext4_extent_header *)&ext_hdr);
-
-#if 0
-  memset((void *)&ext_idx, 0, sizeof(struct ext4_extent_idx));
-
-  ret = ext4_fill_extent_idx((const struct ext4_inode *)&inode, int32_t ext_idx_num, &ext_idx);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    return -1;
-  }
-
-  ext4_show_extent_idx((const struct ext4_extent_idx *)&ext_idx);
-#endif
-
-  memset((void *)&ext, 0, sizeof(struct ext4_extent));
-
-  ret = ext4_fill_extent((const struct ext4_inode *)&inode, 0, &ext);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    return -1;
-  }
-
-  ext4_show_extent((const struct ext4_extent *)&ext);
 
   /*
-   * Fill in Ext4 directory entry
+   * Fill in Ext4 dentries
    */
   ret = ext4_fill_dentries((const struct ext4_super_block *)ext4_info.sb,
-                           (const struct ext4_extent *)&ext,
+                           (const struct ext4_extent *)&extent[0],
                            &dentries);
   if (ret != 0) {
     error("failed to ls ext4 filesystem!");
-    return -1;
+    goto fs_do_ls_done;
   }
 
-  for (i = 0, dentry_offset_rel = 0; i < dentries; ++i) {
-    memset((void *)&dentry, 0, sizeof(struct ext4_dir_entry_2));
-
-    ret = ext4_fill_dentry_linear((const struct ext4_super_block *)ext4_info.sb,
-                                  (const struct ext4_extent *)&ext,
-                                  dentry_offset_rel,
-                                  &dentry);
-    if (ret != 0) {
-      error("failed to ls ext4 filesystem!");
-      return -1;
-    }
-
-    dentry_offset_rel += dentry.rec_len <= sizeof(struct ext4_dir_entry_2) ? dentry.rec_len : sizeof(struct ext4_dir_entry_2);
-
-    ext4_show_dentry_linear((const struct ext4_dir_entry_2 *)&dentry);
+  /*
+   * Fill in Ext4 dentry list
+   */
+  dentry = (struct ext4_dir_entry_2 *)malloc(sizeof(struct ext4_dir_entry_2) * dentries);
+  if (dentry == NULL) {
+    error("failed to ls ext4 filesystem!");
+    goto fs_do_ls_done;
   }
-#endif
+  memset((void *)dentry, 0, sizeof(struct ext4_dir_entry_2) * dentries);
 
-  return 0;
+  ret = ext4_fill_dentry((const struct ext4_super_block *)ext4_info.sb,
+                         (const struct ext4_extent *)&extent[0],
+                         dentries,
+                         dentry);
+  if (ret != 0) {
+    error("failed to ls ext4 filesystem!");
+    goto fs_do_ls_done;
+  }
+
+  for (i = 0; i < dentries; ++i) {
+    ext4_show_dentry_linear(&dentry[i]);
+  }
+
+ fs_do_ls_done:
+
+  if (dentry != NULL) free(dentry);
+  if (extent != NULL) free(extent);
+
+  return ret;
 }
 
 static int32_t fs_do_mkdir(int32_t argc, const char **argv)

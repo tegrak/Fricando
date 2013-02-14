@@ -137,12 +137,10 @@ int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, 
 int32_t ext4_fill_inodes(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *inodes);
 int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t inode_num, struct ext4_inode *inode);
 int32_t ext4_name2ino(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, const char *name, int32_t *inode_num);
-int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr);
-int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, int32_t ext_idx_num, struct ext4_extent_idx *ext_idx);
-int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t ext_num, struct ext4_extent *ext);
+int32_t ext4_fill_extents(const struct ext4_inode *inode, int32_t *extents);
+int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t extents, struct ext4_extent *extent);
 int32_t ext4_fill_dentries(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t *dentries);
-int32_t ext4_fill_dentry_linear(const struct ext4_super_block *sb, const struct ext4_extent *ext, uint32_t dentry_offset_rel, struct ext4_dir_entry_2 *dentry);
-int32_t ext4_fill_dentry_htree(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t root_num, struct dx_root *root);
+int32_t ext4_fill_dentry(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t dentries, struct ext4_dir_entry_2 *dentry);
 
 void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc);
 void ext4_show_inode_stat(const struct ext4_super_block *sb, int32_t inode_num, const struct ext4_inode *inode);

@@ -40,7 +40,7 @@
 #endif
 
 #ifdef DEBUG
-// Add code here
+#define DEBUG_LIBEXT4_EXTENT
 #endif
 
 #include "include/debug.h"
@@ -67,18 +67,20 @@
 /*
  * Function Declaration
  */
+static int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr);
+static int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, int32_t ext_idx_num, struct ext4_extent_idx *ext_idx);
 
 /*
  * Function Definition
  */
-int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr)
+static int32_t ext4_fill_extent_header(const struct ext4_inode *inode, struct ext4_extent_header *ext_hdr)
 {
   memcpy((void *)ext_hdr, (const void *)inode->i_block, sizeof(struct ext4_extent_header));
 
   return 0;
 }
 
-int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, int32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
+static int32_t __attribute__((unused)) ext4_fill_extent_idx (const struct ext4_inode *inode, int32_t ext_idx_num, struct ext4_extent_idx *ext_idx)
 {
   const uint8_t *ptr = NULL;
   int32_t offset = 0;
@@ -92,16 +94,60 @@ int32_t ext4_fill_extent_idx(const struct ext4_inode *inode, int32_t ext_idx_num
   return 0;
 }
 
-int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t ext_num, struct ext4_extent *ext)
+int32_t ext4_fill_extents(const struct ext4_inode *inode, int32_t *extents)
 {
+  // Add code here
+
+  inode = inode;
+  *extents = 1;
+
+  return 0;
+}
+
+int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t extents, struct ext4_extent *extent)
+{
+  struct ext4_extent_header ext_hdr;
+  struct ext4_extent_idx ext_idx __attribute__((unused));
+  int32_t i = 0;
   const uint8_t *ptr = NULL;
   int32_t offset = 0;
+  int32_t ret = 0;
+
+  memset((void *)&ext_hdr, 0, sizeof(struct ext4_extent_header));
+
+  ret = ext4_fill_extent_header(inode, &ext_hdr);
+  if (ret != 0) {
+    return -1;
+  }
+
+#ifdef DEBUG_LIBEXT4_EXTENT
+  ext4_show_extent_header((const struct ext4_extent_header *)&ext_hdr);
+#endif
+
+#if 0
+  memset((void *)&ext_idx, 0, sizeof(struct ext4_extent_idx));
+
+  ret = ext4_fill_extent_idx(inode, int32_t ext_idx_num, &ext_idx);
+  if (ret != 0) {
+    return -1;
+  }
+
+#ifdef DEBUG_LIBEXT4_EXTENT
+  ext4_show_extent_idx((const struct ext4_extent_idx *)&ext_idx);
+#endif
+#endif
 
   ptr = (const uint8_t *)inode->i_block;
 
-  offset = sizeof(struct ext4_extent_header) + (ext_num * sizeof(struct ext4_extent));
+  for (i = 0; i < extents; ++i) {
+    offset = sizeof(struct ext4_extent_header) + (i * sizeof(struct ext4_extent));
 
-  memcpy((void *)ext, (const void *)(ptr + offset), sizeof(struct ext4_extent));
+    memcpy((void *)&extent[i], (const void *)(ptr + offset), sizeof(struct ext4_extent));
+
+#ifdef DEBUG_LIBEXT4_EXTENT
+    ext4_show_extent((const struct ext4_extent *)&extent[i]);
+#endif
+  }
 
   return 0;
 }
