@@ -125,15 +125,3 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
 
   return 0;
 }
-
-int32_t ext4_name2ino(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, const char *name, int32_t *inode_num)
-{
-  // Add code here
-
-  sb = sb;
-  bg_desc = bg_desc;
-  name = name;
-  inode_num = inode_num;
-
-  return -1;
-}

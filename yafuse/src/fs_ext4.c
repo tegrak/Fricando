@@ -67,11 +67,20 @@
 typedef struct {
   int32_t ino;
   const char *path;
+  int32_t dentries;
+  struct ext4_dir_entry_2 *dentry;
 } fs_ext4_cwd_t;
 
 typedef struct {
+  /*
+   * General info
+   */
   int32_t mounted;
   fs_ext4_cwd_t cwd;
+
+  /*
+   * Filesystem info
+   */
   struct ext4_super_block *sb;
   int32_t bg_groups;
   struct ext4_group_desc_min *bg_desc;
@@ -81,6 +90,8 @@ typedef struct {
  * Function Declaration
  */
 static int32_t fs_parse_ino(const char *name, int32_t *ino);
+static int32_t fs_name2ino(const char *name, int32_t dentries, const struct ext4_dir_entry_2 *dentry, int32_t *ino);
+static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *dentries, struct ext4_dir_entry_2 **dentry);
 
 static int32_t fs_do_mount(int32_t argc, const char **argv);
 static int32_t fs_do_umount(int32_t argc, const char **argv);
@@ -219,6 +230,112 @@ static int32_t fs_parse_ino(const char *name, int32_t *ino)
   return ret;
 }
 
+static int32_t fs_name2ino(const char *name, int32_t dentries, const struct ext4_dir_entry_2 *dentry, int32_t *ino)
+{
+  size_t len = 0;
+  int32_t i = 0;
+
+  if (name == NULL || dentries == 0 || dentry == NULL || ino == NULL ) {
+    return -1;
+  }
+
+  for (i = 0; i < dentries; ++i) {
+    len = strlen(name) >= strlen(dentry[i].name) ? strlen(dentry[i].name) : strlen(name);
+    if (0 == strncmp(dentry[i].name, name, len)) {
+      *ino = (int32_t)dentry[i].inode;
+      break;
+    }
+  }
+
+  return 0;
+}
+
+static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *dentries, struct ext4_dir_entry_2 **dentry)
+{
+  struct ext4_inode inode;
+  int32_t extents = 0;
+  struct ext4_extent *extent = NULL;
+  int32_t ret = 0;
+
+  if (ino == EXT4_UNUSED_INO
+      || ino == EXT4_BAD_INO
+      || sb == NULL
+      || bg_desc == NULL
+      || dentries == NULL
+      || dentry == NULL) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 inode
+   */
+  memset((void *)&inode, 0, sizeof(struct ext4_inode));
+
+  ret = ext4_fill_inode((const struct ext4_super_block *)sb,
+                        (const struct ext4_group_desc_min *)bg_desc,
+                        ino,
+                        &inode);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 entents
+   */
+  ret = ext4_fill_extents((const struct ext4_inode *)&inode, &extents);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 entent list
+   * Attention: 'extents = 1' required
+   */
+  extent = (struct ext4_extent *)malloc(sizeof(struct ext4_extent) * extents);
+  if (extent == NULL) {
+    return -1;    
+  }
+  memset((void *)extent, 0, sizeof(struct ext4_extent) * extents);
+
+  ret = ext4_fill_extent((const struct ext4_inode *)&inode, extents, extent);
+  if (ret != 0) {
+    goto fs_ino2dentry_done;
+  }
+
+  /*
+   * Fill in Ext4 dentries
+   */
+  ret = ext4_fill_dentries((const struct ext4_super_block *)sb,
+                           (const struct ext4_extent *)&extent[0],
+                           dentries);
+  if (ret != 0) {
+    goto fs_ino2dentry_done;
+  }
+
+  /*
+   * Fill in Ext4 dentry list
+   */
+  *dentry = (struct ext4_dir_entry_2 *)realloc((void *)*dentry, sizeof(struct ext4_dir_entry_2) * (*dentries));
+  if (*dentry == NULL) {
+    goto fs_ino2dentry_done;
+  }
+  memset((void *)*dentry, 0, sizeof(struct ext4_dir_entry_2) * (*dentries));
+
+  ret = ext4_fill_dentry((const struct ext4_super_block *)sb,
+                         (const struct ext4_extent *)&extent[0],
+                         *dentries,
+                         *dentry);
+  if (ret != 0) {
+    goto fs_ino2dentry_done;
+  }
+
+ fs_ino2dentry_done:
+
+  if (extent != NULL) free(extent);
+
+  return ret;
+}
+
 static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
   const char *name = NULL;
@@ -300,14 +417,28 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   }
 
   /*
-   * Init Ext4 filesytem info
+   * Init Ext4 info
    */
   ext4_info.mounted = 1;
   ext4_info.cwd.ino = EXT4_ROOT_INO;
   ext4_info.cwd.path = FS_ROOT_DIR;
+  ext4_info.cwd.dentries = 0;
+  ext4_info.cwd.dentry = NULL;
   ext4_info.sb = sb;
   ext4_info.bg_groups = bg_groups;
   ext4_info.bg_desc = bg_desc;
+
+  /*
+   * Fill in Ext4 dentry list
+   */
+  ret = fs_ino2dentry(ext4_info.cwd.ino,
+                      (const struct ext4_super_block *)ext4_info.sb,
+                      (const struct ext4_group_desc_min *)ext4_info.bg_desc,
+                      &ext4_info.cwd.dentries,
+                      &ext4_info.cwd.dentry);
+  if (ret != 0) {
+    goto fs_do_mount_fail;
+  }
 
   info("mount ext4 filesystem successfully.");
 
@@ -317,6 +448,7 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
 
   info("failed to mount ext4 filesystem.");
 
+  if (ext4_info.cwd.dentry != NULL) free(ext4_info.cwd.dentry);
   if (bg_desc != NULL) free(bg_desc);
   if (sb != NULL) free(sb);
 
@@ -336,6 +468,7 @@ static int32_t fs_do_umount(int32_t argc, const char **argv)
     info("umount ext4 filesystem successfully.");
   }
 
+  if (ext4_info.cwd.dentry != NULL) free(ext4_info.cwd.dentry);
   if (ext4_info.bg_desc != NULL) free(ext4_info.bg_desc);
   if (ext4_info.sb != NULL) free(ext4_info.sb);
 
@@ -367,12 +500,9 @@ static int32_t fs_do_stats(int32_t argc, const char **argv)
 
 static int32_t fs_do_stat(int32_t argc, const char **argv)
 {
-  int32_t inode_num = 0;
+  int32_t ino = 0;
   struct ext4_inode inode;
   int32_t ret = 0;
-
-  argc = argc;
-  argv = argv;
 
   if (argc != 2 || argv == NULL) {
     error("invalid args!");
@@ -383,12 +513,12 @@ static int32_t fs_do_stat(int32_t argc, const char **argv)
    * Parse args
    * e.g., 'stat name' or 'stat <ino>'
    */
-  ret = fs_parse_ino(argv[1], &inode_num);
+  ret = fs_parse_ino(argv[1], &ino);
   if (ret != 0) {
-    ret = ext4_name2ino((const struct ext4_super_block *)ext4_info.sb,
-                        (const struct ext4_group_desc_min *)ext4_info.bg_desc,
-                        argv[1],
-                        &inode_num);
+    ret = fs_name2ino(argv[1],
+                      ext4_info.cwd.dentries,
+                      (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
+                      &ino);
     if (ret != 0) {
       error("invalid args!");
       return -1;
@@ -402,7 +532,7 @@ static int32_t fs_do_stat(int32_t argc, const char **argv)
 
   ret = ext4_fill_inode((const struct ext4_super_block *)ext4_info.sb,
                         (const struct ext4_group_desc_min *)ext4_info.bg_desc,
-                        inode_num,
+                        ino,
                         &inode);
   if (ret != 0) {
     error("failed to stat ext4 filesystem!");
@@ -413,7 +543,7 @@ static int32_t fs_do_stat(int32_t argc, const char **argv)
    * Show Ext4 inode stat
    */
   ext4_show_inode_stat((const struct ext4_super_block *)ext4_info.sb,
-                       inode_num,
+                       ino,
                        (const struct ext4_inode *)&inode);
 
   return 0;
@@ -431,22 +561,37 @@ static int32_t fs_do_pwd(int32_t argc, const char **argv)
 
 static int32_t fs_do_cd(int32_t argc, const char **argv)
 {
-  argc = argc;
-  argv = argv;
+  int32_t ret = 0;
 
-  return -1;
+  if (argc != 2 || argv == NULL) {
+    error("invalid args!");
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 dentry list
+   */
+  ret = fs_ino2dentry(ext4_info.cwd.ino,
+                      (const struct ext4_super_block *)ext4_info.sb,
+                      (const struct ext4_group_desc_min *)ext4_info.bg_desc,
+                      &ext4_info.cwd.dentries,
+                      &ext4_info.cwd.dentry);
+  if (ret != 0) {
+    error("failed to change directory!");
+    goto fs_do_cd_done;
+  }
+
+ fs_do_cd_done:
+
+  if (ext4_info.cwd.dentry != NULL) free(ext4_info.cwd.dentry);
+
+  return ret;
 }
 
 static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
   const char *name __attribute__((unused)) = NULL;
-  struct ext4_inode inode;
-  int32_t extents = 0;
-  struct ext4_extent *extent = NULL;
-  int32_t dentries = 0;
-  struct ext4_dir_entry_2 *dentry = NULL;
   int32_t i = 0;
-  int32_t ret = 0;
 
   if (argc > 2 || argv == NULL) {
     error("invalid args!");
@@ -457,87 +602,12 @@ static int32_t fs_do_ls(int32_t argc, const char **argv)
     name = argv[1];
   }
 
-  /*
-   * Fill in Ext4 inode
-   */
-  memset((void *)&inode, 0, sizeof(struct ext4_inode));
-
-  ret = ext4_fill_inode((const struct ext4_super_block *)ext4_info.sb,
-                        (const struct ext4_group_desc_min *)ext4_info.bg_desc,
-                        ext4_info.cwd.ino,
-                        &inode);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    return -1;
-  }
-
-  /*
-   * Fill in Ext4 entents
-   */
-  ret = ext4_fill_extents((const struct ext4_inode *)&inode, &extents);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    return -1;
-  }
-
-  /*
-   * Fill in Ext4 entent list
-   * Attention: 'extents = 1' required
-   */
-  extent = (struct ext4_extent *)malloc(sizeof(struct ext4_extent) * extents);
-  if (extent == NULL) {
-    error("failed to ls ext4 filesystem!");
-    return -1;    
-  }
-  memset((void *)extent, 0, sizeof(struct ext4_extent) * extents);
-
-  ret = ext4_fill_extent((const struct ext4_inode *)&inode, extents, extent);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    goto fs_do_ls_done;
-  }
-
-  /*
-   * Fill in Ext4 dentries
-   */
-  ret = ext4_fill_dentries((const struct ext4_super_block *)ext4_info.sb,
-                           (const struct ext4_extent *)&extent[0],
-                           &dentries);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    goto fs_do_ls_done;
-  }
-
-  /*
-   * Fill in Ext4 dentry list
-   */
-  dentry = (struct ext4_dir_entry_2 *)malloc(sizeof(struct ext4_dir_entry_2) * dentries);
-  if (dentry == NULL) {
-    error("failed to ls ext4 filesystem!");
-    goto fs_do_ls_done;
-  }
-  memset((void *)dentry, 0, sizeof(struct ext4_dir_entry_2) * dentries);
-
-  ret = ext4_fill_dentry((const struct ext4_super_block *)ext4_info.sb,
-                         (const struct ext4_extent *)&extent[0],
-                         dentries,
-                         dentry);
-  if (ret != 0) {
-    error("failed to ls ext4 filesystem!");
-    goto fs_do_ls_done;
-  }
-
-  for (i = 0; i < dentries; ++i) {
-    fprintf(stdout, "<%u>%s  ", dentry[i].inode, dentry[i].name);
+  for (i = 0; i < ext4_info.cwd.dentries; ++i) {
+    fprintf(stdout, "<%u>%s  ", ext4_info.cwd.dentry[i].inode, ext4_info.cwd.dentry[i].name);
   }
   fprintf(stdout, "\n");
 
- fs_do_ls_done:
-
-  if (dentry != NULL) free(dentry);
-  if (extent != NULL) free(extent);
-
-  return ret;
+  return 0;
 }
 
 static int32_t fs_do_mkdir(int32_t argc, const char **argv)
