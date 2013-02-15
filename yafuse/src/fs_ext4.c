@@ -500,7 +500,7 @@ static int32_t fs_do_stats(int32_t argc, const char **argv)
 
 static int32_t fs_do_stat(int32_t argc, const char **argv)
 {
-  int32_t ino = 0;
+  int32_t ino = EXT4_UNUSED_INO;
   struct ext4_inode inode;
   int32_t ret = 0;
 
@@ -561,6 +561,7 @@ static int32_t fs_do_pwd(int32_t argc, const char **argv)
 
 static int32_t fs_do_cd(int32_t argc, const char **argv)
 {
+  int32_t ino = EXT4_UNUSED_INO;
   int32_t ret = 0;
 
   if (argc != 2 || argv == NULL) {
@@ -569,9 +570,21 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
   }
 
   /*
+   * Parse args
+   */
+  ret = fs_name2ino(argv[1],
+                    ext4_info.cwd.dentries,
+                    (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
+                    &ino);
+  if (ret != 0) {
+    error("invalid args!");
+    return -1;
+  }
+
+  /*
    * Fill in Ext4 dentry list
    */
-  ret = fs_ino2dentry(ext4_info.cwd.ino,
+  ret = fs_ino2dentry(ino,
                       (const struct ext4_super_block *)ext4_info.sb,
                       (const struct ext4_group_desc_min *)ext4_info.bg_desc,
                       &ext4_info.cwd.dentries,
@@ -580,6 +593,14 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
     error("failed to change directory!");
     goto fs_do_cd_done;
   }
+
+  /*
+   * Update Ext4 info
+   */
+  ext4_info.cwd.ino = ino;
+
+  // Add code here
+  // ext4_info.cwd.path = ;
 
  fs_do_cd_done:
 
@@ -590,17 +611,10 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 
 static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
-  const char *name __attribute__((unused)) = NULL;
   int32_t i = 0;
 
-  if (argc > 2 || argv == NULL) {
-    error("invalid args!");
-    return -1;
-  }
-
-  if (argc == 2) {
-    name = argv[1];
-  }
+  argc = argc;
+  argv = argv;
 
   for (i = 0; i < ext4_info.cwd.dentries; ++i) {
     fprintf(stdout, "<%u>%s  ", ext4_info.cwd.dentry[i].inode, ext4_info.cwd.dentry[i].name);
