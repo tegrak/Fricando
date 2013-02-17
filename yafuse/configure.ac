@@ -25,7 +25,7 @@ AC_INIT([yafuse],[2013.1.12],[angersax@gmail.com])
 YAFUSE_VERSION="1"
 LIBIO_VERSION="1"
 LIBEXT4_VERSION="1"
-LIBFAT32_VERSION="1"
+LIBFAT_VERSION="1"
 AC_CONFIG_SRCDIR([src/main.c])
 
 # Environment
@@ -185,15 +185,15 @@ test "${enable_really_static}" = "yes" && enable_library="no"
 pkgconfigdir="\$(libdir)/pkgconfig"
 libioincludedir="\$(includedir)/libio"
 libext4includedir="\$(includedir)/libext4"
-libfat32includedir="\$(includedir)/libfat32"
+libfatincludedir="\$(includedir)/libfat"
 AC_SUBST([pkgconfigdir])
 AC_SUBST([libioincludedir])
 AC_SUBST([libext4includedir])
-AC_SUBST([libfat32includedir])
+AC_SUBST([libfatincludedir])
 AC_SUBST([YAFUSE_VERSION])
 AC_SUBST([LIBIO_VERSION])
 AC_SUBST([LIBEXT4_VERSION])
-AC_SUBST([LIBFAT32_VERSION])
+AC_SUBST([LIBFAT_VERSION])
 AM_CONDITIONAL([GENERATE_LDSCRIPT], [test "${enable_ldscript}" = "yes"])
 AM_CONDITIONAL([WINDOWS], [test "${WINDOWS}" = "yes"])
 AM_CONDITIONAL([RUN_LDCONFIG], [test "${enable_ldconfig}" = "yes"])
@@ -206,13 +206,13 @@ AC_CONFIG_FILES([
 	include/Makefile
 	include/libio/Makefile
 	include/libext4/Makefile
-	include/libfat32/Makefile
+	include/libfat/Makefile
 	libio/Makefile
 	libio/libio.pc
 	libext4/Makefile
 	libext4/libext4.pc
-	libfat32/Makefile
-	libfat32/libfat32.pc
+	libfat/Makefile
+	libfat/libfat.pc
 	src/Makefile])
 AC_OUTPUT
 

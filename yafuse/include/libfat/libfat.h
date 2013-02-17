@@ -1,5 +1,5 @@
 /**
- * libfat32.h - The header of libfat32.
+ * libfat.h - The header of libfat.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _LIBFAT32_H
-#define _LIBFAT32_H
+#ifndef _LIBFAT_H
+#define _LIBFAT_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -46,4 +46,4 @@
  * Function Declaration
  */
 
-#endif /* _LIBFAT32_H */
+#endif /* _LIBFAT_H */

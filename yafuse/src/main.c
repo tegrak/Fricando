@@ -62,7 +62,7 @@
 
 #include "filesystem.h"
 #include "fs_ext4.h"
-#include "fs_fat32.h"
+#include "fs_fat.h"
 #include "subsystem.h"
 
 /*
@@ -155,9 +155,9 @@ int32_t main(int argc, char *argv[])
     return -1;
   }
 
-  ret = fs_register(fs_opt_tbl_fat32);
+  ret = fs_register(fs_opt_tbl_fat);
   if (ret != 0) {
-    error("failed to register fat32 operation table!");
+    error("failed to register fat operation table!");
     return -1;
   }
 

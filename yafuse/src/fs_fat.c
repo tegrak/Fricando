@@ -1,5 +1,5 @@
 /**
- * fs_fat32.c - The entry of FAT32 filesystem.
+ * fs_fat.c - The entry of FAT filesystem.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -42,11 +42,11 @@
 
 #include "include/debug.h"
 #include "include/types.h"
-#include "include/libfat32/libfat32.h"
+#include "include/libfat/libfat.h"
 #include "include/libio/io.h"
 
 #include "filesystem.h"
-#include "fs_fat32.h"
+#include "fs_fat.h"
 
 /*
  * Macro Definition
@@ -75,9 +75,9 @@ static int32_t fs_do_write(int32_t argc, const char **argv);
  * Global Variable Definition
  */
 /*
- * FAT32 filesystem operation table
+ * FAT filesystem operation table
  */
-fs_opt_t fs_opt_tbl_fat32[FS_OPT_TBL_NUM_MAX] = {
+fs_opt_t fs_opt_tbl_fat[FS_OPT_TBL_NUM_MAX] = {
   [0] = {
     .opt_hdl = fs_do_mount,
     .opt_cmd = FS_OPT_CMD_MOUNT,

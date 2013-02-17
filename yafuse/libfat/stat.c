@@ -1,5 +1,5 @@
 /**
- * stat.c - Show status of FAT32.
+ * stat.c - Show status of FAT.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -42,7 +42,7 @@
 
 #include "include/debug.h"
 #include "include/types.h"
-#include "include/libfat32/libfat32.h"
+#include "include/libfat/libfat.h"
 #include "include/libio/io.h"
 
 /*

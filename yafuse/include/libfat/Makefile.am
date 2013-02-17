@@ -1,9 +1,9 @@
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
-headers = libfat32.h
+headers = libfat.h
 
 if INSTALL_LIBRARY
-libfat32include_HEADERS = $(headers)
+libfatinclude_HEADERS = $(headers)
 else
 noinst_HEADERS = $(headers)
 endif

@@ -1,5 +1,5 @@
 /**
- * fs_fat32.h - The header of FAT32 filesystem.
+ * fs_fat.h - The header of FAT filesystem.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -19,8 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _FS_FAT32_H
-#define _FS_FAT32_H
+#ifndef _FS_FAT_H
+#define _FS_FAT_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -45,10 +45,10 @@
 /*
  * Global Variable Definition
  */
-extern fs_opt_t fs_opt_tbl_fat32[];
+extern fs_opt_t fs_opt_tbl_fat[];
 
 /*
  * Function Declaration
  */
 
-#endif /* _FS_FAT32_H */
+#endif /* _FS_FAT_H */

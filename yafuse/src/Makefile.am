@@ -4,7 +4,7 @@ bin_PROGRAMS = yafuse
 
 yafuse_LDADD = $(top_builddir)/libio/libio.la \
                $(top_builddir)/libext4/libext4.la \
-               $(top_builddir)/libfat32/libfat32.la
+               $(top_builddir)/libfat/libfat.la
 
 if REALLYSTATIC
 yafuse_LDFLAGS = $(AM_LDFLAGS) -all-static
@@ -14,14 +14,14 @@ yafuse_CFLAGS = $(AM_CFLAGS) \
                 -I$(top_srcdir)/include \
                 -I$(top_srcdir)/include/libio \
                 -I$(top_srcdir)/include/libext4 \
-                -I$(top_srcdir)/include/libfat32 \
+                -I$(top_srcdir)/include/libfat \
                 -I$(top_srcdir)/src
 
 yafuse_SOURCES  = main.c \
                   subsystem.c \
                   filesystem.c \
                   fs_ext4.c \
-                  fs_fat32.c
+                  fs_fat.c
 
 if RUN_LDCONFIG
 install-exec-hook:

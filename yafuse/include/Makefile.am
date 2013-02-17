@@ -2,7 +2,7 @@ MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 SUBDIRS = libio \
           libext4 \
-          libfat32
+          libfat
 
 headers = debug.h \
           types.h
