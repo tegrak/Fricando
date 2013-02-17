@@ -125,3 +125,14 @@ int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_gro
 
   return 0;
 }
+
+int32_t ext4_inode_mode_is_dir(const struct ext4_inode *inode, int32_t *status)
+{
+  if (inode->i_mode & EXT4_INODE_MODE_S_IFDIR) {
+    *status = 1;
+  } else {
+    *status = 0;
+  }
+
+  return 0;
+}

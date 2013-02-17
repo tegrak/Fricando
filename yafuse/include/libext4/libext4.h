@@ -136,6 +136,7 @@ int32_t ext4_fill_bg_groups(const struct ext4_super_block *sb, int32_t *bg_group
 int32_t ext4_fill_bg_desc(const struct ext4_super_block *sb, int32_t bg_groups, struct ext4_group_desc_min *bg_desc);
 int32_t ext4_fill_inodes(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *inodes);
 int32_t ext4_fill_inode(const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t inode_num, struct ext4_inode *inode);
+int32_t ext4_inode_mode_is_dir(const struct ext4_inode *inode, int32_t *status);
 int32_t ext4_fill_extents(const struct ext4_inode *inode, int32_t *extents);
 int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t extents, struct ext4_extent *extent);
 int32_t ext4_fill_dentries(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t *dentries);

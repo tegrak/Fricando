@@ -844,6 +844,7 @@ void ext4_show_extent(const struct ext4_extent *ext)
 
 void ext4_show_dentry_linear(const struct ext4_dir_entry_2 *dentry)
 {
+  int32_t i = 0;
   const char *str = NULL;
 
   fprintf(stdout, "Linear dentry: ");
@@ -893,7 +894,10 @@ void ext4_show_dentry_linear(const struct ext4_dir_entry_2 *dentry)
 
   fprintf(stdout, "\n               ");
 
-  fprintf(stdout, "name: %s", dentry->name);
+  fprintf(stdout, "name: ");
+  for (i = 0; i < dentry->name_len; ++i) {
+    fprintf(stdout, "%c", dentry->name[i]);
+  }
 
   fprintf(stdout, "\n");
 }

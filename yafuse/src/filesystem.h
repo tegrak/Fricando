@@ -45,7 +45,10 @@
 #define FS_OPT_CMD_MOUNT   "mount"
 #define FS_OPT_CMD_UMOUNT  "umount"
 
-#define FS_ROOT_DIR  "/"
+#define FS_CURRENT_PATH  "."
+#define FS_UPPER_PATH    ".."
+#define FS_ROOT_PATH  "/"
+#define FS_PATH_DELIM  "/"
 
 /*
  * Type Definition

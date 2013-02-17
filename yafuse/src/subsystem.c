@@ -227,6 +227,7 @@ static void ss_del_history(void)
   for (i = 0; i < SS_HISTORY_BUF_LEN; ++i) {
     if (ss_history_buf[i] != NULL) {
       free((void *)ss_history_buf[i]);
+      ss_history_buf[i] = NULL;
     }
   }
 }
@@ -405,6 +406,7 @@ static void ss_exec_line(char *line)
   fs_opt_handle_t handle = NULL;
   int32_t argc = 0;
   const char* argv[FS_OPT_CMD_ARG_NUM_MAX] = {NULL};
+  int32_t len_s1 = 0, len_s2 = 0;
   int32_t ret = -1;
 
   ret = ss_parse_line(line, &argc, argv);
@@ -422,19 +424,29 @@ static void ss_exec_line(char *line)
     return;
   }
 
-  if (strcmp(argv[0], FS_OPT_CMD_MOUNT) == 0) {
-    fs_type = fs_mount(argv[1]);
-    return;
+  len_s1 = strlen(argv[0]);
+  len_s2 = strlen(FS_OPT_CMD_MOUNT);
+
+  if (len_s1 == len_s2) {
+    if (strncmp(argv[0], FS_OPT_CMD_MOUNT, len_s1) == 0) {
+      fs_type = fs_mount(argv[1]);
+      return;
+    }
   }
 
   if (fs_type < 0) {
    return;
   }
 
-  if (strcmp(argv[0], FS_OPT_CMD_UMOUNT) == 0) {
-    fs_umount(fs_type);
-    fs_type = -1;
-    return;
+  len_s1 = strlen(argv[0]);
+  len_s2 = strlen(FS_OPT_CMD_UMOUNT);
+
+  if (len_s1 == len_s2) {
+    if (strncmp(argv[0], FS_OPT_CMD_UMOUNT, len_s1) == 0) {
+      fs_umount(fs_type);
+      fs_type = -1;
+      return;
+    }
   }
 
   handle = fs_opt_hdl_match(fs_type, (const char *)argv[0]);
@@ -493,6 +505,7 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
 
     if (line != NULL) {
       free((void *)line);
+      line = NULL;
     }
   }
 }
