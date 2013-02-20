@@ -68,6 +68,7 @@
  */
 typedef struct {
   int32_t ino;
+  const char *root;
   char path[FS_EXT4_PATH_LEN_MAX + 1];
   int32_t dentries;
   struct ext4_dir_entry_2 *dentry;
@@ -93,7 +94,8 @@ typedef struct {
 static int32_t fs_parse_ino(const char *name, int32_t *ino);
 static int32_t fs_name2ino(const char *name, int32_t dentries, const struct ext4_dir_entry_2 *dentry, int32_t *ino);
 static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *dentries, struct ext4_dir_entry_2 **dentry);
-static int32_t fs_update_path(const char *dirname, char *path);
+static int32_t fs_path_push(const char *dirname, char *path);
+static int32_t fs_path_pop(char *path);
 
 static int32_t fs_do_mount(int32_t argc, const char **argv);
 static int32_t fs_do_umount(int32_t argc, const char **argv);
@@ -359,85 +361,47 @@ static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, con
   return ret;
 }
 
-static int32_t fs_update_path(const char *dirname, char *path)
+static int32_t fs_path_push(const char *dirname, char *path)
 {
-  const char *buf = NULL;
+  size_t len_path = 0, len_name;
   char *ptr = NULL;
-  int32_t len = 0, len_s1 = 0, len_s2 = 0;
 
   if (dirname == NULL || path == NULL) {
     return -1;
   }
 
-  /*
-   * Ignore '/' in path if '//' occurs
-   */
-  len_s1 = strlen(FS_PATH_DELIM);
-  len_s2 = strlen(dirname);
+  len_path = strlen(path);
+  len_name = strlen(dirname);
 
-  if (len_s1 == len_s2) {
-    if (0 == strncmp(dirname, FS_PATH_DELIM, len_s1)) {
-      len_s2 = strlen(path);
-      if (len_s1 == len_s2) {
-        if (0 == strncmp(path, FS_PATH_DELIM, len_s1)) {
-          return 0;
-        }
-      }
-    }
+  if ((FS_EXT4_PATH_LEN_MAX + 1 - len_path) < (strlen(FS_PATH_DELIM) + len_name + 1)) {
+    return -1;
   }
 
-  /*
-   * Ignore dirname of '.'
-   */
-  len_s1 = strlen(FS_CURRENT_PATH);
-  len_s2 = strlen(dirname);
+  ptr = path + len_path;
 
-  if (len_s1 == len_s2) {
-    if (0 == strncmp(dirname, FS_CURRENT_PATH, len_s1)) {
-      return 0;
-    }
+  memcpy((void *)ptr, (const void *)FS_PATH_DELIM, strlen(FS_PATH_DELIM));
+  memcpy((void *)(ptr + strlen(FS_PATH_DELIM)), (const void *)dirname, len_name);
+
+  return 0;
+}
+
+static int32_t fs_path_pop(char *path)
+{
+  const char *str = NULL;
+  char *ptr = NULL;
+  size_t len = 0;
+
+  if (path == NULL) {
+    return -1;
   }
 
-  /*
-   * Remove current dir name in path if dirname is '..'
-   */
-  len_s1 = strlen(FS_UPPER_PATH);
-  len_s2 = strlen(dirname);
+  str = FS_PATH_DELIM;
 
-  if (len_s1 == len_s2) {
-    if (0 == strncmp(dirname, FS_UPPER_PATH, len_s1)) {
-      buf = FS_PATH_DELIM;
-
-      ptr = strrchr((const char *)path, buf[0]);
-      if (ptr == NULL) {
-        return 0;
-      } else if (ptr == path) {
-        memset(ptr + 1, 0, strlen(ptr + 1));
-      } else {
-        memset(ptr, 0, strlen(ptr));
-      }
-
-      ptr = strrchr((const char *)path, buf[0]);
-      if (ptr == NULL) {
-        return 0;
-      } else if (ptr == path) {
-        memset(ptr + 1, 0, strlen(ptr + 1));
-      } else {
-        memset(ptr, 0, strlen(ptr));
-      }
-
-      return 0;
-    }
+  ptr = strrchr((const char *)path, str[0]);
+  if (ptr != NULL) {
+    len = strlen(ptr);
+    memset((void *)ptr, 0, len);
   }
-
-  /*
-   * Concatenate path and dirname
-   */
-  len = strlen(path) + strlen(dirname);
-
-  if (len <= FS_EXT4_PATH_LEN_MAX) {
-    strncat(path, dirname, strlen(dirname));
-  } 
 
   return 0;
 }
@@ -521,13 +485,8 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
    * Init Ext4 info
    */
   ext4_info.cwd.ino = EXT4_ROOT_INO;
-
+  ext4_info.cwd.root = FS_ROOT_PATH;
   memset((void *)ext4_info.cwd.path, 0, FS_EXT4_PATH_LEN_MAX + 1);
-  ret = fs_update_path(FS_ROOT_PATH, ext4_info.cwd.path);
-  if (ret != 0) {
-    goto fs_do_mount_fail;
-  }
-
   ext4_info.cwd.dentries = 0;
   ext4_info.cwd.dentry = NULL;
   ext4_info.sb = sb;
@@ -674,7 +633,11 @@ static int32_t fs_do_pwd(int32_t argc, const char **argv)
   argc = argc;
   argv = argv;
 
-  fprintf(stdout, "%s\n", ext4_info.cwd.path);
+  if (0 == strlen(ext4_info.cwd.path)) {
+    fprintf(stdout, "%s\n", ext4_info.cwd.root);    
+  } else {
+    fprintf(stdout, "%s\n", ext4_info.cwd.path);
+  }
 
   return 0;
 }
@@ -726,13 +689,21 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
    */
   ext4_info.cwd.ino = ino;
 
-  ret = fs_update_path(FS_PATH_DELIM, ext4_info.cwd.path);
-  if (ret != 0) {
-    error("failed to change ext4 directory!");
-    return -1;
+  if (strlen(name) == strlen(FS_CURRENT_PATH) && 0 == strncmp(name, FS_CURRENT_PATH, strlen(name))) {
+    return 0;
   }
 
-  ret = fs_update_path(name, ext4_info.cwd.path);
+  if (strlen(name) == strlen(FS_UPPER_PATH) && 0 == strncmp(name, FS_UPPER_PATH, strlen(name))) {
+    ret = fs_path_pop(ext4_info.cwd.path);
+    if (ret != 0) {
+      error("failed to change ext4 directory!");
+      return -1;
+    }
+
+    return 0;
+  }
+
+  ret = fs_path_push(name, ext4_info.cwd.path);
   if (ret != 0) {
     error("failed to change ext4 directory!");
     return -1;
