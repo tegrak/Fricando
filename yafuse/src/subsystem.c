@@ -14,8 +14,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the NTFS-3G
- * distribution in the file COPYING); if not, write to the Free Software
+ * along with this program (in the main directory of the distribution
+ * in the file COPYING); if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -429,13 +429,18 @@ static void ss_exec_line(char *line)
 
   if (len_s1 == len_s2) {
     if (strncmp(argv[0], FS_OPT_CMD_MOUNT, len_s1) == 0) {
-      fs_type = fs_mount(argv[1]);
+      if (fs_type < 0 || fs_type >= FS_TYPE_NUM_MAX) {
+        fs_type = fs_mount(argv[1]);
+        if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
+          info("mount filesystem successfully.");
+        } else {
+          info("failed to mount filesystem.");
+        }
+      } else {
+        info("umount filesystem first.");
+      }
       return;
     }
-  }
-
-  if (fs_type < 0) {
-   return;
   }
 
   len_s1 = strlen(argv[0]);
@@ -443,8 +448,12 @@ static void ss_exec_line(char *line)
 
   if (len_s1 == len_s2) {
     if (strncmp(argv[0], FS_OPT_CMD_UMOUNT, len_s1) == 0) {
-      fs_umount(fs_type);
-      fs_type = -1;
+      if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
+        fs_umount(fs_type);
+        fs_type = -1;
+
+        info("umount filesystem successfully.");
+      }
       return;
     }
   }
@@ -473,6 +482,11 @@ static void ss_listen(const char *ss_prompt, const char *fs_name)
    */
   if (fs_name != NULL) {
     fs_type = fs_mount(fs_name);
+    if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
+      info("mount filesystem successfully.");
+    } else {
+      info("failed to mount filesystem.");
+    }
   } else {
     fs_type = -1;
   }
@@ -560,8 +574,12 @@ void ss_delete(int32_t ss_idx)
   /*
    * Umount filesystem
    */
-  fs_umount(fs_type);
-  fs_type = -1;
+  if (fs_type >= 0 && fs_type < FS_TYPE_NUM_MAX) {
+    fs_umount(fs_type);
+    fs_type = -1;
+
+    info("umount filesystem successfully.");
+  }
 
   /*
    * Unregister filesystem

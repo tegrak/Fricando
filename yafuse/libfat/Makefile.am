@@ -16,7 +16,11 @@ libfat_la_LDFLAGS = -version-info \
                     $(LIBFAT_VERSION) \
                     -no-undefined
 
-libfat_la_SOURCES = stat.c
+libfat_la_SOURCES = super.c \
+                    inode.c \
+                    dir.c \
+                    file.c \
+                    stat.c
 
 if WINDOWS
 libfat_la_SOURCES +=

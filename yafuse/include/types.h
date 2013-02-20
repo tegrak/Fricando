@@ -14,8 +14,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the NTFS-3G
- * distribution in the file COPYING); if not, write to the Free Software
+ * along with this program (in the main directory of the distribution
+ * in the file COPYING); if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -43,6 +43,10 @@
 
 #define DIV_ROUND_UP(x, y) (((x) + (y) - 1)/(y))
 #define ALIGN(x, y) ((y) * DIV_ROUND_UP((x), (y)))
+
+#define IS_POWER_OF_2(n) (n != 0 && ((n & (n - 1)) == 0))
+
+#define GET_UNALIGNED_LE16(p) (((uint16_t)p[1] << 8) | ((uint16_t)p[0]))
 
 #define __le64 u64
 #define __le32 u32

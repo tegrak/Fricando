@@ -14,8 +14,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the NTFS-3G
- * distribution in the file COPYING); if not, write to the Free Software
+ * along with this program (in the main directory of the distribution
+ * in the file COPYING); if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -77,7 +77,6 @@ typedef struct {
   /*
    * General info
    */
-  int32_t mounted;
   fs_ext4_cwd_t cwd;
 
   /*
@@ -452,19 +451,14 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   int32_t ret = -1;
 
   if (argc < 2 || argv == NULL) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
   }
 
   name = argv[1];
   if (name == NULL) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
-  }
-
-  if (ext4_info.mounted) {
-    info("umount ext4 filesystem first.");
-    return 0;
   }
 
   /*
@@ -472,7 +466,7 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
    */
   ret = io_open(name);
   if (ret != 0) {
-    error("failed to open io!");
+    error("failed to open ext4 io!");
     return -1;
   }
 
@@ -481,7 +475,7 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
    */
   sb = (struct ext4_super_block *)malloc(sizeof(struct ext4_super_block));
   if (sb == NULL) {
-    error("failed to malloc sb!");
+    error("failed to malloc ext4 sb!");
     ret = -1;
     goto fs_do_mount_fail;
   }
@@ -505,14 +499,14 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
    */
   if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT
       && sb->s_desc_size > EXT4_MIN_DESC_SIZE) {
-    error("not support size of 2^64 blocks!");
+    error("not support ext4 size of 2^64 blocks!");
     ret = -1;
     goto fs_do_mount_fail;
   }
 
   bg_desc = (struct ext4_group_desc_min *)malloc(sb->s_desc_size * bg_groups);
   if (bg_desc == NULL) {
-    error("failed to malloc bg desc!");
+    error("failed to malloc ext4 bg desc!");
     ret = -1;
     goto fs_do_mount_fail;
   }
@@ -526,7 +520,6 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   /*
    * Init Ext4 info
    */
-  ext4_info.mounted = 1;
   ext4_info.cwd.ino = EXT4_ROOT_INO;
 
   memset((void *)ext4_info.cwd.path, 0, FS_EXT4_PATH_LEN_MAX + 1);
@@ -553,13 +546,9 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
     goto fs_do_mount_fail;
   }
 
-  info("mount ext4 filesystem successfully.");
-
   return 0;
 
  fs_do_mount_fail:
-
-  info("failed to mount ext4 filesystem.");
 
   if (ext4_info.cwd.dentry != NULL) {
     free(ext4_info.cwd.dentry);
@@ -587,10 +576,6 @@ static int32_t fs_do_umount(int32_t argc, const char **argv)
 {
   argc = argc;
   argv = argv;
-
-  if (ext4_info.mounted) {
-    info("umount ext4 filesystem successfully.");
-  }
 
   if (ext4_info.cwd.dentry != NULL) {
     free(ext4_info.cwd.dentry);
@@ -640,7 +625,7 @@ static int32_t fs_do_stat(int32_t argc, const char **argv)
   int32_t ret = 0;
 
   if (argc != 2 || argv == NULL) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
   }
 
@@ -655,7 +640,7 @@ static int32_t fs_do_stat(int32_t argc, const char **argv)
                       (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
                       &ino);
     if (ret != 0) {
-      error("invalid args!");
+      error("invalid ext4 args!");
       return -1;
     }
   }
@@ -701,13 +686,13 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
   int32_t ret = 0;
 
   if (argc != 2 || argv == NULL) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
   }
 
   name = argv[1];
   if (name == NULL) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
   }
 
@@ -719,7 +704,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
                     (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
                     &ino);
   if (ret != 0) {
-    error("invalid args!");
+    error("invalid ext4 args!");
     return -1;
   }
 
@@ -732,7 +717,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
                       &ext4_info.cwd.dentries,
                       &ext4_info.cwd.dentry);
   if (ret != 0) {
-    error("failed to change directory!");
+    error("failed to change ext4 directory!");
     return -1;
   }
 
@@ -743,13 +728,13 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 
   ret = fs_update_path(FS_PATH_DELIM, ext4_info.cwd.path);
   if (ret != 0) {
-    error("failed to change directory!");
+    error("failed to change ext4 directory!");
     return -1;
   }
 
   ret = fs_update_path(name, ext4_info.cwd.path);
   if (ret != 0) {
-    error("failed to change directory!");
+    error("failed to change ext4 directory!");
     return -1;
   }
 

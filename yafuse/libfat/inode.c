@@ -1,5 +1,5 @@
 /**
- * file.c - file of Ext4.
+ * inode.c - inode of FAT.
  *
  * Copyright (c) 2013-2014 angersax@gmail.com
  *
@@ -45,11 +45,8 @@
 
 #include "include/debug.h"
 #include "include/types.h"
-#include "include/libext4/ext4.h"
-#include "include/libext4/ext4_extents.h"
-#include "include/libext4/ext4_jbd2.h"
-#include "include/libext4/jbd2.h"
-#include "include/libext4/libext4.h"
+#include "include/libfat/msdos_fs.h"
+#include "include/libfat/libfat.h"
 #include "include/libio/io.h"
 
 /*
