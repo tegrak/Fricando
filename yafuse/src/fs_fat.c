@@ -249,7 +249,8 @@ static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb,
 static int32_t fs_name2dentry(const char *name, int32_t dentries, const struct msdos_dir_entry *dentry, struct msdos_dir_entry *entry)
 {
   int32_t i = 0, j = 0;
-  size_t len_s1 = 0, len_s2 = 0;
+  size_t len_name = 0, len_base = 0, len_ext = 0;
+  const char *base = NULL,  *ext = NULL;
   int32_t ret = -1;
 
   if (name == NULL
@@ -259,29 +260,59 @@ static int32_t fs_name2dentry(const char *name, int32_t dentries, const struct m
     return -1;
   }
 
-  len_s1 = strlen(name);
-  len_s2 = MSDOS_NAME;
+  len_name = strlen(name);
 
-  if (len_s1 >= len_s2) {
+  if (len_name >= MSDOS_NAME) {
     return -1;
   }
 
   for (i = 0; i < dentries; ++i) {
-    for (j = 0; j < MSDOS_NAME; ++j) {
-      if (dentry[i].name[j] == '\0' || dentry[i].name[j] == 0x20) {
+    base = (const char *)dentry[i].name;
+    ext = (const char *)dentry[i].name + MSDOS_NAME_BASE_LEN;
+
+    for (j = 0; j < MSDOS_NAME_BASE_LEN; ++j) {
+      if (base[j] == '\0' || base[j] == 0x20) {
         break;
       }
     }
 
-    len_s2 = j;
+    len_base = j;
 
-    if (len_s1 == len_s2) {
-      if (0 == strncmp(name, (const char *)dentry[i].name, len_s1)) {
-        memcpy((void *)entry, (const void *)&dentry[i], sizeof(struct msdos_dir_entry));
+    if (len_base <= len_name) {
+      if (0 != strncmp(name, base, len_base)) {
+        continue;
+      }
+
+      if (len_base < len_name && name[len_base] != '.') {
+        continue;
+      }
+
+      for (j = 0; j < MSDOS_NAME_EXT_LEN; ++j) {
+        if (ext[j] == '\0' || ext[j] == 0x20) {
+          break;
+        }
+      }
+
+      len_ext = j;
+
+      if (len_base == len_name && len_ext == 0) {
+        ret = 0;
+        break;
+      }
+
+      if (len_ext != (len_name - len_base - 1)) {
+        continue;
+      }
+
+      if (0 == strncmp(name + len_base + 1, ext, len_ext)) {
         ret = 0;
         break;
       }
     }
+  }
+
+  if (ret == 0) {
+    memcpy((void *)entry, (const void *)&dentry[i], sizeof(struct msdos_dir_entry));
   }
 
   return ret;
@@ -624,23 +655,27 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
   int32_t i = 0, j = 0;
+  const char *base = NULL,  *ext = NULL;
 
   argc = argc;
   argv = argv;
 
   for (i = 0; i < fat_info.cwd.dentries; ++i) {
+    base = (const char *)fat_info.cwd.dentry[i].name;
+    ext = (const char *)fat_info.cwd.dentry[i].name + MSDOS_NAME_BASE_LEN;
+
     for (j = 0; j < MSDOS_NAME_BASE_LEN; ++j) {
-      if (fat_info.cwd.dentry[i].name[j] == '\0' || fat_info.cwd.dentry[i].name[j] == 0x20) {
+      if (base[j] == '\0' || base[j] == 0x20) {
         break;
       }
-      fprintf(stdout, "%c", fat_info.cwd.dentry[i].name[j]);
+      fprintf(stdout, "%c", base[j]);
     }
 
-    if (fat_info.cwd.dentry[i].name[MSDOS_NAME_BASE_LEN] != '\0' && fat_info.cwd.dentry[i].name[MSDOS_NAME_BASE_LEN] != 0x20) {
+    if (ext[0] != '\0' && ext[0] != 0x20) {
       fprintf(stdout, ".");
 
       for (j = 0; j < MSDOS_NAME_EXT_LEN; ++j) {
-        fprintf(stdout, "%c", fat_info.cwd.dentry[i].name[j + MSDOS_NAME_BASE_LEN]);
+        fprintf(stdout, "%c", ext[j]);
       }
     }
 
