@@ -2,7 +2,7 @@
 INTRODUCTION
 ============
 
-Yafuse, yet another fuse, is developed to support for Ext4 and FAT32 file system in user space.
+Yafuse, yet another fuse, is developed to support for Ext4 and FAT file system in user space.
 
 
 QUICK INSTALLATION
