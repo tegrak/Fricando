@@ -17,7 +17,6 @@ libfat_la_LDFLAGS = -version-info \
                     -no-undefined
 
 libfat_la_SOURCES = super.c \
-                    inode.c \
                     dir.c \
                     file.c \
                     stat.c

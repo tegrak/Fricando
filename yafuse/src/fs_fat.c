@@ -61,10 +61,10 @@
  * Type Definition
  */
 typedef struct {
-  int32_t cluster;
   const char *root;
   char path[FS_FAT_PATH_LEN_MAX + 1];
   int32_t dentries;
+  struct msdos_dir_slot *dslot;
   struct msdos_dir_entry *dentry;
 } fs_fat_cwd_t;
 
@@ -83,8 +83,8 @@ typedef struct {
 /*
  * Function Declaration
  */
-static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_entry **dentry);
-static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_entry **dentry);
+static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_slot **dslot, struct msdos_dir_entry **dentry);
+static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_slot **dslot, struct msdos_dir_entry **dentry);
 static int32_t fs_name2dentry(const char *name, int32_t dentries, const struct msdos_dir_entry *dentry, struct msdos_dir_entry *entry);
 static int32_t fs_path_push(const char *dirname, char *path);
 static int32_t fs_path_pop(char *path);
@@ -174,12 +174,12 @@ static fs_fat_info_t fat_info;
 /*
  * Function Definition
  */
-static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_entry **dentry)
+static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_slot **dslot, struct msdos_dir_entry **dentry)
 {
   int32_t dentries_new = 0;
   int32_t ret = 0;
 
-  if (sb == NULL || dentries == NULL || dentry == NULL) {
+  if (sb == NULL || dentries == NULL || dslot == NULL || dentry == NULL) {
     return -1;
   }
 
@@ -189,6 +189,12 @@ static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentrie
   }
 
   if (dentries_new > *dentries) {
+    *dslot = (struct msdos_dir_slot *)realloc((void *)*dslot, sizeof(struct msdos_dir_slot) * dentries_new);
+    if (*dslot == NULL) {
+      return -1;
+    }
+    memset((void *)*dslot, 0, sizeof(struct msdos_dir_slot) * dentries_new);
+
     *dentry = (struct msdos_dir_entry *)realloc((void *)*dentry, sizeof(struct msdos_dir_entry) * dentries_new);
     if (*dentry == NULL) {
       return -1;
@@ -198,7 +204,7 @@ static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentrie
 
   *dentries = dentries_new;
 
-  ret = fat_fill_root_dentry(sb, *dentries, *dentry);
+  ret = fat_fill_root_dentry(sb, *dentries, *dslot, *dentry);
   if (ret != 0) {
     return -1;
   }
@@ -206,16 +212,12 @@ static int32_t fs_root2dentry(const struct fat_super_block *sb, int32_t *dentrie
   return 0;
 }
 
-static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_entry **dentry)
+static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb, int32_t *dentries, struct msdos_dir_slot **dslot, struct msdos_dir_entry **dentry)
 {
   int32_t dentries_new = 0;
   int32_t ret = 0;
 
-  if (cluster < FAT_START_ENT
-      || sb == NULL
-      || dentries == NULL
-      || dentry == NULL
-      || *dentry == NULL) {
+  if (cluster < FAT_START_ENT || sb == NULL || dentries == NULL || dslot == NULL || dentry == NULL) {
     return -1;
   }
 
@@ -231,6 +233,12 @@ static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb,
    * Fill in FAT dentry list
    */
   if (dentries_new > *dentries) {
+    *dslot = (struct msdos_dir_slot *)realloc((void *)*dslot, sizeof(struct msdos_dir_slot) * dentries_new);
+    if (*dslot == NULL) {
+      return -1;
+    }
+    memset((void *)*dslot, 0, sizeof(struct msdos_dir_slot) * dentries_new);
+
     *dentry = (struct msdos_dir_entry *)realloc((void *)*dentry, sizeof(struct msdos_dir_entry) * dentries_new);
     if (*dentry == NULL) {
       return -1;
@@ -240,7 +248,7 @@ static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb,
 
   *dentries = dentries_new;
 
-  ret = fat_fill_dentry(sb, cluster, *dentries, *dentry);
+  ret = fat_fill_dentry(sb, cluster, *dentries, *dslot, *dentry);
   if (ret != 0) {
     return -1;
   }
@@ -306,7 +314,7 @@ static int32_t fs_name2dentry(const char *name, int32_t dentries, const struct m
         continue;
       }
 
-      if (0 == strncmp(name + len_base + 1, ext, len_ext)) {
+      if (0 != len_ext && 0 == strncmp(name + len_base + 1, ext, len_ext)) {
         ret = 0;
         break;
       }
@@ -369,7 +377,6 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
   const char *name = NULL;
   struct fat_super_block *sb = NULL;
-  int32_t is_fat32_fs = 0;
   int32_t ret = -1;
 
   if (argc < 2 || argv == NULL) {
@@ -411,35 +418,20 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   /*
    * Init FAT info
    */
-  fat_info.cwd.cluster = FAT_START_ENT;
   fat_info.cwd.root = FS_ROOT_PATH;
   memset((void *)fat_info.cwd.path, 0, FS_FAT_PATH_LEN_MAX + 1);
   fat_info.cwd.dentries = 0;
+  fat_info.cwd.dslot = NULL;
   fat_info.cwd.dentry = NULL;
   fat_info.sb = sb;
 
   /*
-   * Check FAT type
-   */
-  ret = fat_is_fat32_fs((const struct fat_super_block *)sb, &is_fat32_fs);
-  if (ret != 0) {
-    goto fs_do_mount_fail;
-  }
-
-  /*
    * Fill in FAT dentry list
    */
-  if (is_fat32_fs) {
-    ret = fs_clus2dentry(fat_info.cwd.cluster,
-                         (const struct fat_super_block *)fat_info.sb,
-                         &fat_info.cwd.dentries,
-                         &fat_info.cwd.dentry);
-  } else {
-    ret = fs_root2dentry((const struct fat_super_block *)fat_info.sb,
-                         &fat_info.cwd.dentries,
-                         &fat_info.cwd.dentry);
-  }
-
+  ret = fs_root2dentry((const struct fat_super_block *)fat_info.sb,
+                       &fat_info.cwd.dentries,
+                       &fat_info.cwd.dslot,
+                       &fat_info.cwd.dentry);
   if (ret != 0) {
     goto fs_do_mount_fail;
   }
@@ -451,6 +443,11 @@ static int32_t fs_do_mount(int32_t argc, const char **argv)
   if (fat_info.cwd.dentry != NULL) {
     free(fat_info.cwd.dentry);
     fat_info.cwd.dentry = NULL;
+  }
+
+  if (fat_info.cwd.dslot != NULL) {
+    free(fat_info.cwd.dslot);
+    fat_info.cwd.dslot = NULL;
   }
 
   if (sb != NULL) {
@@ -473,6 +470,11 @@ static int32_t fs_do_umount(int32_t argc, const char **argv)
   if (fat_info.cwd.dentry != NULL) {
     free(fat_info.cwd.dentry);
     fat_info.cwd.dentry = NULL;
+  }
+
+  if (fat_info.cwd.dslot != NULL) {
+    free(fat_info.cwd.dslot);
+    fat_info.cwd.dslot = NULL;
   }
 
   if (fat_info.sb != NULL) {
@@ -550,6 +552,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 {
   const char *name = NULL;
   struct msdos_dir_entry entry;
+  int32_t status = 0;
   int32_t start_cluster = 0;
   int32_t ret = 0;
 
@@ -576,6 +579,15 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
   }
 
   /*
+   * Check if dentry refers to directory
+   */
+  ret = fat_dent_attr_is_dir((const struct msdos_dir_entry *)&entry, &status);
+  if (ret != 0 || status == 0) {
+    error("failed to change fat directory!");
+    return -1;
+  }
+
+  /*
    * Fill in FAT dentry list
    */
   ret = fat_fill_dent_start((const struct fat_super_block *)fat_info.sb,
@@ -586,10 +598,24 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
     return -1;
   }
 
-  ret = fs_clus2dentry(start_cluster,
-                       (const struct fat_super_block *)fat_info.sb,
-                       &fat_info.cwd.dentries,
-                       &fat_info.cwd.dentry);
+  if (start_cluster == FAT_ENT_FREE) {
+    /*
+     * Change to root directory
+     * if start clust = 0 in dentry of '..'
+     */
+    ret = fs_root2dentry((const struct fat_super_block *)fat_info.sb,
+                         &fat_info.cwd.dentries,
+                         &fat_info.cwd.dslot,
+                         &fat_info.cwd.dentry);
+
+  } else {
+    ret = fs_clus2dentry(start_cluster,
+                         (const struct fat_super_block *)fat_info.sb,
+                         &fat_info.cwd.dentries,
+                         &fat_info.cwd.dslot,
+                         &fat_info.cwd.dentry);
+  }
+
   if (ret != 0) {
     error("failed to change fat directory!");
     return -1;
@@ -598,8 +624,6 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
   /*
    * Update FAT info
    */
-  fat_info.cwd.cluster = start_cluster;
-
   if (strlen(name) == strlen(FS_CURRENT_PATH) && 0 == strncmp(name, FS_CURRENT_PATH, strlen(name))) {
     return 0;
   }
@@ -626,7 +650,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
 static int32_t fs_do_ls(int32_t argc, const char **argv)
 {
   int32_t i = 0, j = 0;
-  const char *base = NULL,  *ext = NULL;
+  const char *base = NULL, *ext = NULL;
 
   argc = argc;
   argv = argv;

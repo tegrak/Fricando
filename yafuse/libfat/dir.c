@@ -71,7 +71,38 @@ static int32_t fat_fill_root_dent_sec(const struct fat_super_block *sb, int32_t 
  */
 static int32_t fat_fill_root_dent_sec(const struct fat_super_block *sb, int32_t *sector)
 {
-  *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat_length);
+  int32_t is_fat32_fs = 0;
+  int32_t ret = 0;
+
+  ret = fat_is_fat32_fs(sb, &is_fat32_fs);
+  if (ret != 0) {
+    return -1;
+  }
+
+  if (is_fat32_fs) {
+    *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat32_length);
+  } else {
+    *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat_length);
+  }
+
+  return 0;
+}
+
+int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *start_cluster)
+{
+  int32_t is_fat32_fs = 0;
+  int32_t ret = 0;
+
+  ret = fat_is_fat32_fs(sb, &is_fat32_fs);
+  if (ret != 0) {
+    return -1;
+  }
+
+  if (is_fat32_fs) {
+    *start_cluster = ((int32_t)dentry->starthi << 16) | (int32_t)dentry->start;
+  } else {
+    *start_cluster = (int32_t)dentry->start;
+  }
 
   return 0;
 }
@@ -98,12 +129,19 @@ int32_t fat_fill_root_dentries(const struct fat_super_block *sb, int32_t *dentri
 
   sz = sizeof(struct msdos_dir_entry);
 
-  /*
-   * Read FAT dentry of '.'
-   */
   ret = io_fread((uint8_t *)&dentry, sz);
   if (ret != 0) {
     return -1;
+  }
+
+  /*
+   * Long File Names (LFN), i.e., dslot, is used
+   */
+  if (dentry.attr == ATTR_EXT) {
+    ret = io_fread((uint8_t *)&dentry, sz);
+    if (ret != 0) {
+      return -1;
+    }
   }
 
   while (dentry.name[0] != '\0') {
@@ -113,6 +151,16 @@ int32_t fat_fill_root_dentries(const struct fat_super_block *sb, int32_t *dentri
     if (ret != 0) {
       return -1;
     }
+
+    /*
+     * Long File Names (LFN), i.e., dslot, is used
+     */
+    if (dentry.name[0] != '\0' && dentry.attr == ATTR_EXT) {
+      ret = io_fread((uint8_t *)&dentry, sz);
+      if (ret != 0) {
+        return -1;
+      }
+    }
   }
 
   *dentries = i;
@@ -120,7 +168,7 @@ int32_t fat_fill_root_dentries(const struct fat_super_block *sb, int32_t *dentri
   return 0;
 }
 
-int32_t fat_fill_root_dentry(const struct fat_super_block *sb, int32_t dentries, struct msdos_dir_entry *dentry)
+int32_t fat_fill_root_dentry(const struct fat_super_block *sb, int32_t dentries, struct msdos_dir_slot *dslot, struct msdos_dir_entry *dentry)
 {
   int32_t root_den_sec = 0;
   int32_t offset = 0;
@@ -142,9 +190,21 @@ int32_t fat_fill_root_dentry(const struct fat_super_block *sb, int32_t dentries,
   sz = sizeof(struct msdos_dir_entry);
 
   for (i = 0; i < dentries; ++i) {
-    ret = io_fread((uint8_t *)&dentry[i], sz);
+    ret = io_fread((uint8_t *)&dslot[i], sz);
     if (ret != 0) {
       break;
+    }
+
+    /*
+     * Long File Names (LFN), i.e., dslot, is used
+     */
+    if (dslot[i].attr == ATTR_EXT) {
+      ret = io_fread((uint8_t *)&dentry[i], sz);
+      if (ret != 0) {
+        break;
+      }
+    } else {
+      memcpy((void *)&dentry[i], (const void *)&dslot[i], sz);
     }
   }
 
@@ -157,7 +217,7 @@ int32_t fat_fill_dentries(const struct fat_super_block *sb, int32_t cluster, int
   int32_t offset = 0;
   struct msdos_dir_entry dentry;
   int32_t sz = 0;
-  int32_t i = 0;
+  int32_t i = 1;
   int32_t ret = 0;
 
   ret = fat_fill_clus2sec(sb, cluster, &sector);
@@ -181,12 +241,30 @@ int32_t fat_fill_dentries(const struct fat_super_block *sb, int32_t cluster, int
     return -1;
   }
 
+  /*
+   * Read FAT dentry of '..'
+   */
+  ret = io_fread((uint8_t *)&dentry, sz);
+  if (ret != 0) {
+    return -1;
+  }
+
   while (dentry.name[0] != '\0') {
     ++i;
 
     ret = io_fread((uint8_t *)&dentry, sz);
     if (ret != 0) {
       return -1;
+    }
+
+    /*
+     * Long File Names (LFN), i.e., dslot, is used
+     */
+    if (dentry.attr == ATTR_EXT) {
+      ret = io_fread((uint8_t *)&dentry, sz);
+      if (ret != 0) {
+        return -1;
+      }
     }
   }
 
@@ -195,7 +273,7 @@ int32_t fat_fill_dentries(const struct fat_super_block *sb, int32_t cluster, int
   return 0;
 }
 
-int32_t fat_fill_dentry(const struct fat_super_block *sb, int32_t cluster, int32_t dentries, struct msdos_dir_entry *dentry)
+int32_t fat_fill_dentry(const struct fat_super_block *sb, int32_t cluster, int32_t dentries, struct msdos_dir_slot *dslot, struct msdos_dir_entry *dentry)
 {
   int32_t sector = 0;
   int32_t offset = 0;
@@ -209,6 +287,7 @@ int32_t fat_fill_dentry(const struct fat_super_block *sb, int32_t cluster, int32
   }
 
   offset = sector * (int32_t)GET_UNALIGNED_LE16(sb->bs.sector_size);
+
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
@@ -216,30 +295,57 @@ int32_t fat_fill_dentry(const struct fat_super_block *sb, int32_t cluster, int32
 
   sz = sizeof(struct msdos_dir_entry);
 
-  for (i = 0; i < dentries; ++i) {
-    ret = io_fread((uint8_t *)&dentry[i], sz);
+  /*
+   * Fill in dentry of '.'
+   */
+  memset((void *)&dslot[0], 0, sz);
+
+  ret = io_fread((uint8_t *)&dentry[0], sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Fill in dentry of '..'
+   */
+  memset((void *)&dslot[1], 0, sz);
+
+  ret = io_fread((uint8_t *)&dentry[1], sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Fill in other dentry
+   */
+  for (i = 2; i < dentries; ++i) {
+    ret = io_fread((uint8_t *)&dslot[i], sz);
     if (ret != 0) {
       break;
+    }
+
+    /*
+     * Long File Names (LFN), i.e., dslot, is used
+     */
+    if (dslot[i].attr == ATTR_EXT) {
+      ret = io_fread((uint8_t *)&dentry[i], sz);
+      if (ret != 0) {
+        break;
+      }
+    } else {
+      memcpy((void *)&dentry[i], (const void *)&dslot[i], sz);
     }
   }
 
   return ret;
 }
 
-int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *start_cluster)
+int32_t fat_dent_attr_is_dir(const struct msdos_dir_entry *dentry, int32_t *status)
 {
-  int32_t is_fat32_fs = 0;
-  int32_t ret = 0;
-
-  ret = fat_is_fat32_fs(sb, &is_fat32_fs);
-  if (ret != 0) {
-    return -1;
-  }
-
-  if (is_fat32_fs) {
-    *start_cluster = ((int32_t)dentry->starthi << 16) | (int32_t)dentry->start;
+  if (dentry->attr & ATTR_DIR) {
+    *status = 1;
   } else {
-    *start_cluster = (int32_t)dentry->start;
+    *status = 0;
   }
 
   return 0;

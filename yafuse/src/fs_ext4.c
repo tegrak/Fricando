@@ -292,6 +292,9 @@ static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, con
     return -1;
   }
 
+  /*
+   * Check if inode refers to directory entry
+   */
   ret = ext4_inode_mode_is_dir((const struct ext4_inode *)&inode, &status);
   if (ret != 0 || status == 0) {
     return -1;

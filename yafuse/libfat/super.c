@@ -55,7 +55,6 @@
 /*
  * Macro Definition
  */
-#define FAT_TYPE_FAT32  "FAT32"
 
 /*
  * Type Definition
@@ -177,15 +176,7 @@ int32_t fat_fill_sb(struct fat_super_block *sb)
 
 int32_t fat_is_fat32_fs(const struct fat_super_block *sb, int32_t *status)
 {
-  int32_t ret = 0;
-
-  /*
-   * strlen of sb->bb.type[8] is 8
-   * strlen of FAT_TYPE_FAT32 is 5
-   */
-  ret = strncmp((const char *)sb->bb.type, (const char *)FAT_TYPE_FAT32, strlen(FAT_TYPE_FAT32));
-
-  *status = (ret == 0) && (sb->bs.fat_length == 0) && (sb->bs.fat32_length != 0);
+  *status = (sb->bs.fat_length == 0) && (sb->bs.fat32_length != 0);
 
   return 0;
 }
@@ -200,9 +191,10 @@ int32_t fat_fill_clus2sec(const struct fat_super_block *sb, int32_t cluster, int
     return -1;
   }
 
-  *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat_length);
-
-  if (!is_fat32_fs) {
+  if (is_fat32_fs) {
+    *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat32_length);
+  } else {
+    *sector = (int32_t)sb->bs.reserved + ((int32_t)sb->bs.fats * (int32_t)sb->bs.fat_length);
     *sector += ((int32_t)GET_UNALIGNED_LE16(sb->bs.dir_entries) * sizeof(struct msdos_dir_entry)) / ((int32_t)GET_UNALIGNED_LE16(sb->bs.sector_size));
   }
 

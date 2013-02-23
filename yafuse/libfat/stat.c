@@ -86,8 +86,12 @@ void fat_show_stats(const struct fat_super_block *sb)
    * Show FAT boot sector
    */
   fprintf(stdout, "System ID                : ");
-  for (i = 0; i < 8; ++i) {
-    fprintf(stdout, "%c", sb->bs.system_id[i]);
+  if (0 == strlen((const char *)sb->bs.system_id)) {
+    fprintf(stdout, FAT_DUMMY_STR);
+  } else {
+    for (i = 0; i < 8; ++i) {
+      fprintf(stdout, "%c", sb->bs.system_id[i]);
+    }
   }
   fprintf(stdout, "\n");
 
@@ -133,14 +137,22 @@ void fat_show_stats(const struct fat_super_block *sb)
   fprintf(stdout, "Serial number        : %u\n", vol_id);
 
   fprintf(stdout, "Volume name          : ");
-  for (i = 0; i < 11; ++i) {
-    fprintf(stdout, "%c", sb->bb.vol_label[i]);
+  if (0 == strlen((const char *)sb->bb.vol_label)) {
+    fprintf(stdout, FAT_DUMMY_STR);
+  } else {
+    for (i = 0; i < 11; ++i) {
+      fprintf(stdout, "%c", sb->bb.vol_label[i]);
+    }
   }
   fprintf(stdout, "\n");
 
   fprintf(stdout, "FAT name             : ");
-  for (i = 0; i < 8; ++i) {
-    fprintf(stdout, "%c", sb->bb.type[i]);
+  if (0 == strlen((const char *)sb->bb.type)) {
+    fprintf(stdout, FAT_DUMMY_STR);
+  } else {
+    for (i = 0; i < 8; ++i) {
+      fprintf(stdout, "%c", sb->bb.type[i]);
+    }
   }
   fprintf(stdout, "\n");
 
@@ -154,6 +166,53 @@ void fat_show_stats(const struct fat_super_block *sb)
     fprintf(stdout, "Free clusters : %u\n", sb->bf.free_clusters);
     fprintf(stdout, "Next cluster  : %u\n", sb->bf.next_cluster);
   }
+}
+
+void fat_show_dslot(const struct fat_super_block *sb, const struct msdos_dir_slot *dslot)
+{
+  int32_t i = 0;
+
+  sb = sb;
+
+  /*
+   * Show FAT directory entry
+   */
+  fprintf(stdout, "Sequence number   : %u\n", dslot->id);
+
+  fprintf(stdout, "Name char (0-4)   : ");
+  if (dslot->name0_4[0] == '\0' || dslot->name0_4[0] == 0x20) {
+    fprintf(stdout, "%s", FAT_DUMMY_STR);   
+  } else {
+    for (i = 0; i < 10; ++i) {
+      fprintf(stdout, "%c", dslot->name0_4[i]);
+    }
+  }
+  fprintf(stdout, "\n");
+
+  fprintf(stdout, "Attribute         : 0x%X\n", dslot->attr);
+  fprintf(stdout, "checksum          : %u\n", dslot->alias_checksum);
+
+  fprintf(stdout, "Name char (5-10)  : ");
+  if (dslot->name5_10[0] == '\0' || dslot->name5_10[0] == 0x20) {
+    fprintf(stdout, "%s", FAT_DUMMY_STR);   
+  } else {
+    for (i = 0; i < 12; ++i) {
+      fprintf(stdout, "%c", dslot->name5_10[i]);
+    }
+  }
+  fprintf(stdout, "\n");
+
+  fprintf(stdout, "First cluster     : %u\n", dslot->start);
+
+  fprintf(stdout, "Name char (11-12) : ");
+  if (dslot->name11_12[0] == '\0' || dslot->name11_12[0] == 0x20) {
+    fprintf(stdout, "%s", FAT_DUMMY_STR);   
+  } else {
+    for (i = 0; i < 4; ++i) {
+      fprintf(stdout, "%c", dslot->name11_12[i]);
+    }
+  }
+  fprintf(stdout, "\n");
 }
 
 void fat_show_dentry(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry)
@@ -172,8 +231,12 @@ void fat_show_dentry(const struct fat_super_block *sb, const struct msdos_dir_en
    * Show FAT directory entry
    */
   fprintf(stdout, "Name                 : ");
-  for (i = 0; i < MSDOS_NAME_BASE_LEN; ++i) {
-    fprintf(stdout, "%c", dentry->name[i]);
+  if (dentry->name[0] == '\0' || dentry->name[0] == 0x20) {
+    fprintf(stdout, "%s", FAT_DUMMY_STR);   
+  } else {
+    for (i = 0; i < MSDOS_NAME_BASE_LEN; ++i) {
+      fprintf(stdout, "%c", dentry->name[i]);
+    }
   }
   fprintf(stdout, "\n");
 
