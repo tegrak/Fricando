@@ -115,6 +115,7 @@ int32_t ext4_fill_sb(struct ext4_super_block *sb)
   int32_t ret = 0;
 
   offset = EXT4_GROUP_0_PAD_SZ;
+
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;

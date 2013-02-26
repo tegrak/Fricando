@@ -71,3 +71,43 @@
 /*
  * Function Definition
  */
+int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_extent *ext, size_t *size)
+{
+  int32_t blk_sz = 0;
+  int32_t ret = 0;
+
+  ret = ext4_fill_blk_sz(sb, &blk_sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  *size = (size_t)(ext->ee_len * blk_sz);
+
+  return 0;
+}
+
+int32_t ext4_fill_file(const struct ext4_super_block *sb, const struct ext4_extent *ext, size_t size, uint8_t *buf)
+{
+  int32_t blk_sz = 0;
+  __le64 offset = 0;
+  int32_t ret = 0;
+
+  ret = ext4_fill_blk_sz(sb, &blk_sz);
+  if (ret != 0) {
+    return -1;
+  }
+
+  offset = (((__le64)ext->ee_start_hi << 32) | (__le64)ext->ee_start_lo) * blk_sz;
+
+  ret = io_fseek(offset);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = io_fread((uint8_t *)buf, size);
+  if (ret != 0) {
+    return -1;
+  }
+
+  return 0;
+}

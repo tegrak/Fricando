@@ -35,8 +35,17 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
 #ifdef DEBUG
@@ -58,10 +67,16 @@
 /*
  * Macro Definition
  */
+#ifndef O_BINARY
+#define O_BINARY  (0)
+#endif
+
 #define FS_EXT4_PATH_LEN_MAX  (255)
 
 #define FS_EXT4_STAT_INO_DELIM_L  '<'
 #define FS_EXT4_STAT_INO_DELIM_R  '>'
+
+#define FS_EXT4_REDIRECT_CMD  ">"
 
 /*
  * Type Definition
@@ -94,8 +109,11 @@ typedef struct {
 static int32_t fs_parse_ino(const char *name, int32_t *ino);
 static int32_t fs_name2ino(const char *name, int32_t dentries, const struct ext4_dir_entry_2 *dentry, int32_t *ino);
 static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, int32_t *dentries, struct ext4_dir_entry_2 **dentry);
+static int32_t fs_ino2file(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, size_t *size, uint8_t **buf);
 static int32_t fs_path_push(const char *dirname, char *path);
 static int32_t fs_path_pop(char *path);
+static int32_t fs_output_stdout(const uint8_t *buf, size_t size);
+static int32_t fs_output_file(const uint8_t *buf, size_t size, const char *name);
 
 static int32_t fs_do_mount(int32_t argc, const char **argv);
 static int32_t fs_do_umount(int32_t argc, const char **argv);
@@ -106,8 +124,8 @@ static int32_t fs_do_cd(int32_t argc, const char **argv);
 static int32_t fs_do_ls(int32_t argc, const char **argv);
 static int32_t fs_do_mkdir(int32_t argc, const char **argv);
 static int32_t fs_do_rm(int32_t argc, const char **argv);
-static int32_t fs_do_read(int32_t argc, const char **argv);
-static int32_t fs_do_write(int32_t argc, const char **argv);
+static int32_t fs_do_cat(int32_t argc, const char **argv);
+static int32_t fs_do_echo(int32_t argc, const char **argv);
 
 /*
  * Global Variable Definition
@@ -162,13 +180,13 @@ fs_opt_t fs_opt_tbl_ext4[FS_OPT_TBL_NUM_MAX] = {
   },
 
   [9] = {
-    .opt_hdl = fs_do_read,
-    .opt_cmd = "read",
+    .opt_hdl = fs_do_cat,
+    .opt_cmd = "cat",
   },
 
   [10] = {
-    .opt_hdl = fs_do_write,
-    .opt_cmd = "write",
+    .opt_hdl = fs_do_echo,
+    .opt_cmd = "echo",
   },
 
   [11] = {
@@ -354,7 +372,109 @@ static int32_t fs_ino2dentry(int32_t ino, const struct ext4_super_block *sb, con
     goto fs_ino2dentry_done;
   }
 
+  ret = 0;
+
  fs_ino2dentry_done:
+
+  if (extent != NULL) {
+    free(extent);
+    extent = NULL;
+  }
+
+  return ret;
+}
+
+static int32_t fs_ino2file(int32_t ino, const struct ext4_super_block *sb, const struct ext4_group_desc_min *bg_desc, size_t *size, uint8_t **buf)
+{
+  struct ext4_inode inode;
+  int32_t extents = 0;
+  struct ext4_extent *extent = NULL;
+  int32_t status = 0;
+  uint8_t *ptr = NULL;
+  int32_t ret = 0;
+
+  if (ino == EXT4_UNUSED_INO
+      || ino == EXT4_BAD_INO
+      || sb == NULL
+      || bg_desc == NULL
+      || size == NULL
+      || buf == NULL) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 inode
+   */
+  memset((void *)&inode, 0, sizeof(struct ext4_inode));
+
+  ret = ext4_fill_inode((const struct ext4_super_block *)sb,
+                        (const struct ext4_group_desc_min *)bg_desc,
+                        ino,
+                        &inode);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Check if inode refers to directory entry
+   */
+  ret = ext4_inode_mode_is_dir((const struct ext4_inode *)&inode, &status);
+  if (ret != 0 || status == 1) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 entents
+   */
+  ret = ext4_fill_extents((const struct ext4_inode *)&inode, &extents);
+  if (ret != 0) {
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 entent list
+   * Attention: 'extents = 1' required
+   */
+  extent = (struct ext4_extent *)malloc(sizeof(struct ext4_extent) * extents);
+  if (extent == NULL) {
+    return -1;    
+  }
+  memset((void *)extent, 0, sizeof(struct ext4_extent) * extents);
+
+  ret = ext4_fill_extent((const struct ext4_inode *)&inode, extents, extent);
+  if (ret != 0) {
+    goto fs_ino2file_done;
+  }
+
+  /*
+   * Fill in Ext4 file buffer
+   */
+  ret = ext4_fill_filesz(sb, (const struct ext4_extent *)extent, size);
+  if (ret != 0 || *size == 0) {
+    goto fs_ino2file_done;
+  }
+
+  ptr = (uint8_t *)malloc(*size);
+  if (ptr == NULL) {
+    goto fs_ino2file_done;    
+  }
+  memset((void *)ptr, 0, *size);
+
+  ret = ext4_fill_file(sb, (const struct ext4_extent *)extent, *size, ptr);
+  if (ret != 0) {
+    if (ptr != NULL) {
+      free(ptr);
+      ptr = NULL;
+    }
+
+    goto fs_ino2file_done;
+  }
+
+  *buf = ptr;
+
+  ret = 0;
+
+ fs_ino2file_done:
 
   if (extent != NULL) {
     free(extent);
@@ -407,6 +527,67 @@ static int32_t fs_path_pop(char *path)
   }
 
   return 0;
+}
+
+static int32_t fs_output_stdout(const uint8_t *buf, size_t size)
+{
+  size_t i = 0;
+
+  if (buf == NULL || size == 0) {
+    return -1;
+  }
+
+  for (i = 0; i < size; ++i) {
+    fprintf(stdout, "%c", buf[i]);
+  }
+  fprintf(stdout, "\n");
+
+  return 0;
+}
+
+static int32_t fs_output_file(const uint8_t *buf, size_t size, const char *name)
+{
+  int32_t fd = 0;
+  int32_t ret = 0;
+
+  if (buf == NULL || size == 0 || name == NULL) {
+    return -1;
+  }
+
+  ret = access(name, F_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = access(name, W_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  fd = open(name, O_WRONLY | O_BINARY);
+  if (fd < 0) {
+    return -1;
+  }
+
+  ret = lseek(fd, 0, SEEK_SET);
+  if (ret < 0) {
+    ret = -1;
+    goto fs_output_file_done;
+  }
+
+  ret = write(fd, (const void *)buf, size);
+  if (ret < 0) {
+    ret = -1;
+    goto fs_output_file_done;
+  }
+
+  ret = 0;
+
+ fs_output_file_done:
+
+  close(fd);
+
+  return ret;
 }
 
 static int32_t fs_do_mount(int32_t argc, const char **argv)
@@ -670,7 +851,7 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
                     (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
                     &ino);
   if (ret != 0) {
-    error("invalid ext4 args!");
+    error("failed to change ext4 directory!");
     return -1;
   }
 
@@ -752,15 +933,102 @@ static int32_t fs_do_rm(int32_t argc, const char **argv)
   return -1;
 }
 
-static int32_t fs_do_read(int32_t argc, const char **argv)
+static int32_t fs_do_cat(int32_t argc, const char **argv)
 {
-  argc = argc;
-  argv = argv;
+  const char *name_in = NULL, *name_out = NULL;
+  int32_t ino = EXT4_UNUSED_INO;
+  size_t size = 0;
+  uint8_t *buf = NULL;
+  int32_t ret = 0;
 
-  return -1;
+  /*
+   * Support for commands of 'cat file' (argc = 2)
+   * and 'cat srd_file > dst_file' (argc = 4)
+   */
+  if ((argc != 2 && argc != 4)
+      || argv == NULL) {
+    error("invalid ext4 args!");
+    return -1;
+  }
+
+  name_in = argv[1];
+  if (name_in == NULL) {
+    error("invalid ext4 args!");
+    return -1;
+  }
+
+  if (argc == 4) {
+    if (strlen(argv[2]) != strlen(FS_EXT4_REDIRECT_CMD)) {
+      error("invalid ext4 args!");
+      return -1;
+    }
+
+    if (0 != strncmp(argv[2], FS_EXT4_REDIRECT_CMD, strlen(FS_EXT4_REDIRECT_CMD))) {
+      error("invalid ext4 args!");
+      return -1;
+    }
+
+    name_out = argv[3];
+    if (name_out == NULL) {
+      error("invalid ext4 args!");
+      return -1;
+    }
+  }
+
+  /*
+   * Parse args
+   */
+  ret = fs_name2ino(name_in,
+                    ext4_info.cwd.dentries,
+                    (const struct ext4_dir_entry_2 *)ext4_info.cwd.dentry,
+                    &ino);
+  if (ret != 0) {
+    error("failed to cat ext4 file!");
+    return -1;
+  }
+
+  /*
+   * Fill in Ext4 file buffer
+   */
+  ret = fs_ino2file(ino, (const struct ext4_super_block *)ext4_info.sb, (const struct ext4_group_desc_min *)ext4_info.bg_desc, &size, &buf);
+  if (ret != 0 || size == 0) {
+    error("failed to cat ext4 file!");
+    return -1;
+  }
+
+  /*
+   * Output file buffer
+   */
+  if (name_out != NULL) {
+    /*
+     * Outputed to file
+     */
+    ret = fs_output_file((const uint8_t *)buf, size, name_out);
+  } else {
+    /*
+     * Outputed to standard output
+     */
+    ret = fs_output_stdout((const uint8_t *)buf, size);
+  }
+
+  if (ret != 0) {
+    error("failed to cat ext4 file!");
+    goto fs_do_cat_done;
+  }
+
+  ret = 0;
+
+ fs_do_cat_done:
+
+  if (buf != NULL) {
+    free(buf);
+    buf = NULL;
+  }
+
+  return ret;
 }
 
-static int32_t fs_do_write(int32_t argc, const char **argv)
+static int32_t fs_do_echo(int32_t argc, const char **argv)
 {
   argc = argc;
   argv = argv;

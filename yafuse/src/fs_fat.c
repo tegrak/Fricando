@@ -35,8 +35,17 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 
 #ifdef DEBUG
@@ -55,7 +64,13 @@
 /*
  * Macro Definition
  */
+#ifndef O_BINARY
+#define O_BINARY  (0)
+#endif
+
 #define FS_FAT_PATH_LEN_MAX  (255)
+
+#define FS_FAT_REDIRECT_CMD  ">"
 
 /*
  * Type Definition
@@ -88,6 +103,8 @@ static int32_t fs_clus2dentry(int32_t cluster, const struct fat_super_block *sb,
 static int32_t fs_name2dentry(const char *name, int32_t dentries, const struct msdos_dir_entry *dentry, struct msdos_dir_entry *entry);
 static int32_t fs_path_push(const char *dirname, char *path);
 static int32_t fs_path_pop(char *path);
+static int32_t fs_output_stdout(const uint8_t *buf, size_t size);
+static int32_t fs_output_file(const uint8_t *buf, size_t size, const char *name);
 
 static int32_t fs_do_mount(int32_t argc, const char **argv);
 static int32_t fs_do_umount(int32_t argc, const char **argv);
@@ -98,8 +115,8 @@ static int32_t fs_do_cd(int32_t argc, const char **argv);
 static int32_t fs_do_ls(int32_t argc, const char **argv);
 static int32_t fs_do_mkdir(int32_t argc, const char **argv);
 static int32_t fs_do_rm(int32_t argc, const char **argv);
-static int32_t fs_do_read(int32_t argc, const char **argv);
-static int32_t fs_do_write(int32_t argc, const char **argv);
+static int32_t fs_do_cat(int32_t argc, const char **argv);
+static int32_t fs_do_echo(int32_t argc, const char **argv);
 
 /*
  * Global Variable Definition
@@ -154,13 +171,13 @@ fs_opt_t fs_opt_tbl_fat[FS_OPT_TBL_NUM_MAX] = {
   },
 
   [9] = {
-    .opt_hdl = fs_do_read,
-    .opt_cmd = "read",
+    .opt_hdl = fs_do_cat,
+    .opt_cmd = "cat",
   },
 
   [10] = {
-    .opt_hdl = fs_do_write,
-    .opt_cmd = "write",
+    .opt_hdl = fs_do_echo,
+    .opt_cmd = "echo",
   },
 
   [11] = {
@@ -373,6 +390,67 @@ static int32_t fs_path_pop(char *path)
   return 0;
 }
 
+static int32_t fs_output_stdout(const uint8_t *buf, size_t size)
+{
+  size_t i = 0;
+
+  if (buf == NULL || size == 0) {
+    return -1;
+  }
+
+  for (i = 0; i < size; ++i) {
+    fprintf(stdout, "%c", buf[i]);
+  }
+  fprintf(stdout, "\n");
+
+  return 0;
+}
+
+static int32_t fs_output_file(const uint8_t *buf, size_t size, const char *name)
+{
+  int32_t fd = 0;
+  int32_t ret = 0;
+
+  if (buf == NULL || size == 0 || name == NULL) {
+    return -1;
+  }
+
+  ret = access(name, F_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  ret = access(name, W_OK);
+  if (ret != 0) {
+    return -1;
+  }
+
+  fd = open(name, O_WRONLY | O_BINARY);
+  if (fd < 0) {
+    return -1;
+  }
+
+  ret = lseek(fd, 0, SEEK_SET);
+  if (ret < 0) {
+    ret = -1;
+    goto fs_output_file_done;
+  }
+
+  ret = write(fd, (const void *)buf, size);
+  if (ret < 0) {
+    ret = -1;
+    goto fs_output_file_done;
+  }
+
+  ret = 0;
+
+ fs_output_file_done:
+
+  close(fd);
+
+  return ret;
+}
+
 static int32_t fs_do_mount(int32_t argc, const char **argv)
 {
   const char *name = NULL;
@@ -553,7 +631,8 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
   const char *name = NULL;
   struct msdos_dir_entry entry;
   int32_t status = 0;
-  int32_t start_cluster = 0;
+  int32_t cluster = 0;
+  size_t size = 0;
   int32_t ret = 0;
 
   if (argc != 2 || argv == NULL) {
@@ -592,13 +671,14 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
    */
   ret = fat_fill_dent_start((const struct fat_super_block *)fat_info.sb,
                             (const struct msdos_dir_entry *)&entry,
-                            &start_cluster);
+                            &cluster,
+                            &size);
   if (ret != 0) {
     error("failed to change fat directory!");
     return -1;
   }
 
-  if (start_cluster == FAT_ENT_FREE) {
+  if (cluster == FAT_ENT_FREE) {
     /*
      * Change to root directory
      * if start clust = 0 in dentry of '..'
@@ -607,9 +687,8 @@ static int32_t fs_do_cd(int32_t argc, const char **argv)
                          &fat_info.cwd.dentries,
                          &fat_info.cwd.dslot,
                          &fat_info.cwd.dentry);
-
   } else {
-    ret = fs_clus2dentry(start_cluster,
+    ret = fs_clus2dentry(cluster,
                          (const struct fat_super_block *)fat_info.sb,
                          &fat_info.cwd.dentries,
                          &fat_info.cwd.dslot,
@@ -697,15 +776,137 @@ static int32_t fs_do_rm(int32_t argc, const char **argv)
   return -1;
 }
 
-static int32_t fs_do_read(int32_t argc, const char **argv)
+static int32_t fs_do_cat(int32_t argc, const char **argv)
 {
-  argc = argc;
-  argv = argv;
+  const char *name_in = NULL, *name_out = NULL;
+  struct msdos_dir_entry entry;
+  int32_t status = 0;
+  int32_t cluster = 0;
+  size_t size = 0;
+  uint8_t *buf = NULL;
+  int32_t ret = 0;
 
-  return -1;
+  /*
+   * Support for commands of 'cat file' (argc = 2)
+   * and 'cat srd_file > dst_file' (argc = 4)
+   */
+  if ((argc != 2 && argc != 4)
+      || argv == NULL) {
+    error("invalid fat args!");
+    return -1;
+  }
+
+  name_in = argv[1];
+  if (name_in == NULL) {
+    error("invalid fat args!");
+    return -1;
+  }
+
+  if (argc == 4) {
+    if (strlen(argv[2]) != strlen(FS_FAT_REDIRECT_CMD)) {
+      error("invalid fat args!");
+      return -1;
+    }
+
+    if (0 != strncmp(argv[2], FS_FAT_REDIRECT_CMD, strlen(FS_FAT_REDIRECT_CMD))) {
+      error("invalid fat args!");
+      return -1;
+    }
+
+    name_out = argv[3];
+    if (name_out == NULL) {
+      error("invalid fat args!");
+      return -1;
+    }
+  }
+
+  /*
+   * Parse args
+   */
+  memset((void *)&entry, 0, sizeof(struct msdos_dir_entry));
+
+  ret = fs_name2dentry(name_in, fat_info.cwd.dentries, (const struct msdos_dir_entry *)fat_info.cwd.dentry, &entry);
+  if (ret != 0) {
+    error("failed to cat fat file!");
+    return -1;
+  }
+
+  /*
+   * Check if dentry refers to directory
+   */
+  ret = fat_dent_attr_is_dir((const struct msdos_dir_entry *)&entry, &status);
+  if (ret != 0 || status == 1) {
+    error("failed to cat fat file!");
+    return -1;
+  }
+
+  /*
+   * Fill in FAT file buffer
+   */
+  ret = fat_fill_dent_start((const struct fat_super_block *)fat_info.sb,
+                            (const struct msdos_dir_entry *)&entry,
+                            &cluster,
+                            &size);
+  if (ret != 0) {
+    error("failed to cat fat file!");
+    return -1;
+  }
+
+  if (cluster < FAT_START_ENT) {
+    error("failed to cat fat file!");
+    return -1;
+  }
+
+  if (size == 0) {
+    return 0;
+  }
+
+  buf = (uint8_t *)malloc(size);
+  if (buf == NULL) {
+    error("failed to cat fat file!");
+    return -1;
+  }
+  memset((void *)buf, 0, size);
+
+  ret = fat_fill_file((const struct fat_super_block *)fat_info.sb, cluster, size, buf);
+  if (ret != 0) {
+    error("failed to cat fat file!");
+    goto fs_do_cat_done;
+  }
+
+  /*
+   * Output file buffer
+   */
+  if (name_out != NULL) {
+    /*
+     * Outputed to file
+     */
+    ret = fs_output_file((const uint8_t *)buf, size, name_out);
+  } else {
+    /*
+     * Outputed to standard output
+     */
+    ret = fs_output_stdout((const uint8_t *)buf, size);
+  }
+
+  if (ret != 0) {
+    error("failed to cat fat file!");
+    goto fs_do_cat_done;
+  }
+
+  ret = 0;
+
+ fs_do_cat_done:
+
+  if (buf != NULL) {
+    free(buf);
+    buf = NULL;
+  }
+
+  return ret;
 }
 
-static int32_t fs_do_write(int32_t argc, const char **argv)
+static int32_t fs_do_echo(int32_t argc, const char **argv)
 {
   argc = argc;
   argv = argv;

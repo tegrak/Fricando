@@ -96,12 +96,13 @@ struct fat_super_block {
 int32_t fat_fill_sb(struct fat_super_block *sb);
 int32_t fat_is_fat32_fs(const struct fat_super_block *sb, int32_t *status);
 int32_t fat_fill_clus2sec(const struct fat_super_block *sb, int32_t cluster, int32_t *sector);
-int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *start_cluster);
+int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *cluster, size_t *size);
 int32_t fat_fill_root_dentries(const struct fat_super_block *sb, int32_t *dentries);
 int32_t fat_fill_root_dentry(const struct fat_super_block *sb, int32_t dentries, struct msdos_dir_slot *dslot, struct msdos_dir_entry *dentry);
 int32_t fat_fill_dentries(const struct fat_super_block *sb, int32_t cluster, int32_t *dentries);
 int32_t fat_fill_dentry(const struct fat_super_block *sb, int32_t cluster, int32_t dentries, struct msdos_dir_slot *dslot, struct msdos_dir_entry *dentry);
 int32_t fat_dent_attr_is_dir(const struct msdos_dir_entry *dentry, int32_t *status);
+int32_t fat_fill_file(const struct fat_super_block *sb, int32_t cluster, size_t size, uint8_t *buf);
 
 void fat_show_stats(const struct fat_super_block *sb);
 void fat_show_dslot(const struct fat_super_block *sb, const struct msdos_dir_slot *dslot);

@@ -88,7 +88,7 @@ static int32_t fat_fill_root_dent_sec(const struct fat_super_block *sb, int32_t 
   return 0;
 }
 
-int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *start_cluster)
+int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos_dir_entry *dentry, int32_t *cluster, size_t *size)
 {
   int32_t is_fat32_fs = 0;
   int32_t ret = 0;
@@ -99,10 +99,12 @@ int32_t fat_fill_dent_start(const struct fat_super_block *sb, const struct msdos
   }
 
   if (is_fat32_fs) {
-    *start_cluster = ((int32_t)dentry->starthi << 16) | (int32_t)dentry->start;
+    *cluster = ((int32_t)dentry->starthi << 16) | (int32_t)dentry->start;
   } else {
-    *start_cluster = (int32_t)dentry->start;
+    *cluster = (int32_t)dentry->start;
   }
+
+  *size = (size_t)dentry->size;
 
   return 0;
 }
@@ -122,6 +124,7 @@ int32_t fat_fill_root_dentries(const struct fat_super_block *sb, int32_t *dentri
   }
 
   offset = root_den_sec * (int32_t)GET_UNALIGNED_LE16(sb->bs.sector_size);
+
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
@@ -182,6 +185,7 @@ int32_t fat_fill_root_dentry(const struct fat_super_block *sb, int32_t dentries,
   }
 
   offset = root_den_sec * (int32_t)GET_UNALIGNED_LE16(sb->bs.sector_size);
+
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
@@ -226,6 +230,7 @@ int32_t fat_fill_dentries(const struct fat_super_block *sb, int32_t cluster, int
   }
 
   offset = sector * (int32_t)GET_UNALIGNED_LE16(sb->bs.sector_size);
+
   ret = io_fseek(offset);
   if (ret != 0) {
     return -1;
