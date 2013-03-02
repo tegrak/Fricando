@@ -71,7 +71,7 @@
 /*
  * Function Definition
  */
-int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_extent *ext, size_t *size)
+int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_inode *inode, size_t *size)
 {
   int32_t blk_sz = 0;
   int32_t ret = 0;
@@ -81,7 +81,7 @@ int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_ex
     return -1;
   }
 
-  *size = (size_t)(ext->ee_len * blk_sz);
+  *size = (size_t)(((__le64)inode->i_size_high << 32) | (__le64)inode->i_size_lo);
 
   return 0;
 }

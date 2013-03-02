@@ -449,7 +449,7 @@ static int32_t fs_ino2file(int32_t ino, const struct ext4_super_block *sb, const
   /*
    * Fill in Ext4 file buffer
    */
-  ret = ext4_fill_filesz(sb, (const struct ext4_extent *)extent, size);
+  ret = ext4_fill_filesz(sb, (const struct ext4_inode *)&inode, size);
   if (ret != 0 || *size == 0) {
     goto fs_ino2file_done;
   }
@@ -993,7 +993,7 @@ static int32_t fs_do_cat(int32_t argc, const char **argv)
   ret = fs_ino2file(ino, (const struct ext4_super_block *)ext4_info.sb, (const struct ext4_group_desc_min *)ext4_info.bg_desc, &size, &buf);
   if (ret != 0 || size == 0) {
     error("failed to cat ext4 file!");
-    return -1;
+    goto fs_do_cat_done;
   }
 
   /*

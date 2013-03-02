@@ -141,7 +141,7 @@ int32_t ext4_fill_extents(const struct ext4_inode *inode, int32_t *extents);
 int32_t ext4_fill_extent(const struct ext4_inode *inode, int32_t extents, struct ext4_extent *extent);
 int32_t ext4_fill_dentries(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t *dentries);
 int32_t ext4_fill_dentry(const struct ext4_super_block *sb, const struct ext4_extent *ext, int32_t dentries, struct ext4_dir_entry_2 *dentry);
-int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_extent *ext, size_t *size);
+int32_t ext4_fill_filesz(const struct ext4_super_block *sb, const struct ext4_inode *inode, size_t *size);
 int32_t ext4_fill_file(const struct ext4_super_block *sb, const struct ext4_extent *ext, size_t size, uint8_t *buf);
 
 void ext4_show_stats(const struct ext4_super_block *sb, int32_t bg_groups, const struct ext4_group_desc_min *bg_desc);
