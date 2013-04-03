@@ -147,13 +147,13 @@ PT_HIPROC  = 0x7FFFFFFF
 '''
 Helper defines to help parse ELF program headers
 '''
-MI_PROG_BOOT_DIGEST_SIZE       = 20
+MI_PROG_BOOT_DIGEST_SIZE = 20
 
 '''
 Segment Type
 '''
-MI_PBT_HASH_SEGMENT      = 0x2
-MI_PBT_PHDR_SEGMENT      = 0x7
+MI_PBT_HASH_SEGMENT = 0x2
+MI_PBT_PHDR_SEGMENT = 0x7
 
 '''
 Access Type
@@ -174,8 +174,8 @@ MI_PBT_ELF_PHDR_SEGMENT = 0x07000000
 Class of Image Type ID
 '''
 class ImageType:
-  NONE_IMG         = 0
-  HASH_IMG         = 4
+  NONE_IMG = 0
+  HASH_IMG = 4
 
 '''
 Image Type Table
