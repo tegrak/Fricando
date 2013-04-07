@@ -22,7 +22,7 @@
 Example:
 
 To generate ELF with signature and certificate chain according to directory:
-python elfimg-tool-auth-sec.py -d /path/to/dir-of-sample -s /path/to/dir-of-signature-tool -b kmod_auth_sec
+python elfimg-tool-auth-sec.py -d /path/to/dir-of-sample -s /path/to/dir-of-signature-tool -b kmod_auth_sec -i
 '''
 
 import os, sys
@@ -385,17 +385,16 @@ class ElfBuilder(object):
       self.dst_fp = open(dstname, 'wb+')
     except IOError, err:
       print >> sys.stderr, str(err)
-      raise os.error
+      raise os.error, err
 
     try:
       self.build()
       self.flush()
     except OSError, err:
-      print >> sys.stderr, str(err)
       self.src_fp.close()
       self.dst_fp.close()
       os.remove(dstname)
-      raise os.error
+      raise os.error, err
 
   def __del__(self):
     if self.src_fp != -1:
@@ -1127,6 +1126,8 @@ class ElfBuilder(object):
   Write code segment
   '''
   def write_code_seg(self):
+    pad = 0
+
     '''
     Read ELF header
     '''
@@ -1184,14 +1185,14 @@ class ElfBuilder(object):
 
     ret = self.write_exec_ehdr(entry, phnum)
     if ret != 0:
-      raise os.error
+      raise os.error, "failed to write ELF header!"
 
     '''
     Write ELF program header table
     '''
     ret = self.write_phdr_tbl()
     if ret != 0:
-      raise os.error
+      raise os.error, "failed to write program header table!"
 
     '''
     Write Hash table
@@ -1203,7 +1204,7 @@ class ElfBuilder(object):
     '''
     ret = self.write_code_seg()
     if ret != 0:
-      raise os.error
+      raise os.error, "failed to write code segment!"
 
     '''
     Write other segments
@@ -1220,12 +1221,12 @@ class ElfBuilder(object):
     '''
     ret = self.write_hash_tbl()
     if ret != 0:
-      raise os.error
+      raise os.error, "failed to write hash table!"
 
 '''
 Build Auth-Sec ELF
 '''
-def build_auth_sec_elf(directory, signtool = None, namebase = None):
+def build_auth_sec_elf(directory, signtool = None, namebase = None, inplace = False):
   ft = filetype_table['ko'][1]
 
   for dir, dirs, files in os.walk(directory):
@@ -1236,9 +1237,11 @@ def build_auth_sec_elf(directory, signtool = None, namebase = None):
           if S_ISREG(os.stat(fname).st_mode):
             ElfBuilder(fname, fname + '.sec', signtool, namebase)
             '''
-            Remove original file
-            Add code here
+            Remove original file if 'inplace' is True
             '''
+            if inplace is True:
+              os.remove(fname)
+              os.rename(fname + '.sec', fname)
       except os.error, err:
         '''
         Ignore error due to unrecognized file
@@ -1257,6 +1260,7 @@ def print_usage():
     print >> sys.stdout, '  -d, --dir        Directory to generate ELF file'
     print >> sys.stdout, '  -s, --sign       Directory of signature tool to sign ELF file'
     print >> sys.stdout, '  -b, --base       Base name of signature and certificate chain'
+    print >> sys.stdout, '  -i, --inplace    Modify ELF file in place'
     print >> sys.stdout, '  -h, --help       Display help message'
     print >> sys.stdout, ''
 
@@ -1267,6 +1271,7 @@ def main():
   directory = ''
   signtool = ''
   basename = ''
+  inplace = False
   ret = 0
 
   '''
@@ -1278,7 +1283,7 @@ def main():
   Get args list
   '''
   try:
-    opts, args = getopt.getopt(sys.argv[1:], 'd:s:b:h', ['dir', 'sign', 'base', 'help'])
+    opts, args = getopt.getopt(sys.argv[1:], 'd:s:b:ih', ['dir', 'sign', 'base', 'inplace', 'help'])
   except getopt.GetoptError, err:
     print >> sys.stderr, err
     print_usage()
@@ -1291,6 +1296,8 @@ def main():
       signtool = a
     elif o in ('-b', '--base'):
       basename = a
+    elif o in ('-i', '--inplace'):
+      inplace = True
     elif o in ('-h', '--help'):
       print_usage()
       sys.exit(0)
@@ -1315,7 +1322,7 @@ def main():
   '''
   Build auth-sec ELF with signature and certificate chain
   '''
-  ret = build_auth_sec_elf(directory, signtool, basename)
+  ret = build_auth_sec_elf(directory, signtool, basename, inplace)
   if ret != 0:
     print >> sys.stderr, 'error: failed to build auth-sec ELF file!'
     exit(1)
