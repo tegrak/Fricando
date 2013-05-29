@@ -303,10 +303,9 @@ def pack_dtimg(dname, fname, tool):
     deventry_list.sort(key=str.lower, reverse=False)
 
     if header.num_dtb != len(deventry_list):
-        if fp != -1:
-            fp.close()
-        print >> sys.stderr, 'invalid device entry number!'
-        return False
+        print >> sys.stdout, 'device entry number not match with number in header,'
+        print >> sys.stdout, 'and the number in header will be updated.'
+        header.num_dtb = len(deventry_list)
 
     offset = HEADER_SZ
     for item in deventry_list:
@@ -357,9 +356,9 @@ def pack_dtimg(dname, fname, tool):
 
         if len(dts_list) == header.num_dtb:
             dts_list.sort(key=str.lower, reverse=False)
-            for index in range(header.num_dtb):
-                fname_dts = os.path.join(dname, str(index) + '.dts')
-                fname_dtb = os.path.join(dname, str(index) + '.dtb')
+            for f in dts_list:
+                fname_dts = os.path.join(dname, f)
+                fname_dtb = os.path.join(dname, f.replace('.dts', '.dtb'))
                 proc = subprocess.Popen([tool, '-p', '1024', '-I', 'dts', '-O', 'dtb', '-o', fname_dtb, fname_dts], stdout=subprocess.PIPE)
                 outs, errs = proc.communicate()
                 if proc.returncode != 0:
@@ -451,6 +450,13 @@ def pack_dtimg(dname, fname, tool):
             print >> sys.stderr, str(err)
             return False
 
+    '''
+    Update header
+    '''
+    offset = 0
+    fp.seek(offset, os.SEEK_SET)
+    fp.write(str(header.get_packed_data()))
+
     if fp != -1:
         fp.close()
 
@@ -536,6 +542,8 @@ def main():
             print >> sys.stdout, '\nDone!\n'
         else:
             print >> sys.stdout, '\nFailed!\n'
+            if os.access(fname, os.F_OK) is True:
+                os.remove(fname)
             sys.exit(1)
     else:
         print_usage()
