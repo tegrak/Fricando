@@ -191,6 +191,8 @@ AM_CONDITIONAL([INSTALL_LIBRARY], [test "${enable_library}" = "yes"])
 # generate files
 AC_CONFIG_FILES([
 	Makefile
+	src/libfdt/Makefile	
+	src/libfdt/libfdt.pc
 	src/Makefile])
 AC_OUTPUT
 

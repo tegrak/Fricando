@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libio
-Description: Library IO 
+Name: libfdt
+Description: Library Flat Device Tree
 Version: @PACKAGE_VERSION@
 Cflags: -I${includedir}
-Libs: -L${libdir} -lio
+Libs: -L${libdir} -lfdt

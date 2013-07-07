@@ -28,7 +28,7 @@ MAINTAINERCLEANFILES=\
 
 SUBDIRS = src
 
-doc_DATA = README.md
+doc_DATA = README
 
 dist-hook:
 	$(MKDIR_P) "$(distdir)/m4"

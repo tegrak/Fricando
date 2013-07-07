@@ -9,8 +9,6 @@ endif
 
 libfdt_la_CFLAGS  = $(AM_CFLAGS)
 
-libfdt_la_LDFLAGS = -no-undefined
-
 libfdt_la_SOURCES = fdt.c \
                     fdt_empty_tree.c \
                     fdt_ro.c \
@@ -24,3 +22,7 @@ libfdt_la_SOURCES +=
 else
 libfdt_la_SOURCES +=
 endif
+
+clean-local:
+	@rm -f $(lib_LTLIBRARIES)
+
