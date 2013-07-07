@@ -18,8 +18,8 @@ dtcc_CFLAGS = $(AM_CFLAGS) \
               -I$(top_srcdir)/src/libfdt \
               -I$(top_srcdir)/src
 
-dtcc_SOURCES = dtc-parser.tab.c \
-               dtc-lexer.lex.c \
+dtcc_SOURCES = dtc-parser.c \
+               dtc-lexer.c \
                checks.c \
                data.c \
                flattree.c \
