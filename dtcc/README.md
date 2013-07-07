@@ -1,6 +1,7 @@
 ## Introduction
 
 dtcc is forked from Linux kernel/scripts/dtc.
+
 dtcc supports for both c-style and python-style of device tree description.
 
 
