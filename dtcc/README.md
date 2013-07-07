@@ -13,6 +13,7 @@ N/A
 ## Building Steps
 
 ```bash
+$ ./autogen.sh
 $ ./configure --prefixe=/full/install/path/to/dtcc
 $ make
 $ make install
