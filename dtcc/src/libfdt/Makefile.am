@@ -26,3 +26,7 @@ endif
 clean-local:
 	@rm -f $(lib_LTLIBRARIES)
 
+distclean-local:
+	@rm -f $(lib_LTLIBRARIES)
+	@rm -f Makefile.in
+

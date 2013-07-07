@@ -38,6 +38,10 @@ endif
 clean-local:
 	@rm -f $(bin_PROGRAMS)
 
+distclean-local:
+	@rm -f $(bin_PROGRAMS)
+	@rm -f Makefile.in
+
 ##
 ## Build fdtdump
 ##
