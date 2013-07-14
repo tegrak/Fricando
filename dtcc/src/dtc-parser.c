@@ -87,7 +87,7 @@ static unsigned char eval_char_literal(const char *s);
 
 
 /* Line 268 of yacc.c  */
-#line 91 "dtc-parser.tab.c"
+#line 91 "dtc-parser.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -170,7 +170,7 @@ typedef union YYSTYPE
 
 
 /* Line 293 of yacc.c  */
-#line 174 "dtc-parser.tab.c"
+#line 174 "dtc-parser.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -182,7 +182,7 @@ typedef union YYSTYPE
 
 
 /* Line 343 of yacc.c  */
-#line 186 "dtc-parser.tab.c"
+#line 186 "dtc-parser.c"
 
 #ifdef short
 # undef short
@@ -2150,7 +2150,7 @@ yyreduce:
 
 
 /* Line 1806 of yacc.c  */
-#line 2154 "dtc-parser.tab.c"
+#line 2154 "dtc-parser.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

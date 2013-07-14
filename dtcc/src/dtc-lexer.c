@@ -1,6 +1,6 @@
-#line 2 "dtc-lexer.lex.c"
+#line 2 "dtc-lexer.c"
 
-#line 4 "dtc-lexer.lex.c"
+#line 4 "dtc-lexer.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -635,7 +635,7 @@ char *yytext;
 #line 38 "dtc-lexer.l"
 #include "dtc.h"
 #include "srcpos.h"
-#include "dtc-parser.tab.h"
+#include "dtc-parser.h"
 
 YYLTYPE yylloc;
 
@@ -660,7 +660,7 @@ static int dts_version = 1;
 
 static void push_input_file(const char *filename);
 static int pop_input_file(void);
-#line 664 "dtc-lexer.lex.c"
+#line 664 "dtc-lexer.c"
 
 #define INITIAL 0
 #define INCLUDE 1
@@ -854,7 +854,7 @@ YY_DECL
     
 #line 67 "dtc-lexer.l"
 
-#line 858 "dtc-lexer.lex.c"
+#line 858 "dtc-lexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -1207,7 +1207,7 @@ YY_RULE_SETUP
 #line 227 "dtc-lexer.l"
 ECHO;
 	YY_BREAK
-#line 1211 "dtc-lexer.lex.c"
+#line 1211 "dtc-lexer.c"
 
 	case YY_END_OF_BUFFER:
 		{
